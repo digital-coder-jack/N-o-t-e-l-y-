@@ -2,7 +2,6 @@ const APP_SHELL = [
   '/',
   '/offline.html',
   '/dashboard',
-  '/chat',
   '/tools',
   '/css/premium-design-system.css',
   '/css/style.css',
