@@ -83,6 +83,7 @@ function ActionButton({ children, secondary = false, onClick }: { children: Reac
 function NoteCard({ note, onClick }: { note: Note; onClick: () => void }) { return <button className="note-card" onClick={onClick}><div className="note-card-top"><span className="course-dot" /><small>{note.course}</small>{note.pinned && <Star className="star-fill" />}</div><h3>{note.title}</h3><p>{note.time}</p><div className="note-tag">{note.tag}</div></button>; }
 
 function Overview({ setRoute }: { setRoute: (r: Route) => void }) {
+  const [askPrompt, setAskPrompt] = useState("");
   const [stats, setStats] = useState<any>(null);
   const [notes, setNotes] = useState<Note[]>([]);
   const [error, setError] = useState("");
@@ -104,6 +105,7 @@ function Overview({ setRoute }: { setRoute: (r: Route) => void }) {
       <div className="continue-panel"><div className="panel-kicker"><span className="sparkle-dot"><Sparkles /></span><span>YOUR STUDY WORKSPACE</span></div><h2>Pick up where you left off</h2><p>Open a saved note, ask Notely a question, or generate study material from a topic.</p><div className="continue-meta"><span>{stats ? stats.notes + " saved notes" : "Loading notes…"}</span><span>{stats ? stats.total_chats + " chats" : "Loading chats…"}</span><span>{stats ? stats.quizzes + " quizzes" : "Loading quizzes…"}</span></div><ActionButton onClick={() => setRoute("tools")}><Sparkles /> Open study tools <ArrowRight /></ActionButton></div>
       <div className="focus-panel"><div className="panel-kicker"><Clock3 /> WORKSPACE ACTIVITY</div><div className="focus-time">{stats ? stats.total_messages : "—"} <small>messages</small></div><div className="progress"><i style={{ width: stats ? Math.min(100, Number(stats.ai_generations || 0) * 5) + "%" : "0%" }} /></div><p>{stats ? stats.ai_generations + " AI generations and study artifacts" : "Activity appears here when the backend is connected."}</p><button onClick={() => setRoute("tools")}>Open study tools <ArrowRight /></button></div>
     </section>
+    <form className="na-home-ask" onSubmit={e => { e.preventDefault(); if (askPrompt.trim()) { openNotelyAssistant(askPrompt.trim()); setAskPrompt(""); } }}><label htmlFor="naHomeAsk">Ask Notely</label><div><input id="naHomeAsk" value={askPrompt} onChange={e => setAskPrompt(e.target.value)} placeholder="Ask about the topic you are studying…" maxLength={8000} /><button type="submit" disabled={!askPrompt.trim()}><Sparkles /> Ask</button></div></form>
     <section className="section-block"><div className="section-heading"><div><span className="eyebrow">YOUR SPACE</span><h2>Recent notes</h2></div><button onClick={() => setRoute("notes")}>View all <ArrowRight /></button></div>
       {notes.length ? <div className="note-grid">{notes.map(note => <NoteCard key={note.id} note={note} onClick={() => setRoute("notes")} />)}</div> : <EmptyState icon={<FileText />} title="No saved notes yet" copy="Create a note or generate notes from one of the study tools." action={<ActionButton onClick={() => setRoute("notes")}><Plus /> Create a note</ActionButton>} />}
     </section>
