@@ -165,7 +165,7 @@ async def delete_course_link(topic_id: int, link_id: str, user=Depends(auth.curr
     if filtered:
         db.upsert_artifact(topic_id, "links", json.dumps(filtered), "")
     else:
-        db.delete_artifact(topic_id, "links", "")
+        db.upsert_artifact(topic_id, "links", "[]", "")
     return {"deleted": True}
 
 
