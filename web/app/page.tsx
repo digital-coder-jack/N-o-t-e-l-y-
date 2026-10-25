@@ -484,7 +484,7 @@ function FloatingAssistant({ context }: { context: string }) {
         setError(e instanceof Error ? e.message : "Delete failed; chat restored.");
       } finally {
         delete deleteTimersRef.current[id];
-        setUndoChat((current) => current && Number(current.id) === id ? null : current);
+        setUndoChat((current: any) => current && Number(current.id) === id ? null : current);
       }
     }, 7000);
   };

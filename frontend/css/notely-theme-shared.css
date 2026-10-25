@@ -122,17 +122,43 @@ html { background: var(--notely-bg); }
   .notely-theme-fallback { display: none !important; }
 }
 
-/* View Transitions API owns the circular reveal; do not layer a second CSS animation. */
-/* Theme CSS remains framework-free for the existing FastAPI/Vercel web shell. */
-::view-transition-old(root),::view-transition-new(root){animation:none!important;mix-blend-mode:normal}
-::view-transition-old(root){z-index:1}
-::view-transition-new(root){z-index:2}
-.notely-theme-fallback{position:fixed;inset:0;z-index:2147483000;pointer-events:none;background:var(--notely-reveal-color,#060c1c);clip-path:circle(0px at var(--notely-theme-x,50vw) var(--notely-theme-y,50vh))}
-.notely-theme-toggle svg{transition:opacity .28s ease,transform .45s cubic-bezier(.2,.8,.2,1)}
-:root[data-theme="light"] .notely-theme-toggle .theme-sun{opacity:0;transform:rotate(65deg) scale(.55)}
-:root[data-theme="light"] .notely-theme-toggle .theme-moon{opacity:1;transform:rotate(0) scale(1)}
-@media(prefers-reduced-motion:reduce){.notely-theme-toggle,.notely-theme-toggle svg{transition:none!important}::view-transition-old(root),::view-transition-new(root){animation:none!important}}
-
+/* Keep the circular reveal rules above as the single source of truth. */
 /* Shared semantic color tokens for workspace and landing-page controls. */
-:root { --notely-bg:#f5f7ff; --notely-ink:#11182b; --notely-muted:#536079; --notely-accent:#087e9a; --notely-accent-contrast:#ffffff; --notely-accent-2:#6256d9; --notely-surface:#ffffff; --notely-line:#dfe5f5; }
+:root { --notely-theme-dark-bg:#060c1c; --notely-theme-light-bg:#f5f7ff; --notely-bg:#f5f7ff; --notely-ink:#11182b; --notely-muted:#536079; --notely-accent:#087e9a; --notely-accent-contrast:#ffffff; --notely-accent-2:#6256d9; --notely-surface:#ffffff; --notely-line:#dfe5f5; }
 :root[data-theme="dark"] { --notely-bg:#060c1c; --notely-ink:#f4f6ff; --notely-muted:#98a2c3; --notely-accent:#8fe8f8; --notely-accent-contrast:#060c1c; --notely-accent-2:#1f6fb5; --notely-surface:#0f1832; --notely-line:#1e2a4f; }
+
+
+/* Landing header controls: fit reliably on narrow phones without changing desktop layout. */
+.landing-nav-actions { min-width: 0; }
+.landing-nav-actions .notely-theme-toggle { min-width: 44px; min-height: 44px; }
+.landing-nav-actions .btn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; }
+.notely-theme-toggle:active { transform: scale(.96); }
+@media (max-width: 600px) {
+  body { overflow-x: clip; }
+  body > header { gap: 10px; padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px; }
+  .logo { gap: 8px; font-size: 21px; white-space: nowrap; }
+  .logo img { width: 30px; height: 30px; }
+  .landing-nav-actions { gap: 8px; flex: 0 0 auto; }
+  .landing-nav-actions .notely-theme-toggle { width: 44px; height: 44px; }
+  .landing-nav-actions .btn { min-height: 44px; padding: 11px 13px; font-size: 12px; line-height: 1.1; letter-spacing: 0; }
+  .hero { gap: 26px; padding: calc(94px + env(safe-area-inset-top, 0px)) 18px 44px; }
+  .hero .row { gap: 10px; }
+  .hero .row .btn, .cta .row .btn { min-height: 48px; padding: 13px 17px; font-size: 14px; line-height: 1.2; }
+  .cta { gap: 22px; padding: 100px 18px 48px; }
+  .cta .row { width: 100%; gap: 10px; }
+  .cta .row .btn { max-width: 100%; }
+}
+@media (max-width: 370px) {
+  body > header { padding-inline: 12px; gap: 7px; }
+  .logo { gap: 6px; font-size: 19px; }
+  .logo img { width: 28px; height: 28px; }
+  .landing-nav-actions { gap: 6px; }
+  .landing-nav-actions .btn { padding-inline: 10px; font-size: 11px; }
+}
+@media (hover: none) {
+  .notely-theme-toggle:hover { transform: none; box-shadow: 0 0 0 0 var(--toggle-ring); }
+  .notely-theme-toggle:active { transform: scale(.96); border-color: var(--notely-accent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .notely-theme-toggle, .notely-theme-toggle svg { transition: none !important; }
+}
