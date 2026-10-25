@@ -547,3 +547,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .nw-assistant-rename-form small { grid-column:1/-1; color:var(--muted); font-size:10px; }
 .nw-assistant-prose pre button:focus-visible,.nw-assistant-rename-form button:focus-visible { outline:3px solid var(--cyan); outline-offset:2px; }
 .nw-assistant-paused .nw-assistant-launcher,.nw-assistant-paused .nw-assistant-launcher-icon,.nw-assistant-paused .nw-assistant-launcher-ring,.nw-assistant-paused .nw-assistant-thinking span { animation-play-state:paused!important; }
+
+@media (hover:none) {
+  .nw-assistant-launcher:hover { box-shadow:0 10px 30px color-mix(in srgb,var(--navy) 24%,transparent),0 0 0 1px color-mix(in srgb,var(--cyan) 20%,transparent); }
+  .nw-assistant-head-actions .nw-icon-btn:hover,.nw-assistant-context-row button:hover,.nw-assistant-actions button:hover,.nw-assistant-suggestions button:hover,.nw-assistant-prose pre button:hover { background:transparent; border-color:var(--line); color:var(--muted); }
+}
