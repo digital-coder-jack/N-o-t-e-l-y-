@@ -19,8 +19,8 @@
 .na-launcher.is-generating .na-launcher-ring { opacity:1; animation:na-spin 1.15s linear infinite; }
 .na-unread-dot { position:absolute; top:0; right:0; width:11px; height:11px; border:2px solid var(--surface); border-radius:999px; background:var(--cyan); }
 .na-unread-dot[hidden] { display:none; }
-.na-window { position:fixed; z-index:1199; right:24px; bottom:24px; width:min(380px,calc(100vw - 24px)); height:min(560px,80vh); max-height:calc(100dvh - 36px); display:flex; flex-direction:column; overflow:hidden; border:1px solid var(--line); border-radius:24px; background:var(--surface); color:var(--ink); box-shadow:0 24px 70px color-mix(in srgb,var(--navy) 26%,transparent); transform:translateY(18px) scale(.88); transform-origin:calc(100% - 28px) calc(100% - 28px); opacity:0; animation:na-open 260ms cubic-bezier(.2,1.18,.35,1) both; }
-.na-window.is-maximized { right:4vw; bottom:5vh; width:min(1100px,92vw); height:90vh; max-height:90vh; border-radius:24px; transform-origin:bottom right; }
+.na-window { transition:transform 260ms cubic-bezier(.2,1.18,.35,1),opacity 180ms ease-out; position:fixed; z-index:1199; right:24px; bottom:24px; width:min(380px,calc(100vw - 24px)); height:min(560px,80vh); max-height:calc(100dvh - 36px); display:flex; flex-direction:column; overflow:hidden; border:1px solid var(--line); border-radius:24px; background:var(--surface); color:var(--ink); box-shadow:0 24px 70px color-mix(in srgb,var(--navy) 26%,transparent); transform:translateY(18px) scale(.88); transform-origin:calc(100% - 28px) calc(100% - 28px); opacity:0; animation:na-open 260ms cubic-bezier(.2,1.18,.35,1) both; }
+.na-window.is-maximized { right:4vw; bottom:5vh; width:min(1100px,92vw); height:90vh; max-height:90vh; border-radius:24px; transform-origin:bottom right; animation:na-expand 260ms cubic-bezier(.2,1.18,.35,1) both; }
 .na-header { flex:none; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 12px; border-bottom:1px solid var(--line); background:var(--surface); }
 .na-brand { display:flex; align-items:center; gap:9px; min-width:0; }
 .na-brand>span { display:grid; place-items:center; width:32px; height:32px; flex:none; border-radius:10px; background:color-mix(in srgb,var(--cyan) 18%,var(--surface)); color:var(--blue); }
@@ -77,12 +77,13 @@
 @keyframes na-spin { to { transform:rotate(360deg); } }
 @keyframes na-breathe { 0%,100% { box-shadow:0 12px 34px color-mix(in srgb,var(--navy) 22%,transparent),0 0 0 0 color-mix(in srgb,var(--cyan) 0%,transparent); } 50% { box-shadow:0 12px 34px color-mix(in srgb,var(--navy) 24%,transparent),0 0 0 6px color-mix(in srgb,var(--cyan) 12%,transparent); } }
 @keyframes na-open { from { opacity:0; transform:translateY(16px) scale(.88); } to { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes na-expand { from { opacity:.72; transform:scale(.94); } to { opacity:1; transform:scale(1); } }
 @keyframes na-message-in { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
 @keyframes na-dot { 0%,60%,100% { opacity:.35; transform:translateY(0); } 30% { opacity:1; transform:translateY(-3px); } }
 @media (max-width:760px) {
-  .na-launcher { right:16px; bottom:calc(76px + env(safe-area-inset-bottom)); }
-  .na-window { right:6px; bottom:calc(76px + env(safe-area-inset-bottom)); width:calc(100vw - 12px); height:70dvh; max-height:calc(100dvh - 92px - env(safe-area-inset-bottom)); border-radius:22px; }
-  .na-window.is-maximized { inset:env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom)); width:auto; height:auto; max-height:none; border-radius:0; }
+  .na-launcher { right:16px; bottom:calc(var(--na-nav-offset,76px) + var(--na-keyboard-offset,0px) + env(safe-area-inset-bottom)); }
+  .na-window { right:6px; bottom:calc(var(--na-nav-offset,76px) + var(--na-keyboard-offset,0px) + env(safe-area-inset-bottom)); width:calc(100vw - 12px); height:min(70dvh,calc(var(--na-visual-height,100dvh) - var(--na-nav-offset,76px) - var(--na-keyboard-offset,0px) - 18px)); max-height:calc(var(--na-visual-height,100dvh) - var(--na-nav-offset,76px) - var(--na-keyboard-offset,0px) - 18px); border-radius:22px; }
+  .na-window.is-maximized { inset:env(safe-area-inset-top) 0 calc(var(--na-keyboard-offset,0px) + env(safe-area-inset-bottom)); width:auto; height:auto; max-height:none; border-radius:0; }
   .na-header { padding:8px 6px; gap:3px; }
   .na-head-actions { gap:0; }
   .na-head-actions button { min-width:32px; min-height:40px; padding:0 5px; }
