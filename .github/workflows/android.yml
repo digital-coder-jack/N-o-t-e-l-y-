@@ -1,9 +1,6 @@
 name: Build Android APK
 
 on:
-  pull_request:
-    paths:
-      - 'api/Android/**'
   workflow_dispatch:
 
 jobs:
