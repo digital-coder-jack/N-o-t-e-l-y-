@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +14,9 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FloatingActionButton
@@ -20,6 +24,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -38,6 +43,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -69,6 +75,7 @@ fun FloatingAssistantWidget(
     onOpen: () -> Unit
 ) {
     var contextEnabled by rememberSaveable { mutableStateOf(true) }
+    val chatState by vm.state.collectAsState()
     val appContext = LocalContext.current.applicationContext
     val widgetPrefs = remember(appContext) { appContext.getSharedPreferences("notely_assistant_widget", Context.MODE_PRIVATE) }
     val chatState by vm.state.collectAsState()
@@ -148,10 +155,37 @@ fun FloatingAssistantWidget(
                 if (contextEnabled) {
                     Text("Context: $context", modifier = Modifier.padding(horizontal = 14.dp, vertical = 5.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                 }
-                Box(Modifier.weight(1f)) {
-                    // Keep ChatScreen composed while the widget is minimized so the selected chat and
-                    // drafts survive navigation between destinations.
-                    ChatScreen(vm = vm, initialChatId = restoredChatId, embedded = true, context = if (contextEnabled) context else null)
+                if (mode == 2 && !isPhone) {
+                    Row(Modifier.weight(1f).fillMaxWidth()) {
+                        Column(Modifier.width(244.dp).fillMaxHeight().padding(end = 12.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                                Text("Chat history", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
+                                TextButton(onClick = { vm.startNewChat() }) { Text("New") }
+                            }
+                            LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                items(chatState.chats, key = { it.id }) { chat ->
+                                    TextButton(onClick = { vm.openChat(chat.id) }, modifier = Modifier.fillMaxWidth()) {
+                                        Text(
+                                            (if (chat.id == chatState.currentChatId) "• " else "") + chat.title,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        Box(Modifier.width(1.dp).fillMaxHeight().background(MaterialTheme.colorScheme.outlineVariant))
+                        Box(Modifier.weight(1f).fillMaxHeight()) {
+                            // Keep ChatScreen composed while minimized so the selected chat and drafts survive navigation.
+                            ChatScreen(vm = vm, initialChatId = restoredChatId, embedded = true, context = if (contextEnabled) context else null)
+                        }
+                    }
+                } else {
+                    Box(Modifier.weight(1f)) {
+                        // Keep ChatScreen composed while the widget is minimized so the selected chat and drafts survive navigation.
+                        ChatScreen(vm = vm, initialChatId = restoredChatId, embedded = true, context = if (contextEnabled) context else null)
+                    }
                 }
             }
         }
