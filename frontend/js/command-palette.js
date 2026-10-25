@@ -163,7 +163,7 @@
     q = (q || '').trim();
 
     var chatItems = recentChats.map(function (c) {
-      return { icon: 'fa-comment', title: c.title || 'Untitled chat', sub: 'Recent chat', href: '/chat?id=' + c.id, cat: 'Recent', keys: 'history conversation' };
+      return { icon: 'fa-comment', title: c.title || 'Untitled chat', sub: 'Recent chat', href: '/dashboard?openAssistant=1&chatId=' + encodeURIComponent(c.id), cat: 'Recent', keys: 'history conversation' };
     });
 
     var pool = [];
