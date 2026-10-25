@@ -518,3 +518,18 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
   .nw-assistant-launcher,.nw-assistant-launcher-icon,.nw-assistant-launcher-ring,.nw-assistant-message,.nw-assistant-thinking span { animation:none!important; transition:opacity 120ms ease-out!important; }
   .nw-assistant-panel { transition:opacity 120ms ease-out!important; transform:none!important; }
 }
+
+
+.nw-assistant-launcher::after { content:""; position:absolute; inset:0; border:1px solid var(--cyan); border-radius:inherit; opacity:0; transform:scale(.72); pointer-events:none; }
+.nw-assistant-launcher:active::after { animation:nw-assistant-ripple 260ms ease-out; }
+.nw-assistant-paused .nw-assistant-launcher,.nw-assistant-paused .nw-assistant-launcher-icon,.nw-assistant-paused .nw-assistant-launcher-ring { animation-play-state:paused!important; }
+.nw-assistant-panel.is-maximized #nwAssistantHistory { position:absolute; z-index:4; display:block; left:0; top:106px; bottom:0; width:230px; max-height:none; margin:0; border-radius:0; border-top:0; border-bottom:0; box-shadow:12px 0 30px color-mix(in srgb,var(--navy) 12%,transparent); }
+.nw-assistant-panel.is-maximized #nwAssistantMessages,.nw-assistant-panel.is-maximized .nw-assistant-jump-wrap,.nw-assistant-panel.is-maximized .nw-assistant-composer-wrap { margin-left:230px; }
+.nw-assistant-panel.is-maximized .nw-assistant-context-row,.nw-assistant-panel.is-maximized .nw-assistant-context-note { margin-left:244px; }
+@keyframes nw-assistant-ripple { 0% { opacity:.45; transform:scale(.72); } 100% { opacity:0; transform:scale(1.5); } }
+@media (max-width:760px) {
+  .nw-assistant-panel.is-maximized #nwAssistantHistory { top:100px; width:min(240px,78vw); }
+  .nw-assistant-panel.is-maximized #nwAssistantMessages,.nw-assistant-panel.is-maximized .nw-assistant-jump-wrap,.nw-assistant-panel.is-maximized .nw-assistant-composer-wrap { margin-left:0; }
+  .nw-assistant-panel.is-maximized .nw-assistant-context-row,.nw-assistant-panel.is-maximized .nw-assistant-context-note { margin-left:8px; }
+}
+@media (prefers-reduced-motion:reduce) { .nw-assistant-launcher:active::after { animation:none!important; } }
