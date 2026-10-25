@@ -53,6 +53,9 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalContext
+import android.content.Context
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -93,7 +96,9 @@ fun ChatScreen(
     context: String? = null
 ) {
     val state by vm.state.collectAsState()
-    var input by remember { mutableStateOf("") }
+    val appContext = LocalContext.current.applicationContext
+    val draftPrefs = remember(appContext) { appContext.getSharedPreferences("notely_assistant_drafts", Context.MODE_PRIVATE) }
+    var input by rememberSaveable { mutableStateOf("") }
     var editing by remember { mutableStateOf<ChatMessage?>(null) }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
@@ -107,6 +112,9 @@ fun ChatScreen(
         vm.loadChats()
         if (initialChatId != null && initialChatId > 0) vm.openChat(initialChatId)
         else vm.startNewChat()
+    }
+    LaunchedEffect(state.currentChatId) {
+        input = draftPrefs.getString("draft_\${state.currentChatId ?: "new"}", "") ?: ""
     }
 
     // FIX (Bug 3 partial): Only depend on messages.size, not content, to avoid
@@ -210,7 +218,7 @@ fun ChatScreen(
             // Always-visible input bar (moved out of else branch).
             ChatInputBar(
                 value = input,
-                onValueChange = { input = it },
+                onValueChange = { input = it; draftPrefs.edit().putString("draft_\${state.currentChatId ?: "new"}", it).apply() },
                 streaming = state.streaming,
                 isEditing = editing != null,
                 onCancelEdit = { editing = null; input = "" },
@@ -225,6 +233,7 @@ fun ChatScreen(
                             sendWithContext(text)
                         }
                         input = ""
+                        draftPrefs.edit().remove("draft_\${state.currentChatId ?: "new"}").apply()
                     }
                 }
             )
