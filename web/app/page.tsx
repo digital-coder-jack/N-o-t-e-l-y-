@@ -128,7 +128,7 @@ function pathFor(route: Route) {
 }
 
 function AppLogo({ compact = false }: { compact?: boolean }) {
-  return <div className="app-logo"><img src={compact ? "/logo-symbol.svg" : "/logo-wordmark.svg"} alt="Notely" /></div>;
+  return <div className="app-logo"><img src="/assets/logo.png" alt="Notely" /></div>;
 }
 
 function Sidebar({
