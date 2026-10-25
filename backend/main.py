@@ -419,8 +419,9 @@ async def index():
 # PAGE ROUTING
 # ---------------------------------------------------------------------------
 # The frontend uses extensionless URLs and explicit .html URLs. Both forms
-# are served from a single allow-list of known pages plus generic fallbacks.
-# Assistant conversations now live in the persistent workspace widget.
+# are served from an allow-list of known pages plus generic fallbacks.
+# The former dedicated /chat page has been removed; assistant conversations
+# now live in the persistent floating workspace widget on /dashboard.
 # Map each known route slug to the HTML file that backs it. Most map to a
 # same-named file; "settings" is an alias for the profile page (which hosts
 # the settings UI) so the /settings nav link never 404s.
@@ -453,7 +454,7 @@ def _register_page(slug: str, target: str) -> None:
     async def _handler(target: str = target):
         return _page(target)
 
-    # Extensionless route for the current page.
+    # Extensionless route for this workspace page.
     app.get(f"/{slug}", include_in_schema=False)(_handler)
     # Explicit .html route for the current page.
     app.get(f"/{slug}.html", include_in_schema=False)(_handler)
