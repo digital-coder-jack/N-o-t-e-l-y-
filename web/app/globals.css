@@ -104,3 +104,12 @@
 .na-time { display:block; margin-top:4px; color:var(--muted); font-size:9px; opacity:0; transition:opacity 120ms ease-out; }
 @media (hover:hover) and (pointer:fine) { .na-message:hover .na-time { opacity:1; } }
 @media (hover:none) { .na-time { opacity:1; } }
+
+.na-home-ask { display:grid; gap:8px; margin:18px 0 22px; padding:14px; border:1px solid var(--line); border-radius:18px; background:var(--surface); }
+.na-home-ask label { color:var(--muted); font-size:11px; font-weight:700; letter-spacing:.04em; }
+.na-home-ask>div { display:flex; gap:8px; }
+.na-home-ask input { flex:1; min-width:0; min-height:46px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; background:var(--surface-2); color:var(--ink); font:inherit; }
+.na-home-ask button { display:flex; align-items:center; justify-content:center; gap:6px; min-width:76px; min-height:46px; padding:8px 12px; border:0; border-radius:12px; background:var(--blue); color:var(--surface); font-weight:700; }
+.na-home-ask button:disabled { opacity:.45; cursor:not-allowed; }
+.na-home-ask input:focus-visible,.na-home-ask button:focus-visible { outline:3px solid var(--cyan); outline-offset:2px; }
+@media (max-width:480px) { .na-home-ask>div { flex-direction:column; } .na-home-ask button { width:100%; } }
