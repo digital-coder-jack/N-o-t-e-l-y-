@@ -273,6 +273,7 @@ def init_db() -> None:
             # study time, learning style, experience, security preferences).
             "ALTER TABLE user_settings ADD COLUMN onboarding TEXT",
             "ALTER TABLE uploads ADD COLUMN topic_id INTEGER",
+            "ALTER TABLE uploads ADD COLUMN topic_id INTEGER",
         ):
             try:
                 conn.execute(ddl)
@@ -685,7 +686,6 @@ def list_uploads(user_id: int, topic_id: int | None = None) -> list[sqlite3.Row]
             "WHERE user_id = ? AND topic_id = ? ORDER BY id DESC",
             (user_id, topic_id),
         ).fetchall()
-
 
 def delete_upload(user_id: int, upload_id: int) -> bool:
     with closing(get_connection()) as conn:
