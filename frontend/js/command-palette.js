@@ -24,7 +24,7 @@
   /* ---- Static command catalogue ---- */
   var PAGES = [
     { icon: 'fa-gauge-high', title: 'Dashboard', sub: 'Your learning overview', href: '/dashboard', cat: 'Pages', keys: 'home overview stats' },
-    { icon: 'fa-pen-to-square', title: 'New Chat', sub: 'Start a conversation with AI', href: '/chat', cat: 'Pages', keys: 'ask ai message tutor' },
+    { icon: 'fa-pen-to-square', title: 'Study assistant', sub: 'Open the in-place assistant', href: '/dashboard?openAssistant=1', cat: 'Pages', keys: 'ask ai message tutor assistant' },
     { icon: 'fa-screwdriver-wrench', title: 'Study Tools', sub: 'Notes, quizzes, flashcards', href: '/tools', cat: 'Pages', keys: 'notes quiz flashcards summarize planner' },
     { icon: 'fa-chart-pie', title: 'Analytics', sub: 'Track your progress', href: '/analytics', cat: 'Pages', keys: 'insights charts data' },
     { icon: 'fa-gear', title: 'Settings', sub: 'Preferences & account', href: '/settings', cat: 'Pages', keys: 'preferences profile account theme appearance' },

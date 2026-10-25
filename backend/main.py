@@ -431,7 +431,6 @@ PAGE_ALIASES = {
     "signup": "signup",
     "forgot": "forgot",
     "dashboard": "dashboard",
-    "chat": "chat",
     "tools": "tools",
     "notes": "tools",        # tools page hosts notes/quiz/flashcards
     "quiz": "tools",
@@ -445,7 +444,6 @@ PAGE_ALIASES = {
     # Modern AI-workspace sidebar destinations. These map onto the existing
     # pages so every nav item resolves instead of 404-ing.
     "history": "dashboard",  # recent chat history lives on the dashboard
-    "models": "chat",        # model picker lives in the chat composer
     "projects": "tools",     # planner/projects workspace
     "prompts": "tools",      # saved prompts (flashcards workspace)
     "files": "tools",        # file uploads / summarizer workspace
