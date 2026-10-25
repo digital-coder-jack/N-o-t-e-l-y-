@@ -168,7 +168,7 @@ fun ChatHistorySheet(vm: ChatViewModel, onDismiss: () -> Unit) {
                             duration = SnackbarDuration.Long
                         )
                         if (result == SnackbarResult.ActionPerformed) pendingDeletes = pendingDeletes - id
-                        else vm.deleteChat(id)
+                        else { vm.clearError(); vm.deleteChat(id) }
                     }
                 }) {
                     Text("Delete", color = MaterialTheme.colorScheme.error)
