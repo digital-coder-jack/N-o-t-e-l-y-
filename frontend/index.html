@@ -118,13 +118,13 @@ footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;paddin
 <body>
 <div id="pre"><div style="text-align:center"><img src="/assets/logo.png"><div id="cnt">0</div></div></div>
 <div id="bar"></div><div id="cur"></div><canvas id="fx" aria-hidden="true"></canvas>
-<header><a class="logo" href="#"><img src="/assets/logo.png">Notely</a><div class="landing-nav-actions"><button class="notely-theme-toggle" type="button" data-notely-theme-toggle aria-label="Switch theme" title="Switch theme (Shift+T)" aria-pressed="false"><svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"></path></svg><svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.7 8.7 0 1 0 20.2 15.4Z"></path></svg></button><a class="btn mag" href="#get">Download app</a></div></header>
+<header><a class="logo" href="#"><img src="/assets/logo.png">Notely</a><div class="landing-nav-actions"><button class="notely-theme-toggle" type="button" data-notely-theme-toggle aria-label="Switch theme" title="Switch theme (Shift+T)" aria-pressed="false"><svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"></path></svg><svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.7 8.7 0 1 0 20.2 15.4Z"></path></svg></button><a class="btn mag" href="/signup">Get started</a></div></header>
 <main>
 <section class="hero">
 <div class="t">
 <h1><span class="ln" data-split>Study at</span><span class="ln g" data-split>warp speed.</span></h1>
 <p class="in">Notely is the study workspace for students: notebooks, flashcards, quizzes, recorded lectures and an assistant that answers from your own course materials.</p>
-<div class="row in"><a class="btn mag" href="/signup">Download the app</a><a class="btn o mag" href="/dashboard">Open web app</a></div>
+<div class="row in"><a class="btn mag" href="/signup">Get started</a><a class="btn o mag" href="/dashboard">Open web app</a></div>
 </div>
 <div class="pw"><div class="ph ph0" id="tilt"><div class="sc"><b>Notely</b><div class="n n1">Biology 101<i></i></div><div class="n n2">Organic Chemistry<i></i></div><div class="n n3">World History<i></i></div></div></div></div>
 </section>
@@ -165,9 +165,9 @@ footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;paddin
 
 <section class="cta" id="get">
 <h2 class="g" data-split>Ace the semester.</h2>
-<p>Use Notely in your browser, or download the Android app.</p>
+<p>Start using Notely in your browser, or install the Android app when a release is available.</p>
 <div class="row"><a class="btn mag" href="/signup">Download the app</a><a class="btn o mag" href="/dashboard">Open web app</a></div>
-<p class="note">Installing the APK? Android may ask you to allow installs from your browser. It takes a few seconds.</p>
+<p class="note">Android APK downloads will be linked here when a release is published.</p>
 </section>
 </main>
 <footer><span>© 2026 Notely</span><span>Privacy · Terms · Contact</span></footer>
@@ -191,7 +191,7 @@ document.querySelectorAll('[data-split]').forEach(function(el){
   });
 });
 gsap.set('.c',{yPercent:110});
-if(RM){pre.style.display='none';gsap.set('.c',{yPercent:0});return;}
+if(RM||matchMedia('(max-width:700px), (pointer:coarse)').matches){pre.style.display='none';gsap.set('.c',{yPercent:0});document.querySelectorAll('.in').forEach(function(el){el.style.opacity='1';el.style.transform='none'});return;}
 
 /* smooth scroll */
 var lenis=new Lenis({lerp:.08}),tv=0;
