@@ -24,6 +24,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -31,6 +32,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import android.content.Context
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -122,7 +125,10 @@ private fun MainShell(factory: VMFactory) {
     val backStack by nav.currentBackStackEntryAsState()
     val current = backStack?.destination?.route
     val haptic = rememberHaptics()
-    var assistantMode by rememberSaveable { mutableStateOf(0) }
+    val appContext = LocalContext.current.applicationContext
+    val widgetPrefs = remember(appContext) { appContext.getSharedPreferences("notely_assistant_widget", Context.MODE_PRIVATE) }
+    var assistantMode by rememberSaveable { mutableStateOf(widgetPrefs.getInt("mode", 0).coerceIn(0, 2)) }
+    LaunchedEffect(assistantMode) { widgetPrefs.edit().putInt("mode", assistantMode).apply() }
     androidx.activity.compose.BackHandler(enabled = assistantMode > 0) {
         assistantMode = if (assistantMode == 2) 1 else 0
     }
