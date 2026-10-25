@@ -89,7 +89,8 @@ private val SUGGESTIONS = listOf(
 fun ChatScreen(
     vm: ChatViewModel,
     initialChatId: Int?,
-    embedded: Boolean = false
+    embedded: Boolean = false,
+    context: String? = null
 ) {
     val state by vm.state.collectAsState()
     var input by remember { mutableStateOf("") }
@@ -100,6 +101,7 @@ fun ChatScreen(
 
     var showHistory by remember { mutableStateOf(false) }
     var showModels by remember { mutableStateOf(false) }
+    fun sendWithContext(text: String) { vm.send(if (embedded && !context.isNullOrBlank()) "Workspace context: $context. Use this as navigation context only; do not assume access to source files. Student question: $text" else text) }
 
     LaunchedEffect(initialChatId) {
         vm.loadChats()
@@ -131,7 +133,7 @@ fun ChatScreen(
                 .fillMaxSize()
                 .imePadding()
         ) {
-            if (!embedded) {
+            {
                 ChatHeader(
                     title = if (state.streaming) "Thinking…" else state.currentTitle,
                     model = state.model,
@@ -170,7 +172,7 @@ fun ChatScreen(
             if (state.messages.isEmpty()) {
                 EmptyChat(
                     modifier = Modifier.weight(1f),
-                    onSuggestion = { vm.send(it) }
+                    onSuggestion = { sendWithContext(it) }
                 )
             } else {
                 LazyColumn(
@@ -220,7 +222,7 @@ fun ChatScreen(
                             vm.editAndResend(text)
                             editing = null
                         } else {
-                            vm.send(text)
+                            sendWithContext(text)
                         }
                         input = ""
                     }
