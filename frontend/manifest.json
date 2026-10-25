@@ -22,25 +22,25 @@
   ],
   "icons": [
     {
-      "src": "/assets/logo-192.png",
+      "src": "/assets/logo.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/assets/logo-512.png",
+      "src": "/assets/logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/assets/logo-192.png",
+      "src": "/assets/logo.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/assets/logo-512.png",
+      "src": "/assets/logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -54,7 +54,7 @@
       "url": "/chat?source=pwa",
       "icons": [
         {
-          "src": "/assets/logo-192.png",
+          "src": "/assets/logo.png",
           "sizes": "192x192",
           "type": "image/png"
         }
@@ -67,7 +67,7 @@
       "url": "/tools?source=pwa",
       "icons": [
         {
-          "src": "/assets/logo-192.png",
+          "src": "/assets/logo.png",
           "sizes": "192x192",
           "type": "image/png"
         }
