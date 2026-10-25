@@ -9,7 +9,7 @@ import {
   Upload, Zap, Clock3,
 } from "lucide-react";
 
-type Route = "overview" | "notes" | "assistant" | "documents" | "favorites" | "archive" | "trash" | "tools" | "quiz" | "flashcards" | "roadmap" | "mindmap" | "planner" | "summarizer" | "homework" | "search" | "settings";
+type Route = "overview" | "notes" | "documents" | "favorites" | "archive" | "trash" | "tools" | "quiz" | "flashcards" | "roadmap" | "mindmap" | "planner" | "summarizer" | "homework" | "search" | "settings";
 type Note = { id?: number; title: string; course: string; time: string; tag: string; content?: string; pinned?: boolean; favorite?: boolean; archived?: boolean; deleted?: boolean; state?: "active" | "archived" | "deleted" };
 const NOTES: Note[] = [];
 
@@ -60,7 +60,7 @@ const tools = [
   ["summarizer", "Text Summarizer", "Turn long material into clear key points.", FileText],
   ["homework", "Homework Helper", "Work through a question step by step.", CircleHelp],
 ] as const;
-function routeFromPath(path: string): Route { const hash = typeof window !== "undefined" ? window.location.hash.replace(/^#\/?/, "") : ""; const key = hash || path.replace(/^\/+/, "").replace(/^app\/?/, "") || "overview"; const allowed = ["overview","notes","assistant","documents","favorites","archive","trash","tools","quiz","flashcards","roadmap","mindmap","planner","summarizer","homework","search","settings"]; return allowed.includes(key) ? key as Route : "overview"; }
+function routeFromPath(path: string): Route { const hash = typeof window !== "undefined" ? window.location.hash.replace(/^#\/?/, "") : ""; const key = hash || path.replace(/^\/+/, "").replace(/^app\/?/, "") || "overview"; const allowed = ["overview","notes","documents","favorites","archive","trash","tools","quiz","flashcards","roadmap","mindmap","planner","summarizer","homework","search","settings"]; return allowed.includes(key) ? key as Route : "overview"; }
 function pathFor(route: Route) { return route === "overview" ? "/" : "/#/" + route; }
 function AppLogo({ compact = false }: { compact?: boolean }) { return <div className="app-logo"><img src={compact ? "/logo-symbol.svg" : "/logo-wordmark.svg"} alt="Notely" /></div>; }
 
@@ -101,7 +101,7 @@ function Overview({ setRoute }: { setRoute: (r: Route) => void }) {
     <PageTitle eyebrow="YOUR WORKSPACE" title="Welcome to Notely" description="Your notes, AI conversations and study tools in one place." action={<div className="title-actions"><ActionButton secondary onClick={() => setRoute("documents")}><Upload /> Import</ActionButton><ActionButton onClick={() => setRoute("notes")}><Plus /> New note</ActionButton></div>} />
     {error && <div role="alert" className="surface-panel" style={{ marginBottom: 16, color: "#bd5f62" }}>{error}</div>}
     <section className="hero-grid">
-      <div className="continue-panel"><div className="panel-kicker"><span className="sparkle-dot"><Sparkles /></span><span>YOUR STUDY WORKSPACE</span></div><h2>Pick up where you left off</h2><p>Open a saved note, ask Notely a question, or generate study material from a topic.</p><div className="continue-meta"><span>{stats ? stats.notes + " saved notes" : "Loading notes…"}</span><span>{stats ? stats.total_chats + " chats" : "Loading chats…"}</span><span>{stats ? stats.quizzes + " quizzes" : "Loading quizzes…"}</span></div><ActionButton onClick={() => setRoute("assistant")}><Sparkles /> Ask Notely <ArrowRight /></ActionButton></div>
+      <div className="continue-panel"><div className="panel-kicker"><span className="sparkle-dot"><Sparkles /></span><span>YOUR STUDY WORKSPACE</span></div><h2>Pick up where you left off</h2><p>Open a saved note, ask Notely a question, or generate study material from a topic.</p><div className="continue-meta"><span>{stats ? stats.notes + " saved notes" : "Loading notes…"}</span><span>{stats ? stats.total_chats + " chats" : "Loading chats…"}</span><span>{stats ? stats.quizzes + " quizzes" : "Loading quizzes…"}</span></div><ActionButton onClick={() => openNotelyAssistant()}><Sparkles /> Ask Notely <ArrowRight /></ActionButton></div>
       <div className="focus-panel"><div className="panel-kicker"><Clock3 /> WORKSPACE ACTIVITY</div><div className="focus-time">{stats ? stats.total_messages : "—"} <small>messages</small></div><div className="progress"><i style={{ width: stats ? Math.min(100, Number(stats.ai_generations || 0) * 5) + "%" : "0%" }} /></div><p>{stats ? stats.ai_generations + " AI generations and study artifacts" : "Activity appears here when the backend is connected."}</p><button onClick={() => setRoute("tools")}>Open study tools <ArrowRight /></button></div>
     </section>
     <section className="section-block"><div className="section-heading"><div><span className="eyebrow">YOUR SPACE</span><h2>Recent notes</h2></div><button onClick={() => setRoute("notes")}>View all <ArrowRight /></button></div>
@@ -206,105 +206,197 @@ function Notes({ setRoute, filter = "all" }: { setRoute: (r: Route) => void; fil
   </div>;
 }
 
-function Assistant({ setRoute }: { setRoute: (r: Route) => void }) {
+function openNotelyAssistant(prompt = "") { if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("notely:assistant-open", { detail: { prompt } })); }
+
+type AssistantMessage = { role: "user" | "assistant"; content: string; created_at?: string };
+type AssistantMode = "closed" | "small" | "maximized";
+
+function FloatingAssistant({ context }: { context: string }) {
+  const [mode, setMode] = useState<AssistantMode>("closed");
   const [prompt, setPrompt] = useState("");
-  const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
+  const [messages, setMessages] = useState<AssistantMessage[]>([]);
+  const [chats, setChats] = useState<any[]>([]);
   const [chatId, setChatId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [contextEnabled, setContextEnabled] = useState(true);
+  const [unread, setUnread] = useState(false);
+  const [showJump, setShowJump] = useState(false);
+  const [undoChat, setUndoChat] = useState<any | null>(null);
+  const [renamingId, setRenamingId] = useState<number | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const controllerRef = useRef<AbortController | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const launcherRef = useRef<HTMLButtonElement | null>(null);
+  const composerRef = useRef<HTMLTextAreaElement | null>(null);
+  const deleteTimersRef = useRef<Record<number, number>>({});
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const data = await apiRequest<{ chats: any[] }>("/api/chats");
-        const latest = (data.chats || [])[0];
-        if (!latest || cancelled) return;
-        const detail = await apiRequest<{ messages: any[] }>("/api/chats/" + latest.id);
+        const saved = JSON.parse(window.localStorage.getItem("notely-assistant-widget-state") || "{}");
+        if (saved.mode === "small" || saved.mode === "maximized") setMode(saved.mode);
+        if (saved.contextEnabled === false) setContextEnabled(false);
+        const list = await apiRequest<{ chats: any[] }>("/api/chats");
         if (cancelled) return;
-        setChatId(Number(latest.id));
-        setMessages((detail.messages || []).map(m => ({ role: m.role === "assistant" ? "assistant" : "user", content: String(m.content || "") })));
+        setChats(list.chats || []);
+        const desiredId = Number(saved.chatId || (list.chats || [])[0]?.id || 0);
+        if (desiredId) {
+          const detail = await apiRequest<{ messages: any[] }>("/api/chats/" + desiredId);
+          if (cancelled) return;
+          setChatId(desiredId);
+          setMessages((detail.messages || []).map(m => ({ role: m.role === "assistant" ? "assistant" : "user", content: String(m.content || ""), created_at: m.created_at })));
+          setPrompt(window.localStorage.getItem("notely-assistant-draft-" + desiredId) || "");
+        }
       } catch (e) { if (!cancelled) setError(e instanceof Error ? e.message : "Could not load chat history."); }
     })();
-    return () => { cancelled = true; };
+    const onOpen = (event: Event) => {
+      const detail = (event as CustomEvent<{ prompt?: string }>).detail;
+      setMode("small"); setUnread(false);
+      if (detail?.prompt) setPrompt(detail.prompt);
+      window.setTimeout(() => composerRef.current?.focus({ preventScroll: true }), 50);
+    };
+    const onKeys = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "j") {
+        event.preventDefault(); setMode(current => current === "closed" ? "small" : "closed");
+      } else if (event.key === "Escape") {
+        setMode(current => current === "maximized" ? "small" : current === "small" ? "closed" : "closed");
+      }
+    };
+    window.addEventListener("notely:assistant-open", onOpen);
+    window.addEventListener("keydown", onKeys);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("notely:assistant-open", onOpen);
+      window.removeEventListener("keydown", onKeys);
+      Object.values(deleteTimersRef.current).forEach(window.clearTimeout);
+      controllerRef.current?.abort();
+    };
   }, []);
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [messages]);
+  useEffect(() => {
+    try { window.localStorage.setItem("notely-assistant-widget-state", JSON.stringify({ mode, chatId, contextEnabled })); } catch { /* storage may be disabled */ }
+  }, [mode, chatId, contextEnabled]);
+  useEffect(() => {
+    try { window.localStorage.setItem("notely-assistant-draft-" + (chatId || "new"), prompt); } catch { /* storage may be disabled */ }
+  }, [prompt, chatId]);
+  useEffect(() => {
+    const node = scrollRef.current;
+    if (node && !showJump) node.scrollTop = node.scrollHeight;
+  }, [messages, loading, showJump]);
 
-  const send = async (value = prompt) => {
-    const question = value.trim();
-    if (!question || loading) return;
-    setPrompt(""); setError(""); setLoading(true);
-    setMessages(current => [...current, { role: "user", content: question }, { role: "assistant", content: "" }]);
+  const open = () => { setMode("small"); setUnread(false); window.setTimeout(() => composerRef.current?.focus({ preventScroll: true }), 50); };
+  const newChat = () => { setChatId(null); setMessages([]); setPrompt(""); setError(""); setHistoryOpen(false); setMode("small"); window.setTimeout(() => composerRef.current?.focus({ preventScroll: true }), 50); };
+  const selectChat = async (id: number) => {
     try {
-      let id = chatId;
+      const detail = await apiRequest<{ messages: any[] }>("/api/chats/" + id);
+      setChatId(id); setMessages((detail.messages || []).map(m => ({ role: m.role === "assistant" ? "assistant" : "user", content: String(m.content || ""), created_at: m.created_at })));
+      setPrompt(window.localStorage.getItem("notely-assistant-draft-" + id) || ""); setHistoryOpen(false); setError("");
+    } catch (e) { setError(e instanceof Error ? e.message : "Could not open this chat."); }
+  };
+  const renameChat = async (id: number) => {
+    const title = renameValue.trim();
+    if (!title) { setError("Chat title cannot be empty."); return; }
+    try {
+      const result = await apiRequest<{ chat?: any }>("/api/chats/" + id, { method: "PUT", body: JSON.stringify({ title: title.slice(0, 120) }) });
+      setChats(current => current.map(chat => Number(chat.id) === id ? { ...chat, ...(result.chat || {}), title } : chat));
+      setRenamingId(null); setError("");
+    } catch (e) { setError(e instanceof Error ? e.message : "Could not rename chat."); }
+  };
+  const deleteChat = (chat: any) => {
+    const id = Number(chat.id);
+    setChats(current => current.filter(item => Number(item.id) !== id));
+    setUndoChat(chat);
+    deleteTimersRef.current[id] = window.setTimeout(async () => {
+      try {
+        await apiRequest("/api/chats/" + id, { method: "DELETE" });
+        if (chatId === id) { setChatId(null); setMessages([]); }
+      } catch (e) {
+        setChats(current => [chat, ...current.filter(item => Number(item.id) !== id)]);
+        setError(e instanceof Error ? e.message : "Delete failed; chat restored.");
+      } finally { delete deleteTimersRef.current[id]; setUndoChat(current => current && Number(current.id) === id ? null : current); }
+    }, 7000);
+  };
+  const undoDelete = () => {
+    if (!undoChat) return;
+    const id = Number(undoChat.id); window.clearTimeout(deleteTimersRef.current[id]); delete deleteTimersRef.current[id];
+    setChats(current => [undoChat, ...current.filter(item => Number(item.id) !== id)]); setUndoChat(null);
+  };
+  const send = async (value = prompt) => {
+    if (loading) { controllerRef.current?.abort(); return; }
+    const question = value.trim();
+    if (!question) return;
+    setPrompt(""); setError(""); setLoading(true); setUnread(false);
+    setMessages(current => [...current, { role: "user", content: question }, { role: "assistant", content: "" }]);
+    let id = chatId;
+    const controller = new AbortController(); controllerRef.current = controller;
+    try {
       if (!id) {
-        const created = await apiRequest<{ chat: { id: number } }>("/api/chats", { method: "POST", body: JSON.stringify({ title: question.slice(0, 60) }) });
-        id = Number(created.chat.id); setChatId(id);
+        const created = await apiRequest<{ chat: { id: number; title?: string } }>("/api/chats", { method: "POST", body: JSON.stringify({ title: question.slice(0, 60) }) });
+        id = Number(created.chat.id); setChatId(id); setChats(current => [{ ...created.chat, id }, ...current]);
       }
       const token = await workspaceToken();
+      const content = contextEnabled ? "Workspace context: " + context + ". Use this as navigation context only; do not assume access to source files. Student question: " + question : question;
       const response = await fetch(API_BASE + "/api/chats/" + id + "/stream", {
-        method: "POST",
-        headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json" },
-        body: JSON.stringify({ content: question, model: "auto" }),
+        method: "POST", headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+        body: JSON.stringify({ content, model: "auto" }), signal: controller.signal,
       });
-      if (!response.ok || !response.body) {
-        const payload = await response.json().catch(() => ({}));
-        throw new Error(payload.detail || "AI request failed (" + response.status + ").");
-      }
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let answer = "";
-      let done = false;
-      while (!done) {
-        const chunk = await reader.read();
-        if (chunk.done) break;
+      if (!response.ok || !response.body) { const payload = await response.json().catch(() => ({})); throw new Error(payload.detail || "AI request failed (" + response.status + ")."); }
+      const reader = response.body.getReader(); const decoder = new TextDecoder(); let buffer = ""; let answer = "";
+      while (true) {
+        const chunk = await reader.read(); if (chunk.done) break;
         buffer += decoder.decode(chunk.value, { stream: true });
-        const frames = buffer.split("\n\n");
-        buffer = frames.pop() || "";
+        const frames = buffer.split("\n\n"); buffer = frames.pop() || "";
         for (const frame of frames) {
-          const line = frame.split("\n").find(row => row.startsWith("data:"));
-          if (!line) continue;
-          let event: any;
-          try { event = JSON.parse(line.slice(5).trim()); } catch { continue; }
+          const line = frame.split("\n").find(row => row.startsWith("data:")); if (!line) continue;
+          let event: any; try { event = JSON.parse(line.slice(5).trim()); } catch { continue; }
           if (event.event === "token") {
             answer += String(event.token || "");
-            setMessages(current => current.map((m, index) => index === current.length - 1 ? { ...m, content: answer } : m));
-          } else if (event.event === "error") {
-            throw new Error(event.error?.message || "AI response failed. Please try again.");
-          } else if (event.event === "done") done = true;
+            setMessages(current => current.map((message, index) => index === current.length - 1 ? { ...message, content: answer } : message));
+          } else if (event.event === "error") throw new Error(event.error?.message || "AI response failed.");
         }
       }
       if (!answer.trim()) {
         const detail = await apiRequest<{ messages: any[] }>("/api/chats/" + id);
         const last = (detail.messages || []).filter(m => m.role === "assistant").slice(-1)[0];
-        if (last) setMessages(current => current.map((m, index) => index === current.length - 1 ? { ...m, content: String(last.content || "") } : m));
+        if (last) setMessages(current => current.map((message, index) => index === current.length - 1 ? { ...message, content: String(last.content || "") } : message));
       }
+      if (mode === "closed") setUnread(true);
     } catch (e) {
-      const message = e instanceof Error ? e.message : "Something went wrong.";
-      setError(message);
-      setMessages(current => current.map((m, index) => index === current.length - 1 && m.role === "assistant" && !m.content ? { ...m, content: "I couldn't complete that response. Please try again." } : m));
-    } finally { setLoading(false); }
+      if (e instanceof Error && e.name === "AbortError") setError("Generation stopped.");
+      else setError(e instanceof Error ? e.message : "Something went wrong.");
+    } finally { setLoading(false); controllerRef.current = null; }
+  };
+  const act = async (action: string, message: AssistantMessage) => {
+    if (action === "copy") { try { await navigator.clipboard.writeText(message.content); } catch { setError("Could not copy answer."); } }
+    else if (action === "regenerate") { const prior = [...messages].reverse().find(item => item.role === "user"); if (prior) { setPrompt(prior.content); window.setTimeout(() => composerRef.current?.focus(), 0); } }
+    else if (action === "good" || action === "bad") { try { localStorage.setItem("notely-assistant-feedback-" + chatId + "-" + messages.indexOf(message), action); } catch { /* ignore */ } }
+    else if (action === "insert") { try { localStorage.setItem("notely-insert-note-draft", message.content); window.dispatchEvent(new CustomEvent("notely:assistant-insert-note", { detail: { content: message.content } })); } catch { /* ignore */ } }
+    else if (action === "cards") { try { await apiRequest("/api/tools/flashcards", { method: "POST", body: JSON.stringify({ topic: message.content, num_cards: 8 }) }); } catch (e) { setError(e instanceof Error ? e.message : "Could not create flashcards."); } }
   };
 
-  return <div className="screen assistant-screen">
-    <PageTitle eyebrow="AI STUDY PARTNER" title="Ask Notely" description="Chat with your configured AI provider. Your conversation is saved to your workspace." action={<div className="title-actions"><ActionButton secondary onClick={() => { setChatId(null); setMessages([]); setPrompt(""); setError(""); }}><Plus /> New chat</ActionButton><ActionButton secondary onClick={() => setRoute("notes")}><FileText /> Open notes</ActionButton></div>} />
-    <div className="assistant-layout">
-      <div className="chat-panel">
-        <div className="context-strip"><span><Sparkles /> NOTELY AI</span><span><Cloud /> Saved chat history</span></div>
-        <div className="chat-scroll">
-          {!messages.length && <div className="empty-tool-state"><Sparkles /><h2>What are you studying today?</h2><p>Ask for an explanation, summary, quiz, or step-by-step help.</p><div className="suggestion-row"><button onClick={() => setPrompt("Explain a difficult topic in simple words")}>Explain simply</button><button onClick={() => setPrompt("Quiz me on my current topic")}>Quiz me</button><button onClick={() => setPrompt("Summarize the key points")}>Summarize</button></div></div>}
-          {messages.map((message, index) => <div key={index} className={message.role === "user" ? "user-message" : "ai-message"}><div className="ai-label">{message.role === "assistant" ? <><span className="ai-mark"><Sparkles /></span> NOTELY</> : "YOU"}</div><p style={{ whiteSpace: "pre-wrap" }}>{message.content || (loading && index === messages.length - 1 ? "Thinking…" : "")}</p></div>)}
-          <div ref={bottomRef} />
+  return <>
+    <button ref={launcherRef} type="button" className={`na-launcher ${mode !== "closed" ? "is-hidden" : ""} ${loading ? "is-generating" : ""}`} aria-label={mode === "closed" ? "Open Notely Assistant" : "Minimize Notely Assistant"} aria-expanded={mode !== "closed"} onClick={() => mode === "closed" ? open() : setMode("closed")} title="Ask Notely"><span className="na-launcher-ring" aria-hidden="true" /><Sparkles aria-hidden="true" /><span className="na-unread-dot" hidden={!unread} /></button>
+    {mode !== "closed" && <section className={`na-window ${mode === "maximized" ? "is-maximized" : "is-small"}`} role="dialog" aria-modal="false" aria-label="Notely Assistant" aria-live="polite">
+      <header className="na-header"><div className="na-brand"><span><Sparkles /></span><div><strong>Notely Assistant</strong><small>Stay in your study flow</small></div></div><div className="na-head-actions"><span className="na-context-chip" hidden={!contextEnabled}>Context: {context}</span><button type="button" aria-label={contextEnabled ? "Remove context" : "Add context"} onClick={() => setContextEnabled(value => !value)}>{contextEnabled ? "×" : "＋"}</button><button type="button" onClick={() => setHistoryOpen(value => !value)} aria-label="Chat history">☷</button><button type="button" onClick={newChat} aria-label="New chat">＋</button>{mode === "small" ? <button type="button" onClick={() => setMode("maximized")} aria-label="Maximize assistant">□</button> : <button type="button" onClick={() => setMode("small")} aria-label="Restore assistant">↙</button>}<button type="button" onClick={() => { setMode("closed"); window.setTimeout(() => launcherRef.current?.focus(), 0); }} aria-label="Minimize assistant">−</button></div></header>
+      <div className="na-body">
+        <aside className={`na-history ${mode === "maximized" || historyOpen ? "is-visible" : ""}`} aria-label="Chat history"><div className="na-history-title">RECENT CHATS</div>{chats.map(chat => <div className="na-history-item" key={chat.id}>{renamingId === Number(chat.id) ? <form onSubmit={e => { e.preventDefault(); void renameChat(Number(chat.id)); }}><input aria-label="Chat title" value={renameValue} onChange={e => setRenameValue(e.target.value)} autoFocus /><button type="submit">Save</button></form> : <button className={Number(chat.id) === chatId ? "is-current" : ""} onClick={() => void selectChat(Number(chat.id))}>{chat.title || "New chat"}</button>}<button aria-label="Rename chat" onClick={() => { setRenamingId(Number(chat.id)); setRenameValue(String(chat.title || "New chat")); }}>✎</button><button aria-label="Delete chat" onClick={() => deleteChat(chat)}>×</button></div>)}</aside>
+        <div className="na-chat-area">
+          <div className="na-messages" ref={scrollRef} onScroll={e => { const el = e.currentTarget; setShowJump(el.scrollHeight - el.scrollTop - el.clientHeight > 120); }} aria-live="polite">
+            {!messages.length && <div className="na-empty"><Sparkles /><h3>What are you working on?</h3><p>Choose a prompt to get started. Uploaded materials are not automatically retrieved by this API.</p><div className="na-suggestions"><button onClick={() => setPrompt("Summarize the current topic")}>Summarize this topic</button><button onClick={() => setPrompt("Quiz me on this topic")}>Quiz me</button><button onClick={() => setPrompt("Explain this simply")}>Explain simply</button></div></div>}
+            {messages.map((message, index) => <article key={index} className={`na-message ${message.role === "user" ? "is-user" : "is-assistant"}`}>{message.role === "assistant" && <span className="na-avatar"><Sparkles /></span>}<div className="na-bubble"><div className="na-prose">{message.content || (loading && index === messages.length - 1 ? <span className="na-thinking"><i /><i /><i /></span> : "")}</div>{message.role === "assistant" && message.content && <div className="na-message-actions"><button onClick={() => void act("copy", message)}>Copy</button><button onClick={() => void act("regenerate", message)}>Regenerate</button><button aria-label="Good response" onClick={() => void act("good", message)}>👍</button><button aria-label="Bad response" onClick={() => void act("bad", message)}>👎</button><button onClick={() => void act("insert", message)}>Insert into note</button><button onClick={() => void act("cards", message)}>Make flashcards</button></div>}</div></article>)}
+            <div />
+          </div>
+          {showJump && <button className="na-jump" onClick={() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; setShowJump(false); }}>Jump to latest ↓</button>}
+          {error && <p className="na-error" role="alert">{error}</p>}
+          {undoChat && <div className="na-undo"><span>Chat queued for deletion.</span><button onClick={undoDelete}>Undo</button></div>}
+          <form className="na-composer" onSubmit={e => { e.preventDefault(); void send(); }}><textarea ref={composerRef} value={prompt} maxLength={8000} onChange={e => setPrompt(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }} placeholder="Ask Notely anything…" rows={1} aria-label="Message Notely Assistant" /><div><small>{prompt.length.toLocaleString()} / 8,000 · Enter to send</small><button type="submit" disabled={!prompt.trim() && !loading} aria-label={loading ? "Stop generating" : "Send message"}>{loading ? "Stop ■" : "Send ↑"}</button></div></form>
         </div>
-        {error && <div role="alert" style={{ padding: "8px 16px", color: "#bd5f62" }}>{error}</div>}
-        <div className="composer"><div className="composer-box"><textarea value={prompt} onChange={e => setPrompt(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }} placeholder="Ask Notely anything…" rows={2} /><div><button className="send-button" disabled={loading || !prompt.trim()} onClick={() => void send()} aria-label="Send message">{loading ? <Clock3 /> : <ArrowRight />}</button></div></div><small>Enter to send · Shift+Enter for a new line</small></div>
       </div>
-      <aside className="source-panel"><div className="section-heading"><div><span className="eyebrow">WORKSPACE</span><h2>Quick actions</h2></div><Sparkles /></div><button className="source-card" onClick={() => setRoute("notes")}><FileText /><span><strong>My notes</strong><small>Create and edit notes</small></span><ArrowRight /></button><button className="source-card" onClick={() => setRoute("documents")}><FolderOpen /><span><strong>Documents</strong><small>Upload and summarize files</small></span><ArrowRight /></button><button className="source-card" onClick={() => setRoute("tools")}><Zap /><span><strong>Study tools</strong><small>Generate practice material</small></span><ArrowRight /></button></aside>
-    </div>
-  </div>;
+    </section>}
+  </>;
 }
 
 function Documents({ setRoute }: { setRoute: (r: Route) => void }) {
@@ -448,7 +540,6 @@ function SearchScreen({ setRoute }: { setRoute: (r: Route) => void }) {
   const groups = [
     { key: "notes", label: "Notes", rows: results.notes || [], route: "notes" as Route, icon: <FileText /> },
     { key: "topics", label: "Topics", rows: results.topics || [], route: "roadmap" as Route, icon: <BookOpen /> },
-    { key: "chats", label: "Chats", rows: results.chats || [], route: "assistant" as Route, icon: <MessageCircle /> },
     { key: "quizzes", label: "Quizzes", rows: results.quizzes || [], route: "quiz" as Route, icon: <CircleHelp /> },
   ];
   const count = groups.reduce((total, group) => total + group.rows.length, 0);
@@ -610,8 +701,8 @@ export default function Page() {
   useEffect(() => {
     try { localStorage.setItem("notely-sidebar-collapsed", String(collapsed)); } catch { /* Keep the control usable without storage. */ }
   }, [collapsed]);
-  const titles: Partial<Record<Route, string>> = { overview: "Overview", notes: "My Notes", assistant: "AI Assistant", documents: "Documents", favorites: "Favorites", archive: "Archive", trash: "Trash", tools: "Study Tools", quiz: "Quiz Generator", flashcards: "Flashcards", roadmap: "Study Roadmap", mindmap: "Mind Maps", planner: "Revision Planner", summarizer: "Text Summarizer", homework: "Homework Helper", search: "Search", settings: "Settings" };
+  const titles: Partial<Record<Route, string>> = { overview: "Overview", notes: "My Notes", documents: "Documents", favorites: "Favorites", archive: "Archive", trash: "Trash", tools: "Study Tools", quiz: "Quiz Generator", flashcards: "Flashcards", roadmap: "Study Roadmap", mindmap: "Mind Maps", planner: "Revision Planner", summarizer: "Text Summarizer", homework: "Homework Helper", search: "Search", settings: "Settings" };
   let content: ReactNode = <Overview setRoute={setRoute} />;
-  if (route === "notes") content = <Notes setRoute={setRoute} />; else if (["favorites","archive","trash"].includes(route)) content = <Notes setRoute={setRoute} filter={route as "favorites" | "archive" | "trash"} />; else if (route === "assistant") content = <Assistant setRoute={setRoute} />; else if (route === "documents") content = <Documents setRoute={setRoute} />; else if (route === "tools") content = <Tools setRoute={setRoute} />; else if (["quiz","flashcards","roadmap","mindmap","planner"].includes(route)) content = <ToolDetail route={route} setRoute={setRoute} />; else if (route === "search") content = <SearchScreen setRoute={setRoute} />; else if (route === "settings") content = <SettingsScreen />;
-  return <div className="workspace"><Sidebar route={route} setRoute={setRoute} collapsed={collapsed} setCollapsed={setCollapsed} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} /><main className="workspace-main"><Header title={titles[route] || "Workspace"} setRoute={setRoute} onMenu={() => setMobileOpen(true)} />{content}</main></div>;
+  if (route === "notes") content = <Notes setRoute={setRoute} />; else if (["favorites","archive","trash"].includes(route)) content = <Notes setRoute={setRoute} filter={route as "favorites" | "archive" | "trash"} />; else if (route === "documents") content = <Documents setRoute={setRoute} />; else if (route === "tools") content = <Tools setRoute={setRoute} />; else if (["quiz","flashcards","roadmap","mindmap","planner"].includes(route)) content = <ToolDetail route={route} setRoute={setRoute} />; else if (route === "search") content = <SearchScreen setRoute={setRoute} />; else if (route === "settings") content = <SettingsScreen />;
+  return <div className="workspace"><Sidebar route={route} setRoute={setRoute} collapsed={collapsed} setCollapsed={setCollapsed} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} /><main className="workspace-main"><Header title={titles[route] || "Workspace"} setRoute={setRoute} onMenu={() => setMobileOpen(true)} />{content}</main><FloatingAssistant context={titles[route] || "Workspace"} /></div>;
 }
