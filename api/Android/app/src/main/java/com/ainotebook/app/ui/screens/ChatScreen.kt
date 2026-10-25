@@ -114,7 +114,7 @@ fun ChatScreen(
         else vm.startNewChat()
     }
     LaunchedEffect(state.currentChatId) {
-        input = draftPrefs.getString("draft_\${state.currentChatId ?: "new"}", "") ?: ""
+        input = draftPrefs.getString("draft_" + (state.currentChatId?.toString() ?: "new"), "") ?: ""
     }
 
     // FIX (Bug 3 partial): Only depend on messages.size, not content, to avoid
@@ -218,7 +218,7 @@ fun ChatScreen(
             // Always-visible input bar (moved out of else branch).
             ChatInputBar(
                 value = input,
-                onValueChange = { input = it; draftPrefs.edit().putString("draft_\${state.currentChatId ?: "new"}", it).apply() },
+                onValueChange = { input = it; draftPrefs.edit().putString("draft_" + (state.currentChatId?.toString() ?: "new"), it).apply() },
                 streaming = state.streaming,
                 isEditing = editing != null,
                 onCancelEdit = { editing = null; input = "" },
@@ -233,7 +233,7 @@ fun ChatScreen(
                             sendWithContext(text)
                         }
                         input = ""
-                        draftPrefs.edit().remove("draft_\${state.currentChatId ?: "new"}").apply()
+                        draftPrefs.edit().remove("draft_" + (state.currentChatId?.toString() ?: "new")).apply()
                     }
                 }
             )
