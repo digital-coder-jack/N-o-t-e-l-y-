@@ -39,6 +39,11 @@
       button.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
     });
   }
+  // Keeps the Settings > Appearance dropdown in sync when the theme is changed with the toggle button.
+  function syncThemeSelect() {
+    var select = document.getElementById('nwTheme');
+    if (select && select.value !== preference) select.value = preference;
+  }
   function persist(value) {
     preference = value;
     try {
@@ -46,6 +51,7 @@
       if (value === 'light' || value === 'dark') localStorage.setItem(legacyKey, value);
       else localStorage.removeItem(legacyKey);
     } catch (error) {}
+    syncThemeSelect();
   }
   function buttonPoint(button) {
     if (!button || !button.getBoundingClientRect) return { x: innerWidth / 2, y: innerHeight / 2 };
@@ -110,12 +116,15 @@
   function bind() {
     applyTheme(current);
   }
+
+  // Resolved conflict: keep the branch version (preventDefault stops the button from acting as a link/form submit).
   document.addEventListener('click', function (event) {
     var button = event.target && event.target.closest ? event.target.closest('[data-notely-theme-toggle]') : null;
     if (!button) return;
     event.preventDefault();
     toggle(button);
   });
+
   document.addEventListener('keydown', function (event) {
     if (event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey && event.key.toLowerCase() === 't') {
       var active = document.activeElement;
@@ -127,10 +136,16 @@
   if (media && media.addEventListener) media.addEventListener('change', function (event) {
     if (preference === 'system') { applyTheme(event.matches ? 'dark' : 'light'); }
   });
+
+  // Single public API (the duplicate NotelyTheme object from main was merged into this one).
   window.NotelyTheme = {
     getPreference: function () { return preference; },
     getTheme: function () { return current; },
-    hasPreference: function () { return preference !== 'system'; },
+    // True only when the user (or a previous save) already stored a choice in this browser.
+    hasPreference: function () {
+      try { return localStorage.getItem(storageKey) !== null || localStorage.getItem(legacyKey) !== null; }
+      catch (error) { return false; }
+    },
     setPreference: function (value, button, animate) {
       if (['system', 'light', 'dark'].indexOf(value) < 0) return;
       persist(value);
