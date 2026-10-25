@@ -106,7 +106,6 @@ async def list_topics(user=Depends(auth.current_user)):
     topics = []
     for t in db.list_topics(user["id"]):
         d = dict(t)
-        d["sections"] = [dict(a) for a in db.list_artifacts(t["id"])]
         d["sections"] = [{"kind": a["kind"], "variant": a["variant"], "updated_at": a["updated_at"]} for a in db.list_artifacts(t["id"])]
         topics.append(d)
     return {"topics": topics}
