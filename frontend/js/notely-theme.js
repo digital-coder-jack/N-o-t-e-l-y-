@@ -79,7 +79,6 @@
     var shouldAnimate = animate !== false && !(reducedMotion && reducedMotion.matches);
     root.style.setProperty('--notely-theme-x', point.x + 'px');
     root.style.setProperty('--notely-theme-y', point.y + 'px');
-    persist(theme);
     if (!shouldAnimate) { applyTheme(theme); return Promise.resolve(); }
     if (typeof document.startViewTransition === 'function') {
       var transition;
@@ -104,7 +103,9 @@
     return Promise.resolve();
   }
   function toggle(button) {
-    changeTheme(current === 'dark' ? 'light' : 'dark', button, true);
+    var next = current === 'dark' ? 'light' : 'dark';
+    persist(next);
+    changeTheme(next, button, true);
   }
   function bind() {
     applyTheme(current);
