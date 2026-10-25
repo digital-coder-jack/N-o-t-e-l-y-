@@ -19,25 +19,47 @@
       <button class="nw-primary" data-view="notes"><span>＋</span> New note</button>
       <button class="nw-search" data-view="search"><span>⌕</span> Search anything <kbd>⌘ K</kbd></button>
       <nav class="nw-nav" aria-label="Workspace navigation">
-        <span>Workspace</span>
-        <button data-view="overview">◈ <b>Overview</b></button>
-        <button data-view="notes">▤ <b>My notes</b></button>
-        <button data-view="assistant">✦ <b>AI assistant</b><em>AI</em></button>
-        <button data-view="documents">▧ <b>Documents</b></button>
-        <span>Library</span>
-        <button data-view="favorites">★ <b>Favorites</b></button>
-        <button data-view="archive">□ <b>Archive</b></button>
-        <button data-view="trash">⌫ <b>Trash</b></button>
-        <span>Study tools</span>
-        <button data-view="tools">✧ <b>Tools hub</b><em>5</em></button>
-        <button data-view="settings">⚙ <b>Settings</b></button>
+        <span>WRITE</span>
+        <button data-view="notes"><span class="nw-nav-icon" aria-hidden="true">▤</span><b>Notebooks</b></button>
+        <button data-view="documents"><span class="nw-nav-icon" aria-hidden="true">▧</span><b>Course materials</b></button>
+        <button data-view="lectures"><span class="nw-nav-icon" aria-hidden="true">◷</span><b>Recorded lectures</b></button>
+        <span>PRACTICE</span>
+        <button data-view="flashcards"><span class="nw-nav-icon" aria-hidden="true">▣</span><b>Flashcards</b></button>
+        <button data-view="quizzes"><span class="nw-nav-icon" aria-hidden="true">?</span><b>Quizzes</b></button>
+        <button data-view="mindmaps"><span class="nw-nav-icon" aria-hidden="true">◎</span><b>Mind maps</b></button>
+        <button data-view="roadmap"><span class="nw-nav-icon" aria-hidden="true">⌁</span><b>Study roadmap</b></button>
+        <span>ASK</span>
+        <button data-view="assistant"><span class="nw-nav-icon" aria-hidden="true">✦</span><b>Study assistant</b></button>
+        <span>PLAN</span>
+        <button data-view="tasks"><span class="nw-nav-icon" aria-hidden="true">✓</span><b>Tasks & calendar</b></button>
+        <button data-view="revision"><span class="nw-nav-icon" aria-hidden="true">↻</span><b>Revision planner</b></button>
       </nav>
-      <div class="nw-sidebar-bottom"><div class="nw-sync">☁ Cloud sync on<small>Data is saved to your workspace</small></div><button class="nw-user" data-view="settings"><i>JL</i><span><b id="nwUserName">Jamie Lee</b><small>Student workspace</small></span>⋯</button></div>
+      <div class="nw-sidebar-bottom">
+        <button class="nw-settings-link" data-view="settings" type="button"><span aria-hidden="true">⚙</span> Settings</button>
+        <div class="nw-sync"><span>Workspace sync</span><small>Your notes stay in your workspace</small></div>
+        <button class="nw-user" data-view="settings" type="button"><i>S</i><span><b id="nwUserName">Student</b><small>Student workspace</small></span>⋯</button>
+      </div>
     </aside>
     <button class="nw-scrim" id="nwScrim" aria-label="Close navigation"></button>
     <main class="nw-main">
-      <header class="nw-topbar"><button class="nw-mobile-menu" id="nwMenu">☰</button><div class="nw-crumb">Workspace <b>/</b> <strong id="nwTitle">Overview</strong></div><div class="nw-top-actions"><button class="nw-top-search" data-view="search">⌕ <span>Search</span><kbd>⌘ K</kbd></button><button class="nw-bell" aria-label="Notifications">♧<i></i></button><button class="notely-theme-toggle" type="button" data-notely-theme-toggle aria-label="Switch theme" title="Switch theme (Shift+T)" aria-pressed="false"><svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"></path></svg><svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.7 8.7 0 1 0 20.2 15.4Z"></path></svg></button><button class="nw-avatar" data-view="settings">JL</button></div></header>
+      <header class="nw-topbar">
+        <button class="nw-mobile-menu nw-icon" id="nwMenu" type="button" aria-label="Open navigation">☰</button>
+        <div class="nw-crumb"><span>Workspace</span><b>/</b><strong id="nwTitle">Home</strong></div>
+        <div class="nw-top-actions">
+          <button class="nw-top-search" data-view="search" type="button" aria-label="Search workspace">⌕ <span>Search</span><kbd>Ctrl K</kbd></button>
+          <button class="nw-top-new" data-view="notes" type="button"><span aria-hidden="true">＋</span> New note</button>
+          <button class="notely-theme-toggle" type="button" data-notely-theme-toggle aria-label="Switch theme" title="Switch theme (Shift+T)" aria-pressed="false"><svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"></path></svg><svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.7 8.7 0 1 0 20.2 15.4Z"></path></svg></button>
+          <button class="nw-avatar" data-view="settings" type="button" aria-label="Open profile and settings">S</button>
+        </div>
+      </header>
       <section id="nwContent" class="nw-content"><div class="nw-loading">Preparing your workspace…</div></section>
+      <nav class="nw-bottom-nav" aria-label="Mobile workspace navigation">
+        <button data-view="overview" type="button"><span aria-hidden="true">⌂</span><small>Home</small></button>
+        <button data-view="notes" type="button"><span aria-hidden="true">▤</span><small>Write</small></button>
+        <button data-view="tools" type="button"><span aria-hidden="true">▣</span><small>Practice</small></button>
+        <button data-view="assistant" type="button"><span aria-hidden="true">✦</span><small>Ask</small></button>
+        <button data-view="tasks" type="button"><span aria-hidden="true">✓</span><small>Plan</small></button>
+      </nav>
     </main>
   </div>
   <script src="/js/config.js"></script>
