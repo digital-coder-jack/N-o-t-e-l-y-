@@ -540,3 +540,10 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .nw-assistant-prose pre { display:grid; gap:6px; }
 .nw-assistant-prose pre button { justify-self:end; min-height:30px; padding:4px 8px; border:1px solid var(--line); border-radius:8px; background:var(--paper); color:var(--ink); font-size:10px; cursor:pointer; }
 .nw-assistant-prose pre button:hover { border-color:var(--cyan); }
+
+.nw-assistant-rename-form { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:5px; align-items:center; padding:4px; }
+.nw-assistant-rename-form input { min-width:0; min-height:38px; padding:7px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); font-size:11px; }
+.nw-assistant-rename-form button { min-height:38px; padding:6px 8px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); font-size:10px; }
+.nw-assistant-rename-form small { grid-column:1/-1; color:var(--muted); font-size:10px; }
+.nw-assistant-prose pre button:focus-visible,.nw-assistant-rename-form button:focus-visible { outline:3px solid var(--cyan); outline-offset:2px; }
+.nw-assistant-paused .nw-assistant-launcher,.nw-assistant-paused .nw-assistant-launcher-icon,.nw-assistant-paused .nw-assistant-launcher-ring,.nw-assistant-paused .nw-assistant-thinking span { animation-play-state:paused!important; }
