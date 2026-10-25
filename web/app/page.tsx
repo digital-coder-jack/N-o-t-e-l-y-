@@ -227,6 +227,7 @@ function FloatingAssistant({ context }: { context: string }) {
   const [renamingId, setRenamingId] = useState<number | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const controllerRef = useRef<AbortController | null>(null);
+  const modeRef = useRef<AssistantMode>(mode);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const launcherRef = useRef<HTMLButtonElement | null>(null);
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
@@ -262,7 +263,7 @@ function FloatingAssistant({ context }: { context: string }) {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "j") {
         event.preventDefault(); setMode(current => current === "closed" ? "small" : "closed");
       } else if (event.key === "Escape") {
-        setMode(current => current === "maximized" ? "small" : current === "small" ? "closed" : "closed");
+        setMode(current => { const next = current === "maximized" ? "small" : current === "small" ? "closed" : "closed"; if (next === "closed") window.setTimeout(() => launcherRef.current?.focus(), 0); return next; });
       }
     };
     window.addEventListener("notely:assistant-open", onOpen);
@@ -276,12 +277,31 @@ function FloatingAssistant({ context }: { context: string }) {
     };
   }, []);
 
+  useEffect(() => { modeRef.current = mode; }, [mode]);
   useEffect(() => {
     try { window.localStorage.setItem("notely-assistant-widget-state", JSON.stringify({ mode, chatId, contextEnabled })); } catch { /* storage may be disabled */ }
   }, [mode, chatId, contextEnabled]);
   useEffect(() => {
     try { window.localStorage.setItem("notely-assistant-draft-" + (chatId || "new"), prompt); } catch { /* storage may be disabled */ }
   }, [prompt, chatId]);
+  useEffect(() => {
+    const updateViewport = () => {
+      const vv = window.visualViewport;
+      const keyboard = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
+      document.documentElement.style.setProperty("--na-keyboard-offset", keyboard > 100 ? keyboard + "px" : "0px");
+      document.documentElement.style.setProperty("--na-nav-offset", keyboard > 100 ? "0px" : "76px");
+      document.documentElement.style.setProperty("--na-visual-height", (vv?.height || window.innerHeight) + "px");
+    };
+    updateViewport();
+    window.visualViewport?.addEventListener("resize", updateViewport);
+    window.visualViewport?.addEventListener("scroll", updateViewport);
+    window.addEventListener("resize", updateViewport);
+    return () => {
+      window.visualViewport?.removeEventListener("resize", updateViewport);
+      window.visualViewport?.removeEventListener("scroll", updateViewport);
+      window.removeEventListener("resize", updateViewport);
+    };
+  }, []);
   useEffect(() => {
     const node = scrollRef.current;
     if (node && !showJump) node.scrollTop = node.scrollHeight;
@@ -363,7 +383,7 @@ function FloatingAssistant({ context }: { context: string }) {
         const last = (detail.messages || []).filter(m => m.role === "assistant").slice(-1)[0];
         if (last) setMessages(current => current.map((message, index) => index === current.length - 1 ? { ...message, content: String(last.content || "") } : message));
       }
-      if (mode === "closed") setUnread(true);
+      if (modeRef.current === "closed") setUnread(true);
     } catch (e) {
       if (e instanceof Error && e.name === "AbortError") setError("Generation stopped.");
       else setError(e instanceof Error ? e.message : "Something went wrong.");
