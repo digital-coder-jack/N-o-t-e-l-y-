@@ -259,3 +259,10 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 @media(max-width:900px){.nw-course-work-grid,.nw-artifact-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.nw-create-course{align-items:stretch;flex-direction:column}.nw-course-form{min-width:0}}
 @media(max-width:767px){.nw-course-work-grid,.nw-artifact-grid{grid-template-columns:1fr}.nw-course-form{flex-direction:column}.nw-course-form .nw-btn{width:100%}}
 @media(prefers-reduced-motion:reduce){.nw-course-card{transition:none}.nw-course-card:hover{transform:none}}
+
+.nw-home-ask-form{display:flex;gap:6px;width:100%;margin-top:2px}
+.nw-home-ask-form input{flex:1;min-width:0;height:44px;padding:0 12px;border:1px solid var(--border);border-radius:13px;background:var(--bg);color:var(--ink);font-size:12px}
+.nw-home-ask-form button{width:44px;min-width:44px;height:44px;border:0;border-radius:13px;background:var(--accent);color:var(--accent-contrast);font-size:20px;font-weight:700}
+.nw-planner-empty{padding:clamp(20px,4vw,36px);border-radius:var(--radius-card)}
+.nw-planner-empty h2{margin:12px 0 8px;font-size:26px}
+.nw-planner-empty p{max-width:700px;color:var(--muted);line-height:1.6}
