@@ -21,7 +21,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -34,6 +37,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import android.content.Context
 import com.ainotebook.app.ui.ChatViewModel
 import com.ainotebook.app.ui.screens.ChatScreen
 
@@ -50,6 +55,11 @@ fun FloatingAssistantWidget(
     onOpen: () -> Unit
 ) {
     var contextEnabled by rememberSaveable { mutableStateOf(true) }
+    val appContext = LocalContext.current.applicationContext
+    val widgetPrefs = remember(appContext) { appContext.getSharedPreferences("notely_assistant_widget", Context.MODE_PRIVATE) }
+    val chatState by vm.state.collectAsState()
+    val restoredChatId = remember { widgetPrefs.getInt("last_chat_id", -1).takeIf { it > 0 } }
+    LaunchedEffect(chatState.currentChatId) { chatState.currentChatId?.let { widgetPrefs.edit().putInt("last_chat_id", it).apply() } }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val compactHeight = maxHeight * 0.72f
         val panelModifier = when (mode) {
@@ -125,7 +135,7 @@ fun FloatingAssistantWidget(
                 Box(Modifier.weight(1f)) {
                     // Keep ChatScreen composed while the widget is minimized so the selected chat and
                     // drafts survive navigation between destinations.
-                    ChatScreen(vm = vm, initialChatId = null, embedded = true, context = if (contextEnabled) context else null)
+                    ChatScreen(vm = vm, initialChatId = restoredChatId, embedded = true, context = if (contextEnabled) context else null)
                 }
             }
         }
