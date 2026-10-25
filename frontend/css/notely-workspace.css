@@ -400,10 +400,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 @keyframes nw-assistant-in { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
 @keyframes nw-assistant-dot { 0%,60%,100% { transform:translateY(0); opacity:.45; } 30% { transform:translateY(-4px); opacity:1; } }
 @media (max-width:767px) {
-  .nw-assistant-panel { align-items:flex-end; }
-  .nw-assistant-scrim { background:color-mix(in srgb,var(--bg) 60%,transparent); }
-  .nw-assistant-sheet { width:100%; height: min(94dvh,900px); min-height:0; border:1px solid var(--border); border-bottom:0; border-radius:24px 24px 0 0; padding:8px 14px calc(8px + env(safe-area-inset-bottom,0px)); transform:translateY(20px); }
-  .nw-assistant-handle { display:block; }
+
   .nw-assistant-head { align-items:flex-start; }
   .nw-assistant-head-actions { gap:3px; flex-wrap:nowrap; }
   .nw-assistant-head-actions select { max-width:94px; font-size:10px; }
