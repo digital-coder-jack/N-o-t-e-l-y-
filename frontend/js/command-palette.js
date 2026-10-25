@@ -24,7 +24,7 @@
   /* ---- Static command catalogue ---- */
   var PAGES = [
     { icon: 'fa-gauge-high', title: 'Dashboard', sub: 'Your learning overview', href: '/dashboard', cat: 'Pages', keys: 'home overview stats' },
-    { icon: 'fa-pen-to-square', title: 'Study assistant', sub: 'Open the in-place assistant', href: '/dashboard?openAssistant=1', cat: 'Pages', keys: 'ask ai message tutor assistant' },
+    { icon: 'fa-pen-to-square', title: 'Notely Assistant', sub: 'Open the floating assistant', href: '/dashboard?openAssistant=1', cat: 'Pages', keys: 'ask ai message tutor assistant' },
     { icon: 'fa-screwdriver-wrench', title: 'Study Tools', sub: 'Notes, quizzes, flashcards', href: '/tools', cat: 'Pages', keys: 'notes quiz flashcards summarize planner' },
     { icon: 'fa-chart-pie', title: 'Analytics', sub: 'Track your progress', href: '/analytics', cat: 'Pages', keys: 'insights charts data' },
     { icon: 'fa-gear', title: 'Settings', sub: 'Preferences & account', href: '/settings', cat: 'Pages', keys: 'preferences profile account theme appearance' },
@@ -33,7 +33,7 @@
   ];
 
   var ACTIONS = [
-    { icon: 'fa-plus', title: 'New chat', sub: 'Start a conversation with AI', cat: 'Actions', keys: 'ask ai message tutor', href: '/chat' },
+    { icon: 'fa-plus', title: 'New chat', sub: 'Open Notely Assistant', cat: 'Actions', keys: 'ask ai message tutor', href: '/dashboard?openAssistant=1&newChat=1' },
     { icon: 'fa-circle-half-stroke', title: 'Toggle theme', sub: 'Switch light / dark mode', cat: 'Actions', keys: 'dark light mode appearance', run: function () { if (window.SS && SS.toggleTheme) SS.toggleTheme(); if (window.SSMotion) SSMotion.applyPreferences(); } },
     { icon: 'fa-note-sticky', title: 'New note', sub: 'Open the notes workspace', cat: 'Actions', keys: 'write notes', href: '/tools#notes' },
     { icon: 'fa-clipboard-question', title: 'Generate a quiz', sub: 'Open quiz generator', cat: 'Actions', keys: 'test exam questions', href: '/tools#quiz' },
@@ -129,7 +129,7 @@
       items.push({ icon: 'fa-note-sticky', title: n.title || 'Untitled note', sub: 'Note', href: '/tools#notes', cat: 'Content', keys: 'note' });
     });
     (serverResults.chats || []).forEach(function (c) {
-      items.push({ icon: 'fa-comment', title: c.title || 'Untitled chat', sub: 'Saved chat', href: '/chat?id=' + c.id, cat: 'Content', keys: 'chat conversation' });
+      items.push({ icon: 'fa-comment', title: c.title || 'Untitled chat', sub: 'Saved chat', href: '/dashboard?openAssistant=1&chatId=' + encodeURIComponent(c.id), cat: 'Content', keys: 'chat conversation' });
     });
     (serverResults.quizzes || []).forEach(function (qz) {
       items.push({ icon: 'fa-clipboard-question', title: qz.title || 'Quiz', sub: 'Quiz', href: '/tools#quiz', cat: 'Content', keys: 'quiz test' });
@@ -163,7 +163,7 @@
     q = (q || '').trim();
 
     var chatItems = recentChats.map(function (c) {
-      return { icon: 'fa-comment', title: c.title || 'Untitled chat', sub: 'Recent chat', href: '/chat?id=' + c.id, cat: 'Recent', keys: 'history conversation' };
+      return { icon: 'fa-comment', title: c.title || 'Untitled chat', sub: 'Recent chat', href: '/dashboard?openAssistant=1&chatId=' + encodeURIComponent(c.id), cat: 'Recent', keys: 'history conversation' };
     });
 
     var pool = [];
