@@ -21,6 +21,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -42,8 +46,10 @@ fun FloatingAssistantWidget(
     mode: Int,
     onModeChange: (Int) -> Unit,
     vm: ChatViewModel,
+    context: String,
     onOpen: () -> Unit
 ) {
+    var contextEnabled by rememberSaveable { mutableStateOf(true) }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val compactHeight = maxHeight * 0.72f
         val panelModifier = when (mode) {
@@ -53,7 +59,7 @@ fun FloatingAssistantWidget(
                 .padding(end = 12.dp, bottom = 84.dp)
                 .fillMaxWidth()
                 .widthIn(max = 380.dp)
-                .heightIn(min = 320.dp, max = compactHeight)
+                .heightIn(max = compactHeight)
                 .height(compactHeight)
             else -> Modifier
                 .align(Alignment.BottomEnd)
@@ -96,6 +102,9 @@ fun FloatingAssistantWidget(
                         }
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { contextEnabled = !contextEnabled }) {
+                            Text(if (contextEnabled) "×" else "+", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleMedium)
+                        }
                         if (mode == 1) {
                             IconButton(onClick = { onModeChange(2) }) {
                                 Text("□", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleMedium)
@@ -110,10 +119,13 @@ fun FloatingAssistantWidget(
                         }
                     }
                 }
+                if (contextEnabled) {
+                    Text("Context: $context", modifier = Modifier.padding(horizontal = 14.dp, vertical = 5.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                }
                 Box(Modifier.weight(1f)) {
                     // Keep ChatScreen composed while the widget is minimized so the selected chat and
                     // drafts survive navigation between destinations.
-                    ChatScreen(vm = vm, initialChatId = null, embedded = true)
+                    ChatScreen(vm = vm, initialChatId = null, embedded = true, context = if (contextEnabled) context else null)
                 }
             }
         }
