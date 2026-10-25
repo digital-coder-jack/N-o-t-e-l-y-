@@ -26,7 +26,7 @@
 <title>Notely – Study at warp speed</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Sans:wght@400;500&display=swap">
 <style>
-:root{--bg:var(--theme-contrast-ink);--ink:#F4F6FF;--mut:#98A2C3;--lime:#8FE8F8;--vio:#1F6FB5;--theme-contrast-ink:var(--theme-contrast-ink);--hero-surface:var(--hero-surface);--mock-a:#151a33;--mock-b:var(--mock-b);--hero-border:var(--hero-border);--hero-glass:var(--hero-glass);--hero-glass-border:var(--hero-glass-border);--hero-glow:var(--hero-glow);--hero-glow-soft:var(--hero-glow-soft);--marquee-stroke:var(--marquee-stroke);--shot-surface:#fff;--shot-topbar:#E8E6F2;--shot-dot:#C9C5DC;--cursor-color:#fff;--canvas-trail:rgba(6,12,28,.3);color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root{--bg:var(--theme-contrast-ink);--ink:#F4F6FF;--mut:#98A2C3;--lime:#8FE8F8;--vio:#1F6FB5;--theme-contrast-ink:var(--theme-contrast-ink);--hero-surface:var(--hero-surface);--mock-a:#151a33;--mock-b:var(--mock-b);--hero-border:var(--hero-border);--hero-glass:var(--hero-glass);--hero-glass-border:var(--hero-glass-border);--hero-glow:var(--hero-glow);--hero-glow-soft:var(--hero-glow-soft);--marquee-stroke:var(--marquee-stroke);--shot-surface:#fff;--shot-topbar:#E8E6F2;--shot-dot:#C9C5DC;--cursor-color:var(--n2-ink);--canvas-trail:rgba(6,12,28,.3);color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html{background:var(--bg);scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 18px/1.55 'DM Sans',system-ui,sans-serif;overflow-x:hidden}
@@ -46,7 +46,7 @@ header{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;justify-conte
 .logo{font:800 24px 'Bricolage Grotesque',sans-serif;display:flex;gap:10px;align-items:center}
 .logo img{width:34px;height:34px;border-radius:9px;display:block}
 .btn{display:inline-block;padding:16px 30px;border-radius:999px;font-weight:500;background:var(--lime);color:var(--theme-contrast-ink)}
-.btn.o{background:transparent;color:var(--ink);border:1.5px solid rgba(255,255,255,.35)}
+.btn.o{background:transparent;color:var(--ink);border:1.5px solid var(--hero-glass-border)}
 .w{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.12em}
 .c{display:inline-block}
 .g .c{background:linear-gradient(90deg,var(--lime),var(--vio));-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -58,7 +58,7 @@ header{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;justify-conte
 .row{display:flex;gap:12px;flex-wrap:wrap}
 .pw{flex:1 1 320px;display:grid;place-items:center;perspective:1200px}
 .ph{width:min(260px,70vw);aspect-ratio:9/18;border-radius:38px;padding:10px;background:var(--hero-surface);border:1px solid var(--hero-border);box-shadow:0 0 120px var(--hero-glow),0 0 40px var(--hero-glow-soft);transform-style:preserve-3d}
-.sc{height:100%;border-radius:30px;background:linear-gradient(160deg,#151a33,var(--mock-b));padding:18px 14px;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.sc{height:100%;border-radius:30px;background:linear-gradient(160deg,var(--mock-a),var(--mock-b));padding:18px 14px;display:flex;flex-direction:column;gap:10px;overflow:hidden}
 .sc b{font:800 16px 'Bricolage Grotesque',sans-serif}
 .n{border-radius:14px;padding:12px;font-size:13px;line-height:1.3}
 .n1{background:var(--lime);color:var(--theme-contrast-ink)}.n2{background:var(--vio)}.n3{background:var(--hero-glass)}
@@ -71,7 +71,7 @@ header{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;justify-conte
 .st p{color:var(--mut);margin:12px auto 0;max-width:440px}
 #hz{height:100vh;overflow:hidden;display:flex;align-items:center}
 #track{display:flex;gap:28px;padding:0 8vw;will-change:transform}
-.card{flex:0 0 min(78vw,460px);height:min(62vh,480px);border-radius:32px;padding:32px;display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(160deg,var(--hero-glass),rgba(255,255,255,.02));border:1px solid var(--hero-border);backdrop-filter:blur(10px)}
+.card{flex:0 0 min(78vw,460px);height:min(62vh,480px);border-radius:32px;padding:32px;display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(160deg,var(--hero-glass),var(--hero-glass-low));border:1px solid var(--hero-border);backdrop-filter:blur(10px)}
 .card em{font:800 clamp(80px,12vw,150px)/1 'Bricolage Grotesque',sans-serif;font-style:normal;background:linear-gradient(135deg,var(--lime),var(--vio));-webkit-background-clip:text;background-clip:text;color:transparent}
 .card h3{font-size:36px;margin-bottom:10px}.card p{margin:0;color:var(--mut)}
 @media (prefers-reduced-motion:reduce){#hz{overflow-x:auto}}
@@ -88,13 +88,13 @@ footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;paddin
 .shots{padding:12vh 5vw;perspective:1400px}
 .sh{font-size:clamp(44px,8vw,110px);margin-bottom:6vh;text-align:center}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,480px),1fr));gap:32px;max-width:1300px;margin:0 auto}
-.shot{margin:0;border-radius:18px;overflow:hidden;background:var(--shot-surface);border:1px solid var(--hero-glass-border);box-shadow:0 30px 90px rgba(31,111,181,.35);transform-style:preserve-3d}
+.shot{margin:0;border-radius:18px;overflow:hidden;background:var(--shot-surface);border:1px solid var(--hero-glass-border);box-shadow:0 30px 90px var(--hero-glow);transform-style:preserve-3d}
 .bar3{background:var(--shot-topbar);padding:10px 14px;display:flex;gap:6px}.bar3 i{width:10px;height:10px;border-radius:50%;background:var(--shot-dot)}
 .shot img{display:block;width:100%;height:auto}
 .shot figcaption{background:var(--hero-surface);padding:14px 18px;font-size:15px;color:var(--mut)}
 .cta .note{font-size:14px}
 
-:root[data-theme="light"]{--bg:#f5f7ff;--ink:#11182b;--mut:#536079;--lime:#087e9a;--vio:#6256d9;--theme-contrast-ink:#11182b;--hero-surface:#e9edf9;--mock-a:#fff;--mock-b:#e7edf8;--hero-border:rgba(17,24,43,.16);--hero-glass:rgba(255,255,255,.8);--hero-glass-border:rgba(32,47,78,.2);--hero-glow:rgba(98,86,217,.16);--hero-glow-soft:rgba(8,126,154,.12);--marquee-stroke:rgba(17,24,43,.35);--shot-surface:#fff;--shot-topbar:#e8e6f2;--shot-dot:#c9c5dc;--cursor-color:#18233a;--canvas-trail:rgba(245,247,255,.2);color-scheme:light}
+:root[data-theme="light"]{--bg:#f5f7ff;--ink:#11182b;--mut:#536079;--lime:#087e9a;--vio:#6256d9;--theme-contrast-ink:#11182b;--hero-surface:#e9edf9;--mock-a:#fff;--mock-b:#e7edf8;--hero-border:rgba(17,24,43,.16);--hero-glass:rgba(255,255,255,.8);--hero-glass-border:rgba(32,47,78,.2);--hero-glass-low:rgba(32,47,78,.035);--n2-ink:#fff;--hero-glow:rgba(98,86,217,.16);--hero-glow-soft:rgba(8,126,154,.12);--marquee-stroke:rgba(17,24,43,.35);--shot-surface:#fff;--shot-topbar:#e8e6f2;--shot-dot:#c9c5dc;--cursor-color:#18233a;--canvas-trail:rgba(245,247,255,.2);color-scheme:light}
 :root[data-theme="dark"]{color-scheme:dark}
 #pre{color:var(--theme-contrast-ink)}
 #cur{background:var(--cursor-color)}
