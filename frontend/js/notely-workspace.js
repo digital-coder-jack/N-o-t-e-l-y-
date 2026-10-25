@@ -367,5 +367,5 @@
   function syncRouteFromLocation() { var fromHash = location.hash.replace(/^#/, ''); if (fromHash.charAt(0) === '/') fromHash = fromHash.slice(1); var fromPath = location.pathname.split('/').filter(Boolean).join('/'); var courseMatch = fromHash.match(/^course\/(\d+)$/); state.activeTopicId = courseMatch ? courseMatch[1] : null; var candidate = courseMatch ? 'course' : (fromHash || (fromPath === 'settings' ? 'settings' : 'overview')); state.view = validViews.indexOf(candidate) >= 0 ? candidate : 'overview'; }
   window.addEventListener('popstate', function () { syncRouteFromLocation(); render(); });
   window.addEventListener('hashchange', function () { syncRouteFromLocation(); render(); });
-  syncRouteFromLocation(); load();
+  syncRouteFromLocation(); load().then(function(){ var qs = new URLSearchParams(location.search); if(qs.get('openAssistant')==='1'){ openAssistant(qs.get('prompt') || ''); } });
 })();
