@@ -8,7 +8,7 @@
     (function(){try{var s=localStorage.getItem("notely-theme")||localStorage.getItem("ss_theme");var t=s==="light"||s==="dark"?s:(window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t);document.documentElement.style.colorScheme=t;}catch(e){document.documentElement.setAttribute("data-theme",window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");}})();
   </script>
   <title>Notely — Workspace</title>
-  <link rel="icon" type="image/svg+xml" href="/assets/notely-logo.svg" />
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.png" />
   <link rel="stylesheet" href="/css/notely-workspace.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -18,7 +18,7 @@
 <body>
   <div class="nw-shell">
     <aside class="nw-sidebar" id="nwSidebar">
-      <div class="nw-brand"><img src="/assets/notely-logo-wordmark.svg" alt="Notely" /><button class="nw-icon nw-collapse" id="nwCollapse" aria-label="Toggle sidebar">‹</button></div>
+      <div class="nw-brand"><img src="/assets/logo.png" alt="Notely logo" /><span class="nw-brand-name">Notely</span><button class="nw-icon nw-collapse" id="nwCollapse" aria-label="Toggle sidebar">‹</button></div>
       <button class="nw-primary" data-new-note type="button"><span>＋</span> New note</button>
       <button class="nw-search" data-view="search"><span>⌕</span> Search anything <kbd>⌘ K</kbd></button>
       <nav class="nw-nav" aria-label="Workspace navigation">
