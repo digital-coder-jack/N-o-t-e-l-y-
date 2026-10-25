@@ -223,6 +223,12 @@ private fun MainShell(factory: VMFactory) {
             mode = assistantMode,
             onModeChange = { assistantMode = it },
             vm = chatVm,
+            context = when {
+                current?.startsWith(Routes.NOTES) == true -> "Write · Notes"
+                current?.startsWith(Routes.TOOLS) == true -> "Practice · Study tools"
+                current?.startsWith(Routes.PROFILE) == true -> "Plan · Account"
+                else -> "Home"
+            },
             onOpen = { haptic(); assistantMode = 1 }
         )
       }
