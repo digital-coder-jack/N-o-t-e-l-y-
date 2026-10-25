@@ -32,13 +32,27 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.ui.platform.LocalContext
 import android.content.Context
+import android.provider.Settings
 import com.ainotebook.app.ui.ChatViewModel
 import com.ainotebook.app.ui.screens.ChatScreen
 
@@ -60,23 +74,25 @@ fun FloatingAssistantWidget(
     val chatState by vm.state.collectAsState()
     val restoredChatId = remember { widgetPrefs.getInt("last_chat_id", -1).takeIf { it > 0 } }
     LaunchedEffect(chatState.currentChatId) { chatState.currentChatId?.let { widgetPrefs.edit().putInt("last_chat_id", it).apply() } }
+    val motionAllowed = remember(appContext) { try { Settings.Global.getFloat(appContext.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f } catch (_: Exception) { true } }
+    val pulseTransition = rememberInfiniteTransition()
+    val pulseScale by pulseTransition.animateFloat(1f, if (motionAllowed) 1.035f else 1f, infiniteRepeatable(tween(2100, easing = FastOutSlowInEasing), RepeatMode.Reverse))
+    val panelScale by animateFloatAsState(if (mode == 0) 0.84f else if (mode == 1) 0.97f else 1f, animationSpec = spring(dampingRatio = 0.78f, stiffness = 480f))
+    val panelAlpha by animateFloatAsState(if (mode == 0) 0f else 1f, animationSpec = tween(180))
+    val panelOffset by animateFloatAsState(if (mode == 0) 18f else 0f, animationSpec = spring(dampingRatio = 0.82f, stiffness = 500f))
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val compactHeight = maxHeight * 0.72f
+        val isPhone = maxWidth < 600.dp
         val panelModifier = when (mode) {
-            2 -> Modifier.fillMaxSize().padding(8.dp)
-            1 -> Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 12.dp, bottom = 84.dp)
-                .fillMaxWidth()
-                .widthIn(max = 380.dp)
-                .heightIn(max = compactHeight)
-                .height(compactHeight)
-            else -> Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 16.dp, bottom = 88.dp)
-                .size(1.dp)
-                .alpha(0f)
-                .clearAndSetSemantics { }
+            2 -> if (isPhone) Modifier.fillMaxSize().padding(WindowInsets.safeDrawing.asPaddingValues()) else Modifier.fillMaxSize().padding(8.dp)
+            1 -> if (isPhone) Modifier.align(Alignment.BottomEnd).padding(horizontal = 12.dp, bottom = 84.dp).fillMaxWidth().widthIn(max = 380.dp).heightIn(max = compactHeight).height(compactHeight) else Modifier.align(Alignment.BottomEnd).padding(end = 24.dp, bottom = 88.dp).fillMaxWidth().widthIn(max = 380.dp).heightIn(max = compactHeight).height(compactHeight)
+            else -> Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 88.dp).size(1.dp).alpha(0f).clearAndSetSemantics { }
+        }.graphicsLayer {
+            scaleX = panelScale
+            scaleY = panelScale
+            alpha = panelAlpha
+            translationY = panelOffset
+            transformOrigin = TransformOrigin(1f, 1f)
         }
 
         Surface(
@@ -112,7 +128,7 @@ fun FloatingAssistantWidget(
                         }
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = { contextEnabled = !contextEnabled }) {
+                        IconButton(onClick = { contextEnabled = !contextEnabled }, modifier = Modifier.semantics { contentDescription = if (contextEnabled) "Remove context" else "Add context" }) {
                             Text(if (contextEnabled) "×" else "+", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleMedium)
                         }
                         if (mode == 1) {
@@ -145,8 +161,9 @@ fun FloatingAssistantWidget(
                 onClick = onOpen,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(end = 16.dp, bottom = 88.dp)
+                    .padding(end = if (isPhone) 16.dp else 24.dp, bottom = if (isPhone) 88.dp else 24.dp)
                     .size(56.dp)
+                    .graphicsLayer { scaleX = pulseScale; scaleY = pulseScale }
                     .semantics { contentDescription = "Open Notely Assistant" },
                 shape = CircleShape,
                 containerColor = MaterialTheme.colorScheme.primary,
