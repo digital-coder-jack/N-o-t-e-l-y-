@@ -1,0 +1,150 @@
+/* Shared Notely theme foundation. Kept separate from the landing page's existing design. */
+:root {
+  color-scheme: dark;
+  --notely-bg: #060c1c;
+  --notely-ink: #f4f6ff;
+  --notely-muted: #98a2c3;
+  --notely-accent: #8fe8f8;
+  --notely-accent-2: #1f6fb5;
+  --notely-surface: #0c1427;
+  --notely-line: rgba(152, 162, 195, .2);
+}
+:root[data-theme="light"] {
+  --bg: #f5f7ff;
+  --ink: #11182b;
+  --mut: #536079;
+  --lime: #087e9a;
+  --vio: #6256d9;
+  color-scheme: light;
+  --notely-bg: #f5f7ff;
+  --notely-ink: #11182b;
+  --notely-muted: #536079;
+  --notely-accent: #087e9a;
+  --notely-accent-2: #6256d9;
+  --notely-surface: #ffffff;
+  --notely-line: rgba(32, 47, 78, .18);
+}
+:root[data-theme="dark"] { color-scheme: dark; }
+html { background: var(--notely-bg); }
+.landing-nav-actions { display: flex; align-items: center; gap: 12px; }
+.notely-theme-toggle {
+  --toggle-ring: rgba(143, 232, 248, .3);
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid var(--notely-line);
+  border-radius: 999px;
+  color: var(--notely-ink);
+  background: color-mix(in srgb, var(--notely-surface) 84%, transparent);
+  box-shadow: 0 0 0 0 var(--toggle-ring);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .22s ease, border-color .22s ease, background .22s ease, box-shadow .22s ease;
+}
+.notely-theme-toggle:hover { transform: translateY(-1px); border-color: var(--notely-accent); box-shadow: 0 0 0 4px var(--toggle-ring); }
+.notely-theme-toggle:focus-visible { outline: 3px solid var(--notely-accent); outline-offset: 3px; }
+.notely-theme-toggle svg { position: absolute; width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: opacity .28s ease, transform .45s cubic-bezier(.2,.8,.2,1); }
+.notely-theme-toggle .theme-sun { opacity: 1; transform: rotate(0) scale(1); }
+.notely-theme-toggle .theme-moon { opacity: 0; transform: rotate(-65deg) scale(.55); }
+:root[data-theme="dark"] .notely-theme-toggle .theme-sun { opacity: 0; transform: rotate(65deg) scale(.55); }
+:root[data-theme="dark"] .notely-theme-toggle .theme-moon { opacity: 1; transform: rotate(0) scale(1); }
+:root[data-theme="light"] .notely-theme-toggle { --toggle-ring: rgba(8, 126, 154, .2); }
+:root[data-theme="light"] body { background: var(--notely-bg); color: var(--notely-ink); }
+:root[data-theme="light"] .btn.o { color: var(--notely-ink); border-color: rgba(17, 24, 43, .28); }
+:root[data-theme="light"] .ph { background: #e9edf9; border-color: rgba(17, 24, 43, .16); box-shadow: 0 0 100px rgba(98, 86, 217, .16), 0 0 32px rgba(8, 126, 154, .12); }
+:root[data-theme="light"] .sc { background: linear-gradient(160deg, #fff, #e7edf8); color: #11182b; }
+:root[data-theme="light"] .n2 { color: #fff; }
+:root[data-theme="light"] .n3 { background: rgba(17, 24, 43, .08); }
+:root[data-theme="light"] .chip { color: #18233a; background: rgba(255,255,255,.8); border-color: rgba(32,47,78,.2); }
+:root[data-theme="light"] .card { background: linear-gradient(160deg, rgba(255,255,255,.88), rgba(231,237,248,.72)); border-color: rgba(32,47,78,.16); }
+:root[data-theme="light"] .mq span { -webkit-text-stroke-color: rgba(17,24,43,.35); }
+:root[data-theme="light"] .mq.r span { -webkit-text-stroke-color: var(--notely-accent); }
+:root[data-theme="light"] .shot figcaption { background: #e9edf9; color: #536079; }
+:root[data-theme="light"] #pre { background: #8fe8f8; color: #060c1c; }
+/* The workspace originally used a pale paper palette. Keep that look in light mode. */
+:root[data-theme="dark"] {
+  --paper: #060c1c;
+  --surface: #0c1427;
+  --ink: #f4f6ff;
+  --muted: #98a2c3;
+  --line: #27324b;
+  --blue: #2783c5;
+  --cyan: #8fe8f8;
+}
+:root[data-theme="dark"] body { background: var(--paper); color: var(--ink); }
+:root[data-theme="dark"] .nw-topbar { background: rgba(12,20,39,.9); border-color: var(--line); }
+:root[data-theme="dark"] .nw-crumb strong,
+:root[data-theme="dark"] .nw-title-row h1,
+:root[data-theme="dark"] .nw-section-head h2,
+:root[data-theme="dark"] .nw-panel h2,
+:root[data-theme="dark"] .nw-settings-body h2,
+:root[data-theme="dark"] .nw-list strong,
+:root[data-theme="dark"] .nw-task strong,
+:root[data-theme="dark"] .nw-doc strong,
+:root[data-theme="dark"] .nw-card h3 { color: var(--ink); }
+:root[data-theme="dark"] .nw-panel,
+:root[data-theme="dark"] .nw-card,
+:root[data-theme="dark"] .nw-tool,
+:root[data-theme="dark"] .nw-doc,
+:root[data-theme="dark"] .nw-settings-nav,
+:root[data-theme="dark"] .nw-settings-body { background: var(--surface); border-color: var(--line); color: var(--ink); }
+:root[data-theme="dark"] .nw-continue,
+:root[data-theme="dark"] .nw-chat-link { background: linear-gradient(135deg, #10283b, #0c1427); border-color: #24465c; }
+:root[data-theme="dark"] .nw-panel p,
+:root[data-theme="dark"] .nw-card p,
+:root[data-theme="dark"] .nw-tool p,
+:root[data-theme="dark"] .nw-title-row p { color: var(--muted); }
+:root[data-theme="dark"] .nw-input,
+:root[data-theme="dark"] .nw-select,
+:root[data-theme="dark"] .nw-form input,
+:root[data-theme="dark"] .nw-field input { background: #101b31; border-color: var(--line); color: var(--ink); }
+:root[data-theme="dark"] .nw-top-search { background: #101b31; border-color: var(--line); color: var(--muted); }
+:root[data-theme="dark"] .nw-settings-nav button { color: var(--muted); }
+:root[data-theme="dark"] .nw-settings-nav button.active { background: #15374b; color: #a6edf6; }
+:root[data-theme="dark"] .nw-progress { background: #24304a; }
+:root[data-theme="dark"] .nw-result-box { background: #101b31; color: #b5c5dc; }
+:root[data-theme="dark"] .nw-drop { background: #102333; border-color: #28566b; }
+:root[data-theme="dark"] .nw-empty { border-color: var(--line); color: var(--muted); }
+:root[data-theme="dark"] .nw-list button,
+:root[data-theme="dark"] .nw-task,
+:root[data-theme="dark"] .nw-result button { border-color: var(--line); color: var(--ink); }
+:root[data-theme="dark"] .nw-nav button:hover,
+:root[data-theme="dark"] .nw-nav button.active { background: #123b58; }
+:root[data-theme="dark"] .nw-main { background: var(--paper); }
+:root[data-theme="dark"] .nw-content { color: var(--ink); }
+:root[data-theme="dark"] .nw-toolbar { color: var(--ink); }
+:root[data-theme="dark"] .nw-tool-icon { background: #15374b; color: #8fe8f8; }
+:root[data-theme="dark"] .nw-tag { background: #15374b; color: #a6edf6; }
+:root[data-theme="dark"] .nw-doc-icon { background: #152e47; color: #8ac9ef; }
+:root[data-theme="dark"] .nw-focus strong { color: var(--ink); }
+:root[data-theme="dark"] .nw-focus strong small { color: var(--muted); }
+:root[data-theme="dark"] .nw-title-row .nw-eyebrow,
+:root[data-theme="dark"] .nw-kicker { color: var(--muted); }
+/* Reveal the new theme over the old page, originating at the control. */
+::view-transition-old(root) { animation: none; z-index: 1; }
+::view-transition-new(root) { animation: notely-theme-reveal .62s cubic-bezier(.2,.75,.25,1) both; z-index: 2; }
+@keyframes notely-theme-reveal {
+  from { clip-path: circle(0 at var(--notely-theme-x, 50vw) var(--notely-theme-y, 50vh)); }
+  to { clip-path: circle(150vmax at var(--notely-theme-x, 50vw) var(--notely-theme-y, 50vh)); }
+}
+.notely-theme-fallback {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  pointer-events: none;
+  clip-path: circle(0 at var(--notely-theme-x, 50vw) var(--notely-theme-y, 50vh));
+  background: var(--notely-reveal-color, #060c1c);
+  animation: notely-fallback-reveal .62s cubic-bezier(.2,.75,.25,1) forwards;
+}
+@keyframes notely-fallback-reveal {
+  to { clip-path: circle(150vmax at var(--notely-theme-x, 50vw) var(--notely-theme-y, 50vh)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .notely-theme-toggle, .notely-theme-toggle svg { transition: none !important; }
+  ::view-transition-old(root), ::view-transition-new(root) { animation: none !important; }
+  .notely-theme-fallback { display: none !important; }
+}

@@ -23,6 +23,8 @@ jobs:
         run: python -m compileall -q backend
       - name: Check static workspace JavaScript syntax
         run: node --check frontend/js/notely-workspace.js
+      - name: Check shared theme JavaScript syntax
+        run: node --check frontend/js/notely-theme.js
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
