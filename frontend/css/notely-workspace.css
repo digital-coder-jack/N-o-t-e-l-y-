@@ -552,3 +552,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
   .nw-assistant-launcher:hover { box-shadow:0 10px 30px color-mix(in srgb,var(--navy) 24%,transparent),0 0 0 1px color-mix(in srgb,var(--cyan) 20%,transparent); }
   .nw-assistant-head-actions .nw-icon-btn:hover,.nw-assistant-context-row button:hover,.nw-assistant-actions button:hover,.nw-assistant-suggestions button:hover,.nw-assistant-prose pre button:hover { background:transparent; border-color:var(--line); color:var(--muted); }
 }
+
+.nw-assistant-time { display:block; margin-top:4px; color:var(--muted); font-size:9px; opacity:0; transition:opacity 120ms ease-out; }
+@media (hover:hover) and (pointer:fine) { .nw-assistant-message:hover .nw-assistant-time { opacity:1; } }
+@media (hover:none) { .nw-assistant-time { opacity:1; } }
