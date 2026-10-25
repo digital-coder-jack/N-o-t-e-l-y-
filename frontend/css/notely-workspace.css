@@ -336,7 +336,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .nw-btn:disabled,.nw-icon-btn:disabled,.nw-assistant-panel button:disabled { opacity:.48; cursor:not-allowed; transform:none; }
 .nw-assistant-panel { position:fixed; inset:0; z-index:9990; display:flex; justify-content:flex-end; color:var(--ink); }
 .nw-assistant-panel[hidden] { display:none; }
-.nw-assistant-panel.is-open .nw-assistant-panel.is-open .nw-assistant-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:4px 0 14px; border-bottom:1px solid var(--border); }
+.nw-assistant-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:4px 0 14px; border-bottom:1px solid var(--border); }
 .nw-assistant-title { display:flex; align-items:center; gap:10px; min-width:0; }
 .nw-assistant-title h2 { margin:0; font-size:19px; line-height:1.2; }
 .nw-assistant-title small { display:block; color:var(--muted); margin-top:4px; font-size:11px; }
