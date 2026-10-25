@@ -73,7 +73,7 @@ function renderContinue(s) {
   card.hidden = false;
   action.href = isChat ? '/dashboard?openAssistant=1' : '/tools#notes';
   action.innerHTML = 'Continue <i class="fas fa-arrow-right" aria-hidden="true"></i>';
-  description.textContent = isChat ? ((item.title || 'Your latest chat') + ' · Open Study assistant') : ('Note on ' + (item.topic || 'your latest topic'));
+  description.textContent = isChat ? ((item.title || 'Your latest chat') + ' · Open Notely Assistant') : ('Note on ' + (item.topic || 'your latest topic'));
 }
 
 function renderFirstRun(s) {
@@ -343,7 +343,7 @@ function renderStats(s) {
     { ic: 'fa-book-open-reader',    n: s.topics || 0,                      label: 'Topics started',  href: '#myTopicsSection' },
     { ic: 'fa-note-sticky',         n: (s.notes || 0) + (s.quizzes || 0),  label: 'Notes & quizzes', href: '/tools#notes' },
     { ic: 'fa-wand-magic-sparkles', n: s.ai_generations || s.ai_responses || 0, label: 'AI generations', href: '#aiUsage' },
-    { ic: 'fa-comments',            n: s.total_chats || 0,                 label: 'Total chats',     href: '/chat' },
+    { ic: 'fa-comments',            n: s.total_chats || 0,                 label: 'Total chats',     href: '/dashboard?openAssistant=1' },
   ];
   grid.innerHTML = cards.map((c) => `
     <a class="stat-card glass" href="${c.href}">
@@ -366,12 +366,12 @@ function renderRecent(chats) {
         <div class="empty-icon"><i class="fas fa-comment-dots" aria-hidden="true"></i></div>
         <h4>No chats yet</h4>
         <p>Ask the AI tutor your first question.</p>
-        <a href="/chat" class="btn small"><i class="fas fa-plus" aria-hidden="true"></i> New chat</a>
+        <a href="/dashboard?openAssistant=1" class="btn small"><i class="fas fa-plus" aria-hidden="true"></i> New chat</a>
       </div>`;
     return;
   }
   box.innerHTML = chats.map((c) => `
-    <a class="recent-item" href="/chat?id=${encodeURIComponent(c.id)}">
+    <a class="recent-item" href="/dashboard?openAssistant=1&chatId=${encodeURIComponent(c.id)}">
       <span class="ttl"><i class="fas fa-comment" aria-hidden="true"></i> <b>${escapeHtml(c.title)}</b></span>
       <small>${formatDate(c.updated_at)}</small>
     </a>`).join('');
