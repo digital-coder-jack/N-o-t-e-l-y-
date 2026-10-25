@@ -55,8 +55,8 @@
       '<div class="search-layout"><div><p class="eyebrow">6 results · Sorted by relevance</p><div class="search-results">' + rows + '</div></div>' +
       '<aside class="search-side"><div class="side-card"><h3>Narrow your search</h3>' + filters + '</div>' +
       '<div class="side-card connect-card"><h3>Connect these sources</h3>' +
-      '<p>Ask your study assistant a question about respiration using your Biology materials.</p>' +
-      '<button class="button primary" data-nav="Study assistant">' + I('Sparkles', 14) + ' Ask study assistant</button></div></aside></div>';
+      '<p>Ask Notely from any workspace screen without leaving your current work.</p>' +
+      '<button class="button primary" type="button" data-open-assistant>' + I('Sparkles', 14) + ' Ask Notely</button></div></aside></div';
   };
 
   V.settings = function (toast) {
