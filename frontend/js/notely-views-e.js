@@ -56,7 +56,7 @@
       '<aside class="search-side"><div class="side-card"><h3>Narrow your search</h3>' + filters + '</div>' +
       '<div class="side-card connect-card"><h3>Connect these sources</h3>' +
       '<p>Ask Notely from any workspace screen without leaving your current work.</p>' +
-      '<button class="button primary" type="button" data-open-assistant>' + I('Sparkles', 14) + ' Ask Notely</button></div></aside></div';
+      '<button class="button primary" type="button" data-open-assistant>' + I('Sparkles', 14) + ' Ask Notely</button></div></aside></div>';
   };
 
   V.settings = function (toast) {
