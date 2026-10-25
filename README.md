@@ -12,7 +12,7 @@ An AI-powered student notebook web app built with Vite, React, and TypeScript.
 - Calendar
 - Recorded lectures library and player
 - Workspace search
-- Study assistant
+- Floating Notely Assistant
 - Tasks
 - Account and settings
 
