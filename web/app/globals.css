@@ -101,3 +101,7 @@
   .na-launcher:hover { box-shadow:0 12px 34px color-mix(in srgb,var(--navy) 24%,transparent); }
   .na-head-actions button:hover,.na-history-item>button:hover,.na-suggestions button:hover,.na-message-actions button:hover { background:transparent; border-color:transparent; }
 }
+
+.na-time { display:block; margin-top:4px; color:var(--muted); font-size:9px; opacity:0; transition:opacity 120ms ease-out; }
+@media (hover:hover) and (pointer:fine) { .na-message:hover .na-time { opacity:1; } }
+@media (hover:none) { .na-time { opacity:1; } }
