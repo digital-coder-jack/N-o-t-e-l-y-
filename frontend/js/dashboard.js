@@ -71,9 +71,9 @@ function renderContinue(s) {
   const item = chat || note;
   const isChat = !!chat;
   card.hidden = false;
-  action.href = isChat ? '/chat?id=' + encodeURIComponent(item.id) : '/tools#notes';
+  action.href = isChat ? '/dashboard?openAssistant=1' : '/tools#notes';
   action.innerHTML = 'Continue <i class="fas fa-arrow-right" aria-hidden="true"></i>';
-  description.textContent = isChat ? (item.title || 'Your latest chat') : ('Note on ' + (item.topic || 'your latest topic'));
+  description.textContent = isChat ? ((item.title || 'Your latest chat') + ' · Open Study assistant') : ('Note on ' + (item.topic || 'your latest topic'));
 }
 
 function renderFirstRun(s) {
