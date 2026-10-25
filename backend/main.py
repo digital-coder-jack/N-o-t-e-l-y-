@@ -418,10 +418,9 @@ async def index():
 # ---------------------------------------------------------------------------
 # PAGE ROUTING
 # ---------------------------------------------------------------------------
-# The frontend links use BOTH extensionless URLs (e.g. /chat, /dashboard) and
-# explicit .html URLs (e.g. /chat.html). Previously only the .html variants
-# were registered, so every extensionless link produced a 404. We now serve
-# both forms from a single allow-list of known pages plus generic fallbacks.
+# The frontend uses extensionless workspace URLs and explicit .html URLs.
+# Both forms are served from an allow-list of known pages plus generic fallbacks.
+# The former dedicated /chat page has been removed; chat is now in-place on /dashboard.
 # Map each known route slug to the HTML file that backs it. Most map to a
 # same-named file; "settings" is an alias for the profile page (which hosts
 # the settings UI) so the /settings nav link never 404s.
@@ -454,7 +453,7 @@ def _register_page(slug: str, target: str) -> None:
     async def _handler(target: str = target):
         return _page(target)
 
-    # Extensionless route: /chat
+    # Extensionless route for this workspace page.
     app.get(f"/{slug}", include_in_schema=False)(_handler)
     # Explicit .html route: /chat.html
     app.get(f"/{slug}.html", include_in_schema=False)(_handler)
