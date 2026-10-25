@@ -533,3 +533,10 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
   .nw-assistant-panel.is-maximized .nw-assistant-context-row,.nw-assistant-panel.is-maximized .nw-assistant-context-note { margin-left:8px; }
 }
 @media (prefers-reduced-motion:reduce) { .nw-assistant-launcher:active::after { animation:none!important; } }
+
+.nw-assistant-prose table { width:100%; border-collapse:collapse; margin:8px 0; font-size:10px; }
+.nw-assistant-prose th,.nw-assistant-prose td { padding:6px; border:1px solid var(--line); text-align:left; vertical-align:top; }
+.nw-assistant-prose th { background:var(--surface); font-weight:700; }
+.nw-assistant-prose pre { display:grid; gap:6px; }
+.nw-assistant-prose pre button { justify-self:end; min-height:30px; padding:4px 8px; border:1px solid var(--line); border-radius:8px; background:var(--paper); color:var(--ink); font-size:10px; cursor:pointer; }
+.nw-assistant-prose pre button:hover { border-color:var(--cyan); }
