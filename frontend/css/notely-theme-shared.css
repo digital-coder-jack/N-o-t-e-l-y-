@@ -123,6 +123,7 @@ html { background: var(--notely-bg); }
 }
 
 /* View Transitions API owns the circular reveal; do not layer a second CSS animation. */
+/* Theme CSS remains framework-free for the existing FastAPI/Vercel web shell. */
 ::view-transition-old(root),::view-transition-new(root){animation:none!important;mix-blend-mode:normal}
 ::view-transition-old(root){z-index:1}
 ::view-transition-new(root){z-index:2}
