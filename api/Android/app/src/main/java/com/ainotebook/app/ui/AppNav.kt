@@ -234,7 +234,7 @@ private fun MainShell(factory: VMFactory) {
             context = when {
                 current?.startsWith(Routes.NOTES) == true -> "Write · Notes"
                 current?.startsWith(Routes.TOOLS) == true -> "Practice · Study tools"
-                current?.startsWith(Routes.PROFILE) == true -> "Plan · Account"
+                current?.startsWith(Routes.PROFILE) == true -> "More · Account"
                 else -> "Home"
             },
             onOpen = { haptic(); assistantMode = 1 }
