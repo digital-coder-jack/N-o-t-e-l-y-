@@ -418,10 +418,9 @@ async def index():
 # ---------------------------------------------------------------------------
 # PAGE ROUTING
 # ---------------------------------------------------------------------------
-# The frontend links use BOTH extensionless URLs (e.g. /chat, /dashboard) and
-# explicit .html URLs (e.g. /chat.html). Previously only the .html variants
-# were registered, so every extensionless link produced a 404. We now serve
-# both forms from a single allow-list of known pages plus generic fallbacks.
+# The frontend uses extensionless URLs and explicit .html URLs. Both forms
+# are served from a single allow-list of known pages plus generic fallbacks.
+# Assistant conversations now live in the persistent workspace widget.
 # Map each known route slug to the HTML file that backs it. Most map to a
 # same-named file; "settings" is an alias for the profile page (which hosts
 # the settings UI) so the /settings nav link never 404s.
