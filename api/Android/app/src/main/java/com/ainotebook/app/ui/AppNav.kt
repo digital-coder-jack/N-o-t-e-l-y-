@@ -72,8 +72,7 @@ private data class NavItem(val route: String, val label: String, val icon: Image
 
 private val BOTTOM_ITEMS = listOf(
     NavItem(Routes.DASHBOARD, "Home", Icons.Default.Dashboard),
-    NavItem(Routes.NOTES, "Write", Icons.Default.AutoStories),
-    NavItem(Routes.TOOLS, "Practice", Icons.Default.AutoStories),
+    NavItem(Routes.NOTES, "Notes", Icons.Default.AutoStories),
     NavItem(Routes.PROFILE, "More", Icons.Default.Person),
 )
 
