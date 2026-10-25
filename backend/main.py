@@ -434,7 +434,7 @@ PAGE_ALIASES = {
     "notes": "tools",        # tools page hosts notes/quiz/flashcards
     "quiz": "tools",
     "flashcards": "tools",
-    "settings": "profile",   # profile page hosts settings UI
+    "settings": "dashboard", # keep Settings inside the current Notely workspace; dashboard.html reads /settings as the Settings view
     "profile": "profile",
     "analytics": "analytics",
     "telegram": "telegram",  # Telegram bot info / integration page
