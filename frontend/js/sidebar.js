@@ -46,8 +46,6 @@
 
   /* ---- Navigation catalogue (grouped) ---- */
   var items = [
-    { id: 'assistant', href: '/dashboard?openAssistant=1&newChat=1', icon: 'fa-pen-to-square', label: 'Notely Assistant', primary: true },
-
     { section: 'Workspace' },
     { id: 'dashboard',  href: '/dashboard',              icon: 'fa-house',             label: 'Home' },
     { id: 'notes',      href: '/tools#notes',            icon: 'fa-note-sticky',       label: 'Notes' },
