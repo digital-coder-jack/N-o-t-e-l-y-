@@ -193,6 +193,7 @@ def init_db() -> None:
                 content_type TEXT,
                 size_bytes   INTEGER DEFAULT 0,
                 extracted    TEXT,                -- extracted text (truncated)
+                topic_id     INTEGER,              -- optional course notebook association
                 created_at   TEXT    DEFAULT (datetime('now')),
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
@@ -257,6 +258,25 @@ def init_db() -> None:
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS tasks (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id     INTEGER NOT NULL,
+                topic_id    INTEGER,
+                title       TEXT NOT NULL,
+                details     TEXT DEFAULT '',
+                due_date    TEXT,
+                completed   INTEGER DEFAULT 0,
+                created_at  TEXT DEFAULT (datetime('now')),
+                updated_at  TEXT DEFAULT (datetime('now')),
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE SET NULL
+            )
+            """
+        )
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_tasks_user_due ON tasks(user_id, due_date)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_tasks_topic ON tasks(topic_id)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_topics_user ON topics(user_id)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_artifacts_topic ON topic_artifacts(topic_id)")
 
@@ -271,6 +291,8 @@ def init_db() -> None:
             # Onboarding wizard answers (education level, goals, interests,
             # study time, learning style, experience, security preferences).
             "ALTER TABLE user_settings ADD COLUMN onboarding TEXT",
+            "ALTER TABLE uploads ADD COLUMN topic_id INTEGER",
+            "ALTER TABLE uploads ADD COLUMN topic_id INTEGER",
         ):
             try:
                 conn.execute(ddl)
@@ -658,25 +680,31 @@ def count_quizzes(user_id: int) -> int:
 # UPLOADS
 # ===========================================================================
 def add_upload(user_id: int, filename: str, content_type: str | None,
-               size_bytes: int, extracted: str | None) -> int:
+               size_bytes: int, extracted: str | None,
+               topic_id: int | None = None) -> int:
     with closing(get_connection()) as conn:
         cur = conn.execute(
-            "INSERT INTO uploads (user_id, filename, content_type, size_bytes, extracted) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (user_id, filename, content_type, size_bytes, extracted),
+            "INSERT INTO uploads (user_id, filename, content_type, size_bytes, extracted, topic_id) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (user_id, filename, content_type, size_bytes, extracted, topic_id),
         )
         conn.commit()
         return cur.lastrowid
 
 
-def list_uploads(user_id: int) -> list[sqlite3.Row]:
+def list_uploads(user_id: int, topic_id: int | None = None) -> list[sqlite3.Row]:
     with closing(get_connection()) as conn:
+        if topic_id is None:
+            return conn.execute(
+                "SELECT id, filename, content_type, size_bytes, topic_id, created_at FROM uploads "
+                "WHERE user_id = ? ORDER BY id DESC",
+                (user_id,),
+            ).fetchall()
         return conn.execute(
-            "SELECT id, filename, content_type, size_bytes, created_at FROM uploads "
-            "WHERE user_id = ? ORDER BY id DESC",
-            (user_id,),
+            "SELECT id, filename, content_type, size_bytes, topic_id, created_at FROM uploads "
+            "WHERE user_id = ? AND topic_id = ? ORDER BY id DESC",
+            (user_id, topic_id),
         ).fetchall()
-
 
 def delete_upload(user_id: int, upload_id: int) -> bool:
     with closing(get_connection()) as conn:
@@ -852,9 +880,71 @@ def upsert_artifact(topic_id: int, kind: str, content: str, variant: str = "") -
 def list_artifacts(topic_id: int) -> list[sqlite3.Row]:
     with closing(get_connection()) as conn:
         return conn.execute(
-            "SELECT kind, variant, updated_at FROM topic_artifacts WHERE topic_id = ?",
+            "SELECT kind, variant, content, created_at, updated_at FROM topic_artifacts WHERE topic_id = ?",
             (topic_id,),
         ).fetchall()
+
+
+def list_tasks(user_id: int) -> list[sqlite3.Row]:
+    with closing(get_connection()) as conn:
+        return conn.execute(
+            "SELECT tasks.id, tasks.topic_id, tasks.title, tasks.details, tasks.due_date, "
+            "tasks.completed, tasks.created_at, tasks.updated_at, topics.title AS course_title "
+            "FROM tasks LEFT JOIN topics ON topics.id = tasks.topic_id "
+            "WHERE tasks.user_id = ? ORDER BY CASE WHEN tasks.completed = 1 THEN 1 ELSE 0 END, "
+            "CASE WHEN tasks.due_date IS NULL OR tasks.due_date = '' THEN 1 ELSE 0 END, tasks.due_date, tasks.id DESC",
+            (user_id,),
+        ).fetchall()
+
+
+def create_task(user_id: int, title: str, details: str = "",
+                due_date: str | None = None, topic_id: int | None = None) -> int:
+    with closing(get_connection()) as conn:
+        cur = conn.execute(
+            "INSERT INTO tasks (user_id, topic_id, title, details, due_date) VALUES (?, ?, ?, ?, ?)",
+            (user_id, topic_id, title.strip()[:200], details.strip()[:2000], due_date),
+        )
+        conn.commit()
+        return cur.lastrowid
+
+
+def update_task(user_id: int, task_id: int, updates: dict) -> bool:
+    allowed = {"title", "details", "due_date", "topic_id", "completed"}
+    sets, values = [], []
+    for key, value in updates.items():
+        if key not in allowed:
+            continue
+        if key == "title":
+            value = str(value or "").strip()[:200]
+            if not value:
+                continue
+        if key == "details":
+            value = str(value or "").strip()[:2000]
+        if key == "completed":
+            value = 1 if value else 0
+        sets.append(f"{key} = ?")
+        values.append(value)
+    if not sets:
+        return False
+    sets.append("updated_at = ?")
+    values.append(_utcnow())
+    values.extend([task_id, user_id])
+    with closing(get_connection()) as conn:
+        cur = conn.execute(
+            f"UPDATE tasks SET {', '.join(sets)} WHERE id = ? AND user_id = ?",
+            values,
+        )
+        conn.commit()
+        return cur.rowcount > 0
+
+
+def delete_task(user_id: int, task_id: int) -> bool:
+    with closing(get_connection()) as conn:
+        cur = conn.execute(
+            "DELETE FROM tasks WHERE id = ? AND user_id = ?", (task_id, user_id)
+        )
+        conn.commit()
+        return cur.rowcount > 0
 
 
 def count_artifacts(user_id: int) -> int:

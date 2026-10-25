@@ -4,8 +4,6 @@ on:
   pull_request:
     paths:
       - 'api/Android/**'
-      - 'backend/**'
-      - '.github/workflows/android.yml'
   workflow_dispatch:
 
 jobs:
