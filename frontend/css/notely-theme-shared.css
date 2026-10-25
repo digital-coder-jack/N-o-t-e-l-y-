@@ -132,3 +132,7 @@ html { background: var(--notely-bg); }
 :root[data-theme="light"] .notely-theme-toggle .theme-sun{opacity:0;transform:rotate(65deg) scale(.55)}
 :root[data-theme="light"] .notely-theme-toggle .theme-moon{opacity:1;transform:rotate(0) scale(1)}
 @media(prefers-reduced-motion:reduce){.notely-theme-toggle,.notely-theme-toggle svg{transition:none!important}::view-transition-old(root),::view-transition-new(root){animation:none!important}}
+
+/* Shared semantic color tokens for workspace and landing-page controls. */
+:root { --notely-bg:#f5f7ff; --notely-ink:#11182b; --notely-muted:#536079; --notely-accent:#087e9a; --notely-accent-contrast:#ffffff; --notely-accent-2:#6256d9; --notely-surface:#ffffff; --notely-line:#dfe5f5; }
+:root[data-theme="dark"] { --notely-bg:#060c1c; --notely-ink:#f4f6ff; --notely-muted:#98a2c3; --notely-accent:#8fe8f8; --notely-accent-contrast:#060c1c; --notely-accent-2:#1f6fb5; --notely-surface:#0f1832; --notely-line:#1e2a4f; }
