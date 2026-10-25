@@ -1,4 +1,4 @@
-/* Notely views part 4 — Calendar, Tasks, Study assistant (from Notely app) */
+/* Notely views part 4 — Calendar and Tasks (from Notely app) */
 (function () {
   'use strict';
   var I = window.NotelyIcons.icon;
