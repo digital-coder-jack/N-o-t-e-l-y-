@@ -66,7 +66,7 @@
     overlay.className = 'notely-theme-fallback';
     overlay.style.setProperty('--notely-theme-x', point.x + 'px');
     overlay.style.setProperty('--notely-theme-y', point.y + 'px');
-    overlay.style.setProperty('--notely-reveal-color', theme === 'dark' ? '#060c1c' : '#f5f7ff');
+    overlay.style.setProperty('--notely-reveal-color', theme === 'dark' ? 'var(--notely-theme-dark-bg)' : 'var(--notely-theme-light-bg)');
     overlay.style.setProperty('--notely-reveal-radius', endRadius(point) + 'px');
     document.body.appendChild(overlay);
     var animation;
@@ -74,7 +74,7 @@
       animation = overlay.animate([
         { clipPath: 'circle(0px at ' + point.x + 'px ' + point.y + 'px)' },
         { clipPath: 'circle(' + endRadius(point) + 'px at ' + point.x + 'px ' + point.y + 'px)' }
-      ], { duration: 600, easing: 'ease-in-out', fill: 'forwards' });
+      ], { duration: 480, easing: 'cubic-bezier(.22,.8,.22,1)', fill: 'forwards' });
     } catch (error) {}
     var finish = function () { applyTheme(theme); overlay.remove(); };
     if (animation) animation.finished.then(finish, finish);
@@ -86,7 +86,9 @@
     root.style.setProperty('--notely-theme-x', point.x + 'px');
     root.style.setProperty('--notely-theme-y', point.y + 'px');
     if (!shouldAnimate) { applyTheme(theme); return Promise.resolve(); }
-    if (typeof document.startViewTransition === 'function') {
+    var touchViewport = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    // Touch browsers use the overlay reveal; it is more consistent across iOS Safari and Android WebView.
+    if (typeof document.startViewTransition === 'function' && !touchViewport) {
       var transition;
       try {
         transition = document.startViewTransition(function () { applyTheme(theme); });
@@ -99,7 +101,7 @@
         var newView = document.documentElement;
         return newView.animate(
           { clipPath: ['circle(0px at ' + point.x + 'px ' + point.y + 'px)', 'circle(' + radius + 'px at ' + point.x + 'px ' + point.y + 'px)'] },
-          { duration: 600, easing: 'ease-in-out', pseudoElement: '::view-transition-new(root)' }
+          { duration: 480, easing: 'cubic-bezier(.22,.8,.22,1)', pseudoElement: '::view-transition-new(root)' }
         ).finished.catch(function () {});
       }).catch(function () {
         // The theme callback still applies if the browser rejects a transition animation.
