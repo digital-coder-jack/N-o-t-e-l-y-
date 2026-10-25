@@ -2,7 +2,19 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n<script>
+  (function () {
+    try {
+      var saved = localStorage.getItem('notely-theme') || localStorage.getItem('ss_theme');
+      var theme = saved === 'light' || saved === 'dark' ? saved :
+        (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.style.colorScheme = theme;
+    } catch (e) {
+      document.documentElement.setAttribute('data-theme', window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    }
+  })();
+</script>
 <title>Notely – Study at warp speed</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Sans:wght@400;500&display=swap">
 <style>
@@ -73,12 +85,12 @@ footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;paddin
 .shot img{display:block;width:100%;height:auto}
 .shot figcaption{background:#0D1020;padding:14px 18px;font-size:15px;color:var(--mut)}
 .cta .note{font-size:14px}
-</style>
+</style>\n<link rel="stylesheet" href="/css/notely-theme-shared.css">
 </head>
 <body>
 <div id="pre"><div style="text-align:center"><img src="/assets/logo.png"><div id="cnt">0</div></div></div>
 <div id="bar"></div><div id="cur"></div><canvas id="fx" aria-hidden="true"></canvas>
-<header><a class="logo" href="#"><img src="/assets/logo.png">Notely</a><a class="btn mag" href="#get">Download app</a></header>
+<header><a class="logo" href="#"><img src="/assets/logo.png">Notely</a><div class="landing-nav-actions"><button class="notely-theme-toggle" type="button" data-notely-theme-toggle aria-label="Switch theme" title="Switch theme (Shift+T)" aria-pressed="false"><svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"></path></svg><svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.7 8.7 0 1 0 20.2 15.4Z"></path></svg></button><a class="btn mag" href="#get">Download app</a></div></header>
 <main>
 <section class="hero">
 <div class="t">
@@ -233,5 +245,5 @@ gsap.to(pc,{n:100,duration:1.7,ease:'power2.inOut',onUpdate:function(){cn.textCo
 }});
 })();
 </script>
-</body>
+<script src="/js/notely-theme.js" defer></script>\n</body>
 </html>
