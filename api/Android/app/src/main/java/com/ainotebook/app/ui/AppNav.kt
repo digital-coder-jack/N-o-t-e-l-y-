@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Quiz
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -73,7 +74,7 @@ private data class NavItem(val route: String, val label: String, val icon: Image
 private val BOTTOM_ITEMS = listOf(
     NavItem(Routes.DASHBOARD, "Home", Icons.Default.Dashboard),
     NavItem(Routes.NOTES, "Write", Icons.Default.AutoStories),
-    NavItem(Routes.TOOLS, "Practice", Icons.Default.AutoStories),
+    NavItem(Routes.TOOLS, "Practice", Icons.Default.Quiz),
     NavItem(Routes.PROFILE, "More", Icons.Default.Person),
 )
 
