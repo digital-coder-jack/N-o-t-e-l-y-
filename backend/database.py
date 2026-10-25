@@ -193,6 +193,7 @@ def init_db() -> None:
                 content_type TEXT,
                 size_bytes   INTEGER DEFAULT 0,
                 extracted    TEXT,                -- extracted text (truncated)
+                topic_id     INTEGER,              -- optional course notebook association
                 created_at   TEXT    DEFAULT (datetime('now')),
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
@@ -271,6 +272,7 @@ def init_db() -> None:
             # Onboarding wizard answers (education level, goals, interests,
             # study time, learning style, experience, security preferences).
             "ALTER TABLE user_settings ADD COLUMN onboarding TEXT",
+            "ALTER TABLE uploads ADD COLUMN topic_id INTEGER",
         ):
             try:
                 conn.execute(ddl)
@@ -658,23 +660,30 @@ def count_quizzes(user_id: int) -> int:
 # UPLOADS
 # ===========================================================================
 def add_upload(user_id: int, filename: str, content_type: str | None,
-               size_bytes: int, extracted: str | None) -> int:
+               size_bytes: int, extracted: str | None,
+               topic_id: int | None = None) -> int:
     with closing(get_connection()) as conn:
         cur = conn.execute(
-            "INSERT INTO uploads (user_id, filename, content_type, size_bytes, extracted) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (user_id, filename, content_type, size_bytes, extracted),
+            "INSERT INTO uploads (user_id, filename, content_type, size_bytes, extracted, topic_id) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (user_id, filename, content_type, size_bytes, extracted, topic_id),
         )
         conn.commit()
         return cur.lastrowid
 
 
-def list_uploads(user_id: int) -> list[sqlite3.Row]:
+def list_uploads(user_id: int, topic_id: int | None = None) -> list[sqlite3.Row]:
     with closing(get_connection()) as conn:
+        if topic_id is None:
+            return conn.execute(
+                "SELECT id, filename, content_type, size_bytes, topic_id, created_at FROM uploads "
+                "WHERE user_id = ? ORDER BY id DESC",
+                (user_id,),
+            ).fetchall()
         return conn.execute(
-            "SELECT id, filename, content_type, size_bytes, created_at FROM uploads "
-            "WHERE user_id = ? ORDER BY id DESC",
-            (user_id,),
+            "SELECT id, filename, content_type, size_bytes, topic_id, created_at FROM uploads "
+            "WHERE user_id = ? AND topic_id = ? ORDER BY id DESC",
+            (user_id, topic_id),
         ).fetchall()
 
 
