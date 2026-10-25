@@ -569,8 +569,12 @@ if (el.modelSelect) el.modelSelect.addEventListener('change', (e) => saveModel(e
     await loadModels();
     await loadChats();
     const params = new URLSearchParams(location.search);
+    const prompt = (params.get('prompt') || '').trim().slice(0, 2000);
     const id = parseInt(params.get('id'), 10);
-    if (id && state.chats.some((c) => c.id === id)) openChat(id);
+    if (prompt) {
+      await newChat();
+      if (el.input) { el.input.value = prompt; autoGrow(); await sendMessage(); }
+    } else if (id && state.chats.some((c) => c.id === id)) openChat(id);
     else if (state.chats.length) openChat(state.chats[0].id);
     else showEmptyState();
   } catch (err) {
