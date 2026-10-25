@@ -95,3 +95,9 @@
   .na-launcher,.na-launcher-ring,.na-message,.na-thinking i { animation:none!important; transition:opacity 120ms ease-out!important; }
   .na-window { animation:none!important; transition:opacity 120ms ease-out!important; }
 }
+
+.na-paused .na-launcher,.na-paused .na-launcher-ring,.na-paused .na-thinking i { animation-play-state:paused!important; }
+@media (hover:none) {
+  .na-launcher:hover { box-shadow:0 12px 34px color-mix(in srgb,var(--navy) 24%,transparent); }
+  .na-head-actions button:hover,.na-history-item>button:hover,.na-suggestions button:hover,.na-message-actions button:hover { background:transparent; border-color:transparent; }
+}
