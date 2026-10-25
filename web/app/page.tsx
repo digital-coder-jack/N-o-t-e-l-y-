@@ -213,6 +213,7 @@ type AssistantMode = "closed" | "small" | "maximized";
 
 function FloatingAssistant({ context }: { context: string }) {
   const [mode, setMode] = useState<AssistantMode>("closed");
+  const [persistReady, setPersistReady] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState<AssistantMessage[]>([]);
   const [chats, setChats] = useState<any[]>([]);
@@ -252,6 +253,7 @@ function FloatingAssistant({ context }: { context: string }) {
           setPrompt(window.localStorage.getItem("notely-assistant-draft-" + desiredId) || "");
         }
       } catch (e) { if (!cancelled) setError(e instanceof Error ? e.message : "Could not load chat history."); }
+      finally { if (!cancelled) setPersistReady(true); }
     })();
     const onOpen = (event: Event) => {
       const detail = (event as CustomEvent<{ prompt?: string }>).detail;
@@ -279,8 +281,9 @@ function FloatingAssistant({ context }: { context: string }) {
 
   useEffect(() => { modeRef.current = mode; }, [mode]);
   useEffect(() => {
+    if (!persistReady) return;
     try { window.localStorage.setItem("notely-assistant-widget-state", JSON.stringify({ mode, chatId, contextEnabled })); } catch { /* storage may be disabled */ }
-  }, [mode, chatId, contextEnabled]);
+  }, [mode, chatId, contextEnabled, persistReady]);
   useEffect(() => {
     try { window.localStorage.setItem("notely-assistant-draft-" + (chatId || "new"), prompt); } catch { /* storage may be disabled */ }
   }, [prompt, chatId]);
