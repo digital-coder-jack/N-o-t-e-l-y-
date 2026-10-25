@@ -90,13 +90,34 @@
   }
 
   function bind() {
-    document.querySelectorAll('[data-notely-theme-toggle]').forEach(function (button) {
-      if (button.dataset.themeBound === 'true') return;
-      button.dataset.themeBound = 'true';
-      button.addEventListener('click', function () { toggle(button); });
-    });
     applyTheme(current);
   }
+
+  document.addEventListener('click', function (event) {
+    var button = event.target && event.target.closest ? event.target.closest('[data-notely-theme-toggle]') : null;
+    if (button) toggle(button);
+  });
+
+  function setPreference(value) {
+    preference = value === 'light' || value === 'dark' || value === 'system' ? value : 'system';
+    try {
+      localStorage.setItem(storageKey, preference);
+      if (preference === 'system') localStorage.removeItem(legacyKey);
+      else localStorage.setItem(legacyKey, preference);
+    } catch (error) {}
+    current = resolveTheme(preference);
+    applyTheme(current);
+  }
+
+  window.NotelyTheme = {
+    bind: bind,
+    getPreference: function () { return preference; },
+    hasPreference: function () {
+      try { return localStorage.getItem(storageKey) !== null || localStorage.getItem(legacyKey) !== null; }
+      catch (error) { return false; }
+    },
+    setPreference: setPreference
+  };
 
   document.addEventListener('keydown', function (event) {
     if (event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey && event.key.toLowerCase() === 't') {
