@@ -263,7 +263,7 @@ function Documents({ setRoute }: { setRoute: (r: Route) => void }) {
       <ActionButton secondary onClick={browse}>{uploading ? "Uploading…" : "Browse files"}</ActionButton>
     </div>
     {error && <div role="alert" className="surface-panel" style={{ marginTop: 16, color: "#bd5f62" }}>{error}</div>}
-    <div className="toolbar"><div className="filter-pills">{["All materials", "PDFs"].map(item => <button type="button" key={item} className={"pill " + (filter === item ? "active" : "")} onClick={() => setFilter(item)}>{item}{item === "All materials" && <small>{files.length}</small>}</button>)}</div><button type="button" className="select-button" onClick={() => setRoute("assistant")}>Ask AI about a file <ArrowRight /></button></div>
+    <div className="toolbar"><div className="filter-pills">{["All materials", "PDFs"].map(item => <button type="button" key={item} className={"pill " + (filter === item ? "active" : "")} onClick={() => setFilter(item)}>{item}{item === "All materials" && <small>{files.length}</small>}</button>)}</div><button type="button" className="select-button" onClick={() => setRoute("tools")}>Open study tools <ArrowRight /></button></div>
     {loading ? <div className="surface-panel">Loading your documents…</div> : visible.length ? <div className="document-grid">{visible.map(file => <div className="document-card" key={file.id}>
       <div className="doc-icon"><FileText /></div><div><strong>{file.filename}</strong><small>{String(file.kind || file.content_type || "File").toUpperCase()} · {Math.max(1, Math.round(Number(file.size_bytes || 0) / 1024))} KB</small></div>
       <span className="ready"><CheckCircle2 /> {file.has_text === false ? "Stored" : "Uploaded"}</span>
@@ -347,7 +347,7 @@ function SearchScreen({ setRoute }: { setRoute: (r: Route) => void }) {
   const groups = [
     { key: "notes", label: "Notes", rows: results.notes || [], route: "notes" as Route, icon: <FileText /> },
     { key: "topics", label: "Topics", rows: results.topics || [], route: "roadmap" as Route, icon: <BookOpen /> },
-    { key: "chats", label: "Chats", rows: results.chats || [], route: "assistant" as Route, icon: <MessageCircle /> },
+    { key: "chats", label: "Chats", rows: results.chats || [], route: "overview" as Route, icon: <MessageCircle /> },
     { key: "quizzes", label: "Quizzes", rows: results.quizzes || [], route: "quiz" as Route, icon: <CircleHelp /> },
   ];
   const count = groups.reduce((total, group) => total + group.rows.length, 0);
@@ -509,7 +509,7 @@ export default function Page() {
   useEffect(() => {
     try { localStorage.setItem("notely-sidebar-collapsed", String(collapsed)); } catch { /* Keep the control usable without storage. */ }
   }, [collapsed]);
-  const titles: Partial<Record<Route, string>> = { overview: "Overview", notes: "My Notes", assistant: "AI Assistant", documents: "Documents", favorites: "Favorites", archive: "Archive", trash: "Trash", tools: "Study Tools", quiz: "Quiz Generator", flashcards: "Flashcards", roadmap: "Study Roadmap", mindmap: "Mind Maps", planner: "Revision Planner", summarizer: "Text Summarizer", homework: "Homework Helper", search: "Search", settings: "Settings" };
+  const titles: Partial<Record<Route, string>> = { overview: "Overview", notes: "My Notes", documents: "Documents", favorites: "Favorites", archive: "Archive", trash: "Trash", tools: "Study Tools", quiz: "Quiz Generator", flashcards: "Flashcards", roadmap: "Study Roadmap", mindmap: "Mind Maps", planner: "Revision Planner", summarizer: "Text Summarizer", homework: "Homework Helper", search: "Search", settings: "Settings" };
   let content: ReactNode = <Overview setRoute={setRoute} />;
   if (route === "notes") content = <Notes setRoute={setRoute} />; else if (["favorites","archive","trash"].includes(route)) content = <Notes setRoute={setRoute} filter={route as "favorites" | "archive" | "trash"} />; else if (route === "documents") content = <Documents setRoute={setRoute} />; else if (route === "tools") content = <Tools setRoute={setRoute} />; else if (["quiz","flashcards","roadmap","mindmap","planner"].includes(route)) content = <ToolDetail route={route} setRoute={setRoute} />; else if (route === "search") content = <SearchScreen setRoute={setRoute} />; else if (route === "settings") content = <SettingsScreen />;
   return <div className="workspace"><Sidebar route={route} setRoute={setRoute} collapsed={collapsed} setCollapsed={setCollapsed} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} /><main className="workspace-main"><Header title={titles[route] || "Workspace"} setRoute={setRoute} onMenu={() => setMobileOpen(true)} />{content}</main></div>;
