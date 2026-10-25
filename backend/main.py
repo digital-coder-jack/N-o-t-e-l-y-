@@ -454,9 +454,9 @@ def _register_page(slug: str, target: str) -> None:
     async def _handler(target: str = target):
         return _page(target)
 
-    # Extensionless route: /chat
+    # Extensionless route for the current page.
     app.get(f"/{slug}", include_in_schema=False)(_handler)
-    # Explicit .html route: /chat.html
+    # Explicit .html route for the current page.
     app.get(f"/{slug}.html", include_in_schema=False)(_handler)
 
 
