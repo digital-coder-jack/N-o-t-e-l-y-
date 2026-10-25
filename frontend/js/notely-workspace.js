@@ -285,7 +285,7 @@
     });
 
     var homeAskForm = document.getElementById('nwHomeAskForm');
-    if (homeAskForm) homeAskForm.onsubmit = function (event) { event.preventDefault(); var prompt = (homeAskForm.querySelector('[name="prompt"]') || {}).value || ''; if (prompt.trim()) window.location.href = '/chat?prompt=' + encodeURIComponent(prompt.trim()); };
+    if (homeAskForm) homeAskForm.onsubmit = function (event) { event.preventDefault(); var prompt = (homeAskForm.querySelector('[name="prompt"]') || {}).value || ''; if (prompt.trim()) openAssistant(prompt.trim()); };
     document.querySelectorAll('[data-topic-tool]').forEach(function (button) {
       button.onclick = async function () {
         var topicId = button.getAttribute('data-topic-tool');
@@ -393,7 +393,7 @@
   function syncRouteFromLocation() { var fromHash = location.hash.replace(/^#/, ''); if (fromHash.charAt(0) === '/') fromHash = fromHash.slice(1); var fromPath = location.pathname.split('/').filter(Boolean).join('/'); var courseMatch = fromHash.match(/^course\/(\d+)$/); state.activeTopicId = courseMatch ? courseMatch[1] : null; var candidate = courseMatch ? 'course' : (fromHash || (fromPath === 'settings' ? 'settings' : 'overview')); state.view = validViews.indexOf(candidate) >= 0 ? candidate : 'overview'; }
   window.addEventListener('popstate', function () { if(assistantState.mode==='maximized'){setAssistantMode('small',false);return;}if(assistantState.mode==='small'){minimizeAssistant();return;}syncRouteFromLocation(); render(); });
   window.addEventListener('hashchange', function () { syncRouteFromLocation(); render(); });
-  syncRouteFromLocation(); load().then(function(){ assistantEnsurePanel();assistantRestoreWidget();assistantUpdateContext();var qs = new URLSearchParams(location.search); if(qs.get('openAssistant')==='1'){ openAssistant(qs.get('prompt') || ''); } });
+  syncRouteFromLocation(); load().then(function(){ assistantEnsurePanel();assistantRestoreWidget();assistantUpdateContext();var qs = new URLSearchParams(location.search);if(qs.get('chatId')){assistantState.chatId=Number(qs.get('chatId'))||null;assistantPersistWidget();}if(qs.get('openAssistant')==='1'){if(qs.get('newChat')==='1')assistantState.chatId=null;openAssistant(qs.get('prompt') || '');} });
   function assistantUpdateViewport(){var vv=window.visualViewport,keyboard=vv?Math.max(0,window.innerHeight-vv.height-vv.offsetTop):0;document.documentElement.style.setProperty('--nw-assistant-keyboard-offset',keyboard>100?keyboard+'px':'0px');document.documentElement.style.setProperty('--nw-vv-height',(vv?vv.height:window.innerHeight)+'px');document.documentElement.style.setProperty('--nw-assistant-nav-offset',keyboard>100?'0px':'72px');}
   if(window.visualViewport){window.visualViewport.addEventListener('resize',assistantUpdateViewport);window.visualViewport.addEventListener('scroll',assistantUpdateViewport);}window.addEventListener('resize',assistantUpdateViewport);assistantUpdateViewport();
   document.addEventListener('visibilitychange',function(){document.body.classList.toggle('nw-assistant-paused',document.hidden);});
