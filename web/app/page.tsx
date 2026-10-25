@@ -261,6 +261,7 @@ function FloatingAssistant({ context }: { context: string }) {
       if (detail?.prompt) setPrompt(detail.prompt);
       window.setTimeout(() => composerRef.current?.focus({ preventScroll: true }), 50);
     };
+    const onPopState = () => setMode(current => current === "maximized" ? "small" : current === "small" ? "closed" : "closed");
     const onKeys = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "j") {
         event.preventDefault(); setMode(current => current === "closed" ? "small" : "closed");
@@ -270,10 +271,12 @@ function FloatingAssistant({ context }: { context: string }) {
     };
     window.addEventListener("notely:assistant-open", onOpen);
     window.addEventListener("keydown", onKeys);
+    window.addEventListener("popstate", onPopState);
     return () => {
       cancelled = true;
       window.removeEventListener("notely:assistant-open", onOpen);
       window.removeEventListener("keydown", onKeys);
+      window.removeEventListener("popstate", onPopState);
       Object.values(deleteTimersRef.current).forEach(window.clearTimeout);
       controllerRef.current?.abort();
     };
@@ -358,7 +361,7 @@ function FloatingAssistant({ context }: { context: string }) {
     const question = value.trim();
     if (!question) return;
     setPrompt(""); setError(""); setLoading(true); setUnread(false);
-    setMessages(current => [...current, { role: "user", content: question }, { role: "assistant", content: "" }]);
+    setMessages(current => [...current, { role: "user", content: question, created_at: new Date().toISOString() }, { role: "assistant", content: "", created_at: new Date().toISOString() }]);
     let id = chatId;
     const controller = new AbortController(); controllerRef.current = controller;
     try {
@@ -398,6 +401,7 @@ function FloatingAssistant({ context }: { context: string }) {
       else setError(e instanceof Error ? e.message : "Something went wrong.");
     } finally { setLoading(false); controllerRef.current = null; }
   };
+  const suggestions = context.toLowerCase().includes("flash") ? [["Quiz me on these cards", "Quiz me on these cards"], ["Explain a difficult card", "Explain a difficult card"], ["Help me remember these concepts", "Help me remember these concepts"]] : context.toLowerCase().includes("note") ? [["Summarize this note", "Summarize this note"], ["Explain this topic simply", "Explain this topic simply"], ["Make a quiz from this note", "Make a quiz from this note"]] : context.toLowerCase().includes("document") || context.toLowerCase().includes("material") ? [["Explain this page", "Explain this page"], ["Summarize this material", "Summarize this material"], ["Make revision questions", "Make revision questions"]] : context.toLowerCase().includes("planner") || context.toLowerCase().includes("plan") ? [["Help me plan my revision", "Help me plan my revision"], ["Break a task into steps", "Break a task into steps"]] : [["Summarize this topic", "Summarize this topic"], ["Quiz me", "Quiz me on this topic"], ["Explain simply", "Explain this simply"]];
   const act = async (action: string, message: AssistantMessage) => {
     if (action === "copy") { try { await navigator.clipboard.writeText(message.content); } catch { setError("Could not copy answer."); } }
     else if (action === "regenerate") { const prior = [...messages].reverse().find(item => item.role === "user"); if (prior) { setPrompt(prior.content); window.setTimeout(() => composerRef.current?.focus(), 0); } }
@@ -414,8 +418,8 @@ function FloatingAssistant({ context }: { context: string }) {
         <aside className={`na-history ${mode === "maximized" || historyOpen ? "is-visible" : ""}`} aria-label="Chat history"><div className="na-history-title">RECENT CHATS</div>{chats.map(chat => <div className="na-history-item" key={chat.id}>{renamingId === Number(chat.id) ? <form onSubmit={e => { e.preventDefault(); void renameChat(Number(chat.id)); }}><input aria-label="Chat title" value={renameValue} onChange={e => setRenameValue(e.target.value)} autoFocus /><button type="submit">Save</button></form> : <button className={Number(chat.id) === chatId ? "is-current" : ""} onClick={() => void selectChat(Number(chat.id))}>{chat.title || "New chat"}</button>}<button aria-label="Rename chat" onClick={() => { setRenamingId(Number(chat.id)); setRenameValue(String(chat.title || "New chat")); }}>✎</button><button aria-label="Delete chat" onClick={() => deleteChat(chat)}>×</button></div>)}</aside>
         <div className="na-chat-area">
           <div className="na-messages" ref={scrollRef} onScroll={e => { const el = e.currentTarget; setShowJump(el.scrollHeight - el.scrollTop - el.clientHeight > 120); }} aria-live="polite">
-            {!messages.length && <div className="na-empty"><Sparkles /><h3>What are you working on?</h3><p>Choose a prompt to get started. Uploaded materials are not automatically retrieved by this API.</p><div className="na-suggestions"><button onClick={() => setPrompt("Summarize the current topic")}>Summarize this topic</button><button onClick={() => setPrompt("Quiz me on this topic")}>Quiz me</button><button onClick={() => setPrompt("Explain this simply")}>Explain simply</button></div></div>}
-            {messages.map((message, index) => <article key={index} className={`na-message ${message.role === "user" ? "is-user" : "is-assistant"}`}>{message.role === "assistant" && <span className="na-avatar"><Sparkles /></span>}<div className="na-bubble"><div className="na-prose">{message.content || (loading && index === messages.length - 1 ? <span className="na-thinking"><i /><i /><i /></span> : "")}</div>{message.role === "assistant" && message.content && <div className="na-message-actions"><button onClick={() => void act("copy", message)}>Copy</button><button onClick={() => void act("regenerate", message)}>Regenerate</button><button aria-label="Good response" onClick={() => void act("good", message)}>👍</button><button aria-label="Bad response" onClick={() => void act("bad", message)}>👎</button><button onClick={() => void act("insert", message)}>Insert into note</button><button onClick={() => void act("cards", message)}>Make flashcards</button></div>}</div></article>)}
+            {!messages.length && <div className="na-empty"><Sparkles /><h3>What are you working on?</h3><p>Choose a prompt to get started. Uploaded materials are not automatically retrieved by this API.</p><div className="na-suggestions">{suggestions.map(([label, value]) => <button key={label} onClick={() => setPrompt(value)}>{label}</button>)}</div></div>}
+            {messages.map((message, index) => <article key={index} className={`na-message ${message.role === "user" ? "is-user" : "is-assistant"}`}>{message.role === "assistant" && <span className="na-avatar"><Sparkles /></span>}<div className="na-bubble"><div className="na-prose">{message.content || (loading && index === messages.length - 1 ? <span className="na-thinking"><i /><i /><i /></span> : "")}</div>{message.created_at && <time className="na-time" title={new Date(message.created_at).toLocaleString()}>{new Date(message.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</time>}{message.role === "assistant" && message.content && <div className="na-message-actions"><button onClick={() => void act("copy", message)}>Copy</button><button onClick={() => void act("regenerate", message)}>Regenerate</button><button aria-label="Good response" onClick={() => void act("good", message)}>👍</button><button aria-label="Bad response" onClick={() => void act("bad", message)}>👎</button><button onClick={() => void act("insert", message)}>Insert into note</button><button onClick={() => void act("cards", message)}>Make flashcards</button></div>}</div></article>)}
             <div />
           </div>
           {showJump && <button className="na-jump" onClick={() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; setShowJump(false); }}>Jump to latest ↓</button>}
