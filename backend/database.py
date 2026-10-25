@@ -861,7 +861,7 @@ def upsert_artifact(topic_id: int, kind: str, content: str, variant: str = "") -
 def list_artifacts(topic_id: int) -> list[sqlite3.Row]:
     with closing(get_connection()) as conn:
         return conn.execute(
-            "SELECT kind, variant, updated_at FROM topic_artifacts WHERE topic_id = ?",
+            "SELECT kind, variant, content, created_at, updated_at FROM topic_artifacts WHERE topic_id = ?",
             (topic_id,),
         ).fetchall()
 
