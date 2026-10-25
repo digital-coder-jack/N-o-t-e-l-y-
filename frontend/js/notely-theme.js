@@ -1,30 +1,37 @@
-/* Shared Notely theme control for the landing page and workspace. */
+/* Shared Notely theme controller: the root element is the only theme source of truth. */
 (function () {
   'use strict';
   var root = document.documentElement;
   var storageKey = 'notely-theme';
   var legacyKey = 'ss_theme';
   var media = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  var reducedMotion = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
 
   function readPreference() {
     try {
-      var saved = localStorage.getItem(storageKey);
-      if (saved === 'light' || saved === 'dark' || saved === 'system') return saved;
-      var legacy = localStorage.getItem(legacyKey);
-      if (legacy === 'light' || legacy === 'dark') return legacy;
+      var value = localStorage.getItem(storageKey);
+      if (value === 'light' || value === 'dark' || value === 'system') return value;
+      value = localStorage.getItem(legacyKey);
+      if (value === 'light' || value === 'dark') return value;
     } catch (error) {}
     return 'system';
   }
-
-  function resolveTheme(preference) {
-    return preference === 'system' ? (media && media.matches ? 'dark' : 'light') : preference;
+  var preference = readPreference();
+  function resolveTheme(value) {
+    return value === 'system' ? (media && media.matches ? 'dark' : 'light') : value;
   }
+  var current = root.getAttribute('data-theme');
+  if (current !== 'light' && current !== 'dark') current = resolveTheme(preference);
 
+  function updateMeta(theme) {
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', theme === 'dark' ? '#060c1c' : '#f5f7ff');
+  }
   function applyTheme(theme) {
     root.setAttribute('data-theme', theme);
     root.style.colorScheme = theme;
-    var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', theme === 'dark' ? '#060c1c' : '#f5f7ff');
+    current = theme;
+    updateMeta(theme);
     document.querySelectorAll('[data-notely-theme-toggle]').forEach(function (button) {
       var next = theme === 'dark' ? 'light' : 'dark';
       button.setAttribute('aria-label', 'Switch to ' + next + ' theme');
@@ -32,92 +39,91 @@
       button.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
     });
   }
-
-  var preference = readPreference();
-  var current = resolveTheme(preference);
-  // Respect the pre-paint script's choice while ensuring older pages are initialized.
-  if (root.getAttribute('data-theme') !== 'light' && root.getAttribute('data-theme') !== 'dark') applyTheme(current);
-  else current = root.getAttribute('data-theme');
-
-  function pointFor(button) {
-    if (!button || !button.getBoundingClientRect) return { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+  // Keeps the Settings > Appearance dropdown in sync when the theme is changed with the toggle button.
+  function syncThemeSelect() {
+    var select = document.getElementById('nwTheme');
+    if (select && select.value !== preference) select.value = preference;
+  }
+  function persist(value) {
+    preference = value;
+    try {
+      localStorage.setItem(storageKey, value);
+      if (value === 'light' || value === 'dark') localStorage.setItem(legacyKey, value);
+      else localStorage.removeItem(legacyKey);
+    } catch (error) {}
+    syncThemeSelect();
+  }
+  function buttonPoint(button) {
+    if (!button || !button.getBoundingClientRect) return { x: innerWidth / 2, y: innerHeight / 2 };
     var rect = button.getBoundingClientRect();
     return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
   }
-
-  function persist(theme) {
-    preference = theme;
-    current = theme;
-    try { localStorage.setItem(storageKey, theme); localStorage.setItem(legacyKey, theme); } catch (error) {}
+  function endRadius(point) {
+    return Math.hypot(Math.max(point.x, innerWidth - point.x), Math.max(point.y, innerHeight - point.y));
   }
-
-  function toggle(button) {
-    var next = current === 'dark' ? 'light' : 'dark';
-    var point = pointFor(button);
+  function fallbackReveal(theme, point) {
+    var overlay = document.createElement('div');
+    overlay.className = 'notely-theme-fallback';
+    overlay.style.setProperty('--notely-theme-x', point.x + 'px');
+    overlay.style.setProperty('--notely-theme-y', point.y + 'px');
+    overlay.style.setProperty('--notely-reveal-color', theme === 'dark' ? '#060c1c' : '#f5f7ff');
+    overlay.style.setProperty('--notely-reveal-radius', endRadius(point) + 'px');
+    document.body.appendChild(overlay);
+    var animation;
+    try {
+      animation = overlay.animate([
+        { clipPath: 'circle(0px at ' + point.x + 'px ' + point.y + 'px)' },
+        { clipPath: 'circle(' + endRadius(point) + 'px at ' + point.x + 'px ' + point.y + 'px)' }
+      ], { duration: 600, easing: 'ease-in-out', fill: 'forwards' });
+    } catch (error) {}
+    var finish = function () { applyTheme(theme); overlay.remove(); };
+    if (animation) animation.finished.then(finish, finish);
+    else { applyTheme(theme); overlay.remove(); }
+  }
+  function changeTheme(theme, button, animate) {
+    var point = buttonPoint(button);
+    var shouldAnimate = animate !== false && !(reducedMotion && reducedMotion.matches);
     root.style.setProperty('--notely-theme-x', point.x + 'px');
     root.style.setProperty('--notely-theme-y', point.y + 'px');
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      applyTheme(next);
-      persist(next);
-      return;
-    }
+    if (!shouldAnimate) { applyTheme(theme); return Promise.resolve(); }
     if (typeof document.startViewTransition === 'function') {
-      var transition = document.startViewTransition(function () { applyTheme(next); });
-      persist(next);
-      transition.finished.catch(function () {});
-      return;
-    }
-    var oldTheme = current;
-    var reveal = document.createElement('div');
-    reveal.className = 'notely-theme-fallback';
-    reveal.style.setProperty('--notely-theme-x', point.x + 'px');
-    reveal.style.setProperty('--notely-theme-y', point.y + 'px');
-    reveal.style.setProperty('--notely-reveal-color', next === 'dark' ? '#060c1c' : '#f5f7ff');
-    document.body.appendChild(reveal);
-    reveal.addEventListener('animationend', function () {
-      applyTheme(next);
-      persist(next);
-      reveal.remove();
-    }, { once: true });
-    // If animations are disabled between checks, do not leave an overlay behind.
-    window.setTimeout(function () {
-      if (reveal.isConnected) {
-        applyTheme(next);
-        persist(next);
-        reveal.remove();
+      var transition;
+      try {
+        transition = document.startViewTransition(function () { applyTheme(theme); });
+      } catch (error) {
+        fallbackReveal(theme, point);
+        return Promise.resolve();
       }
-    }, 750);
+      return transition.ready.then(function () {
+        var radius = endRadius(point);
+        var newView = document.documentElement;
+        return newView.animate(
+          { clipPath: ['circle(0px at ' + point.x + 'px ' + point.y + 'px)', 'circle(' + radius + 'px at ' + point.x + 'px ' + point.y + 'px)'] },
+          { duration: 600, easing: 'ease-in-out', pseudoElement: '::view-transition-new(root)' }
+        ).finished.catch(function () {});
+      }).catch(function () {
+        // The theme callback still applies if the browser rejects a transition animation.
+      });
+    }
+    fallbackReveal(theme, point);
+    return Promise.resolve();
   }
-
+  function toggle(button) {
+    var next = current === 'dark' ? 'light' : 'dark';
+    persist(next);
+    changeTheme(next, button, true);
+  }
   function bind() {
     applyTheme(current);
   }
 
+  // Resolved conflict: keep the branch version (preventDefault stops the button from acting as a link/form submit).
   document.addEventListener('click', function (event) {
     var button = event.target && event.target.closest ? event.target.closest('[data-notely-theme-toggle]') : null;
-    if (button) toggle(button);
+    if (!button) return;
+    event.preventDefault();
+    toggle(button);
   });
-
-  function setPreference(value) {
-    preference = value === 'light' || value === 'dark' || value === 'system' ? value : 'system';
-    try {
-      localStorage.setItem(storageKey, preference);
-      if (preference === 'system') localStorage.removeItem(legacyKey);
-      else localStorage.setItem(legacyKey, preference);
-    } catch (error) {}
-    current = resolveTheme(preference);
-    applyTheme(current);
-  }
-
-  window.NotelyTheme = {
-    bind: bind,
-    getPreference: function () { return preference; },
-    hasPreference: function () {
-      try { return localStorage.getItem(storageKey) !== null || localStorage.getItem(legacyKey) !== null; }
-      catch (error) { return false; }
-    },
-    setPreference: setPreference
-  };
 
   document.addEventListener('keydown', function (event) {
     if (event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey && event.key.toLowerCase() === 't') {
@@ -127,12 +133,30 @@
       toggle(document.querySelector('[data-notely-theme-toggle]'));
     }
   });
+  if (media && media.addEventListener) media.addEventListener('change', function (event) {
+    if (preference === 'system') { applyTheme(event.matches ? 'dark' : 'light'); }
+  });
 
-  if (media && media.addEventListener) {
-    media.addEventListener('change', function (event) {
-      if (preference === 'system') { current = event.matches ? 'dark' : 'light'; applyTheme(current); }
-    });
-  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
-  else bind();
+  // Single public API (the duplicate NotelyTheme object from main was merged into this one).
+  window.NotelyTheme = {
+    getPreference: function () { return preference; },
+    getTheme: function () { return current; },
+    // True only when the user (or a previous save) already stored a choice in this browser.
+    hasPreference: function () {
+      try { return localStorage.getItem(storageKey) !== null || localStorage.getItem(legacyKey) !== null; }
+      catch (error) { return false; }
+    },
+    setPreference: function (value, button, animate) {
+      if (['system', 'light', 'dark'].indexOf(value) < 0) return;
+      persist(value);
+      changeTheme(resolveTheme(value), button, animate !== false);
+    },
+    setTheme: function (theme, button, animate) {
+      if (theme !== 'light' && theme !== 'dark') return;
+      persist(theme);
+      changeTheme(theme, button, animate !== false);
+    },
+    bind: bind
+  };
+  applyTheme(current);
 })();

@@ -34,3 +34,16 @@
 [data-theme="dark"] .nw-settings-nav button.active{background:#16384a;color:#8fe1eb}
 [data-theme="dark"] .nw-card-actions button{background:#132234;color:var(--ink);border-color:var(--line)}
 @media(max-width:720px){.nw-card-actions button{font-size:11px;padding:8px}.nw-form input{min-width:0;width:100%}.nw-preference select{width:100%}}
+
+/* Shared theme controls and workspace surfaces use the root theme tokens. */
+:root{color-scheme:light;--navy:#071120;--ink:#263241;--muted:#7d8a97;--paper:#f7f9fb;--surface:#fff;--line:#e1e7ec;--blue:#2578aa;--cyan:#56cbd8;--green:#42856f}
+:root[data-theme="dark"]{color-scheme:dark;--navy:#071120;--ink:#e5edf5;--muted:#9aabba;--paper:#0a1220;--surface:#111d2c;--line:#26374b;--blue:#49a5df;--cyan:#56cbd8;--green:#70c7a4}
+.nw-topbar{background:color-mix(in srgb,var(--surface) 88%,transparent);border-color:var(--line)}
+.nw-panel,.nw-card,.nw-tool,.nw-doc,.nw-settings-nav,.nw-settings-body{background:var(--surface);border-color:var(--line);color:var(--ink)}
+.nw-panel p,.nw-card p,.nw-tool p,.nw-title-row p,.nw-field,.nw-settings-nav button{color:var(--muted)}
+.nw-input,.nw-select,.nw-top-search,.nw-form input,.nw-form textarea,.nw-field input{background:var(--surface);color:var(--ink);border-color:var(--line)}
+.nw-continue,.nw-chat-link{background:linear-gradient(135deg,color-mix(in srgb,var(--cyan) 14%,var(--surface)),var(--surface));border-color:var(--line)}
+.nw-result-box{background:var(--paper);color:var(--muted)}
+.nw-settings-nav button.active{background:color-mix(in srgb,var(--cyan) 18%,var(--surface));color:var(--ink)}
+.nw-card-actions button{background:var(--paper);color:var(--ink);border-color:var(--line)}
+.nw-preference>.notely-theme-toggle{align-self:flex-start}

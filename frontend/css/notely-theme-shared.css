@@ -29,21 +29,7 @@ html { background: var(--notely-bg); }
 .landing-nav-actions { display: flex; align-items: center; gap: 12px; }
 .notely-theme-toggle {
   --toggle-ring: rgba(143, 232, 248, .3);
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-  flex: 0 0 auto;
-  width: 42px;
-  height: 42px;
-  padding: 0;
-  border: 1px solid var(--notely-line);
-  border-radius: 999px;
-  color: var(--notely-ink);
-  background: color-mix(in srgb, var(--notely-surface) 84%, transparent);
-  box-shadow: 0 0 0 0 var(--toggle-ring);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition: transform .22s ease, border-color .22s ease, background .22s ease, box-shadow .22s ease;
+  position: relative; display: inline-grid; place-items: center; flex: 0 0 auto; width: 42px; height: 42px; padding: 0; border: 1px solid var(--notely-line); border-radius: 999px; color: var(--notely-ink); background: color-mix(in srgb, var(--notely-surface) 84%, transparent); box-shadow: 0 0 0 0 var(--toggle-ring); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform .22s ease, border-color .22s ease, background .22s ease, box-shadow .22s ease;
 }
 .notely-theme-toggle:hover { transform: translateY(-1px); border-color: var(--notely-accent); box-shadow: 0 0 0 4px var(--toggle-ring); }
 .notely-theme-toggle:focus-visible { outline: 3px solid var(--notely-accent); outline-offset: 3px; }
@@ -55,16 +41,16 @@ html { background: var(--notely-bg); }
 :root[data-theme="light"] .notely-theme-toggle { --toggle-ring: rgba(8, 126, 154, .2); }
 :root[data-theme="light"] body { background: var(--notely-bg); color: var(--notely-ink); }
 :root[data-theme="light"] .btn.o { color: var(--notely-ink); border-color: rgba(17, 24, 43, .28); }
-:root[data-theme="light"] .ph { background: #e9edf9; border-color: rgba(17, 24, 43, .16); box-shadow: 0 0 100px rgba(98, 86, 217, .16), 0 0 32px rgba(8, 126, 154, .12); }
-:root[data-theme="light"] .sc { background: linear-gradient(160deg, #fff, #e7edf8); color: #11182b; }
-:root[data-theme="light"] .n2 { color: #fff; }
-:root[data-theme="light"] .n3 { background: rgba(17, 24, 43, .08); }
-:root[data-theme="light"] .chip { color: #18233a; background: rgba(255,255,255,.8); border-color: rgba(32,47,78,.2); }
-:root[data-theme="light"] .card { background: linear-gradient(160deg, rgba(255,255,255,.88), rgba(231,237,248,.72)); border-color: rgba(32,47,78,.16); }
-:root[data-theme="light"] .mq span { -webkit-text-stroke-color: rgba(17,24,43,.35); }
+:root[data-theme="light"] .ph { background: var(--hero-surface); border-color: var(--hero-border); box-shadow: 0 0 100px var(--hero-glow), 0 0 32px var(--hero-glow-soft); }
+:root[data-theme="light"] .sc { background: linear-gradient(160deg, var(--mock-a), var(--mock-b)); color: var(--ink); }
+:root[data-theme="light"] .n2 { color: var(--n2-ink); }
+:root[data-theme="light"] .n3 { background: var(--hero-glass); }
+:root[data-theme="light"] .chip { color: var(--ink); background: var(--hero-glass); border-color: var(--hero-glass-border); }
+:root[data-theme="light"] .card { background: linear-gradient(160deg, var(--hero-glass), var(--hero-glass-low)); border-color: var(--hero-border); }
+:root[data-theme="light"] .mq span { -webkit-text-stroke-color: var(--marquee-stroke); }
 :root[data-theme="light"] .mq.r span { -webkit-text-stroke-color: var(--notely-accent); }
-:root[data-theme="light"] .shot figcaption { background: #e9edf9; color: #536079; }
-:root[data-theme="light"] #pre { background: #8fe8f8; color: #060c1c; }
+:root[data-theme="light"] .shot figcaption { background: var(--hero-surface); color: var(--mut); }
+:root[data-theme="light"] #pre { background: var(--lime); color: var(--theme-contrast-ink); }
 /* The workspace originally used a pale paper palette. Keep that look in light mode. */
 :root[data-theme="dark"] {
   --paper: #060c1c;
@@ -125,26 +111,24 @@ html { background: var(--notely-bg); }
 :root[data-theme="dark"] .nw-title-row .nw-eyebrow,
 :root[data-theme="dark"] .nw-kicker { color: var(--muted); }
 /* Reveal the new theme over the old page, originating at the control. */
-::view-transition-old(root) { animation: none; z-index: 1; }
-::view-transition-new(root) { animation: notely-theme-reveal .62s cubic-bezier(.2,.75,.25,1) both; z-index: 2; }
-@keyframes notely-theme-reveal {
-  from { clip-path: circle(0 at var(--notely-theme-x, 50vw) var(--notely-theme-y, 50vh)); }
-  to { clip-path: circle(150vmax at var(--notely-theme-x, 50vw) var(--notely-theme-y, 50vh)); }
-}
-.notely-theme-fallback {
-  position: fixed;
-  inset: 0;
-  z-index: 2147483000;
-  pointer-events: none;
-  clip-path: circle(0 at var(--notely-theme-x, 50vw) var(--notely-theme-y, 50vh));
-  background: var(--notely-reveal-color, #060c1c);
-  animation: notely-fallback-reveal .62s cubic-bezier(.2,.75,.25,1) forwards;
-}
-@keyframes notely-fallback-reveal {
-  to { clip-path: circle(150vmax at var(--notely-theme-x, 50vw) var(--notely-theme-y, 50vh)); }
-}
+::view-transition-old(root) { animation: none !important; mix-blend-mode: normal; z-index: 1; }
+::view-transition-new(root) { animation: none !important; mix-blend-mode: normal; z-index: 2; }
+
+.notely-theme-fallback { position: fixed; inset: 0; z-index: 2147483000; pointer-events: none; background: var(--notely-reveal-color, #060c1c); clip-path: circle(0px at var(--notely-theme-x, 50vw) var(--notely-theme-y, 50vh)); }
+
 @media (prefers-reduced-motion: reduce) {
   .notely-theme-toggle, .notely-theme-toggle svg { transition: none !important; }
   ::view-transition-old(root), ::view-transition-new(root) { animation: none !important; }
   .notely-theme-fallback { display: none !important; }
 }
+
+/* View Transitions API owns the circular reveal; do not layer a second CSS animation. */
+/* Theme CSS remains framework-free for the existing FastAPI/Vercel web shell. */
+::view-transition-old(root),::view-transition-new(root){animation:none!important;mix-blend-mode:normal}
+::view-transition-old(root){z-index:1}
+::view-transition-new(root){z-index:2}
+.notely-theme-fallback{position:fixed;inset:0;z-index:2147483000;pointer-events:none;background:var(--notely-reveal-color,#060c1c);clip-path:circle(0px at var(--notely-theme-x,50vw) var(--notely-theme-y,50vh))}
+.notely-theme-toggle svg{transition:opacity .28s ease,transform .45s cubic-bezier(.2,.8,.2,1)}
+:root[data-theme="light"] .notely-theme-toggle .theme-sun{opacity:0;transform:rotate(65deg) scale(.55)}
+:root[data-theme="light"] .notely-theme-toggle .theme-moon{opacity:1;transform:rotate(0) scale(1)}
+@media(prefers-reduced-motion:reduce){.notely-theme-toggle,.notely-theme-toggle svg{transition:none!important}::view-transition-old(root),::view-transition-new(root){animation:none!important}}
