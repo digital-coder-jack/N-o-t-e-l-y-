@@ -45,8 +45,6 @@
       viewRoot.innerHTML = V.calendar(t);
     } else if (state.view === 'Recorded lectures') {
       viewRoot.innerHTML = V.recordedLectures(t);
-    } else if (state.view === 'Study assistant') {
-      viewRoot.innerHTML = V.assistant(t);
     } else if (state.view === 'Search') {
       viewRoot.innerHTML = V.search(t);
     } else if (state.view === 'Settings') {
