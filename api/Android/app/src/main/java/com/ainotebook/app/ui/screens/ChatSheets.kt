@@ -29,19 +29,26 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import com.ainotebook.app.data.Chat
 import com.ainotebook.app.ui.ChatViewModel
 import com.ainotebook.app.ui.theme.Cyan
@@ -57,6 +64,11 @@ fun ChatHistorySheet(vm: ChatViewModel, onDismiss: () -> Unit) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var renameTarget by remember { mutableStateOf<Chat?>(null) }
     var deleteTarget by remember { mutableStateOf<Chat?>(null) }
+    var pendingDeletes by remember { mutableStateOf(setOf<Int>()) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(state.chats) { pendingDeletes = pendingDeletes.filterTo(mutableSetOf()) { id -> state.chats.any { it.id == id } } }
+    LaunchedEffect(state.error) { if (state.error != null && pendingDeletes.isNotEmpty()) pendingDeletes = emptySet() }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -82,7 +94,7 @@ fun ChatHistorySheet(vm: ChatViewModel, onDismiss: () -> Unit) {
             )
             Spacer(Modifier.size(12.dp))
 
-            val chats = state.visibleChats
+            val chats = state.visibleChats.filterNot { it.id in pendingDeletes }
             if (chats.isEmpty()) {
                 Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) {
                     Text(
@@ -108,6 +120,7 @@ fun ChatHistorySheet(vm: ChatViewModel, onDismiss: () -> Unit) {
                     }
                 }
             }
+            SnackbarHost(hostState = snackbarHostState, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.size(24.dp))
         }
     }
@@ -140,9 +153,24 @@ fun ChatHistorySheet(vm: ChatViewModel, onDismiss: () -> Unit) {
         AlertDialog(
             onDismissRequest = { deleteTarget = null },
             title = { Text("Delete conversation?") },
-            text = { Text("\"${chat.title}\" will be permanently removed.") },
+            text = { Text("\"${chat.title}\" will be removed. You can undo this for a few seconds.") },
             confirmButton = {
-                TextButton(onClick = { vm.deleteChat(chat.id); deleteTarget = null }) {
+                TextButton(onClick = {
+                    val id = chat.id
+                    val title = chat.title
+                    deleteTarget = null
+                    pendingDeletes = pendingDeletes + id
+                    scope.launch {
+                        val result = snackbarHostState.showSnackbar(
+                            message = "\"$title\" queued for deletion",
+                            actionLabel = "Undo",
+                            withDismissAction = true,
+                            duration = SnackbarDuration.Long
+                        )
+                        if (result == SnackbarResult.ActionPerformed) pendingDeletes = pendingDeletes - id
+                        else vm.deleteChat(id)
+                    }
+                }) {
                     Text("Delete", color = MaterialTheme.colorScheme.error)
                 }
             },
