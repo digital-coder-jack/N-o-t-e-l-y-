@@ -201,7 +201,7 @@ function Notes({ setRoute, filter = "all" }: { setRoute: (r: Route) => void; fil
       <div className="section-heading"><div><span className="eyebrow">NOTE EDITOR</span><h2>{title || "Untitled note"}</h2></div><span role="status">{saving ? "Saving…" : dirty ? "Unsaved changes" : "Saved"}</span></div>
       <label style={{ display: "grid", gap: 8, marginBottom: 14 }}>Title<input value={title} maxLength={200} onChange={e => { version.current++; setTitle(e.target.value); setDirty(true); }} /></label>
       <label style={{ display: "grid", gap: 8 }}>Content<textarea value={body} rows={12} placeholder="Start writing…" onChange={e => { version.current++; setBody(e.target.value); setDirty(true); }} /></label>
-      <div className="title-actions" style={{ marginTop: 14 }}><ActionButton secondary onClick={() => setRoute("assistant")}><Sparkles /> Ask AI</ActionButton><ActionButton onClick={() => setSelectedId(null)}>Close editor</ActionButton></div>
+      <div className="title-actions" style={{ marginTop: 14 }}><ActionButton secondary onClick={() => openNotelyAssistant()}><Sparkles /> Ask AI</ActionButton><ActionButton onClick={() => setSelectedId(null)}>Close editor</ActionButton></div>
     </section>}
   </div>;
 }
