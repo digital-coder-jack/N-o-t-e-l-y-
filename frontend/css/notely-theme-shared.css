@@ -10,6 +10,11 @@
   --notely-line: rgba(152, 162, 195, .2);
 }
 :root[data-theme="light"] {
+  --bg: #f5f7ff;
+  --ink: #11182b;
+  --mut: #536079;
+  --lime: #087e9a;
+  --vio: #6256d9;
   color-scheme: light;
   --notely-bg: #f5f7ff;
   --notely-ink: #11182b;
@@ -21,7 +26,8 @@
 }
 :root[data-theme="dark"] { color-scheme: dark; }
 html { background: var(--notely-bg); }
-.landing-nav-actions { display: flex; align-items: center; gap: 12px; }\n.notely-theme-toggle {
+.landing-nav-actions { display: flex; align-items: center; gap: 12px; }
+.notely-theme-toggle {
   --toggle-ring: rgba(143, 232, 248, .3);
   position: relative;
   display: inline-grid;
