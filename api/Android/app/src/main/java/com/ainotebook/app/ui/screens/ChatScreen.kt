@@ -88,7 +88,8 @@ private val SUGGESTIONS = listOf(
 @Composable
 fun ChatScreen(
     vm: ChatViewModel,
-    initialChatId: Int?
+    initialChatId: Int?,
+    embedded: Boolean = false
 ) {
     val state by vm.state.collectAsState()
     var input by remember { mutableStateOf("") }
@@ -130,13 +131,15 @@ fun ChatScreen(
                 .fillMaxSize()
                 .imePadding()
         ) {
-            ChatHeader(
-                title = if (state.streaming) "Thinking…" else state.currentTitle,
-                model = state.model,
-                onNewChat = { haptic(); vm.startNewChat(); editing = null; input = "" },
-                onHistory = { haptic(); showHistory = true },
-                onModel = { haptic(); showModels = true }
-            )
+            if (!embedded) {
+                ChatHeader(
+                    title = if (state.streaming) "Thinking…" else state.currentTitle,
+                    model = state.model,
+                    onNewChat = { haptic(); vm.startNewChat(); editing = null; input = "" },
+                    onHistory = { haptic(); showHistory = true },
+                    onModel = { haptic(); showModels = true }
+                )
+            }
 
             state.error?.let { errorMessage ->
                 Row(
