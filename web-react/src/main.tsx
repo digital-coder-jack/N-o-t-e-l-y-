@@ -30,7 +30,7 @@ const APK_URL = '#download';
 const featureSteps = [
   { kicker: '01 / WRITE', title: 'Write.', body: 'A notebook for every course, built to keep your ideas moving.', tag: 'Lab report due', icon: 'note' },
   { kicker: '02 / PRACTICE', title: 'Practice.', body: 'Turn notes into flashcards and quizzes that know what you need next.', tag: '12 cards ready', icon: 'cards' },
-  { kicker: '03 / ASK', title: 'Ask.', body: 'A study assistant that answers with citations from your own materials.', tag: 'Ch. 9 · p. 7', icon: 'ask' },
+  { kicker: '03 / ASK', title: 'Ask.', body: 'Open Notely Assistant from the floating button without leaving your current screen.', tag: 'Ch. 9 · p. 7', icon: 'ask' },
 ];
 const featureCards = [
   ['01','Notebooks','A home for every course, page, and connection you make.'],['02','Course materials','Upload PDFs and slides, then annotate them beside your notes.'],['03','Flashcards & quizzes','Practice the ideas that matter with generated recall sessions.'],['04','Recorded lectures','Searchable transcripts turn long lectures into clear next steps.'],['05','Study assistant','Get answers grounded in your sources, with citations attached.'],['06','Tasks & calendar','Deadlines, checklists, and study time in one quiet place.'],
