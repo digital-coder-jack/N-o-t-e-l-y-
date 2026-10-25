@@ -28,7 +28,8 @@
 html { background: var(--notely-bg); }
 .landing-nav-actions { display: flex; align-items: center; gap: 12px; }
 .notely-theme-toggle {
-  --toggle-ring: rgba(143, 232, 248, .3);\n  position: relative; display: inline-grid; place-items: center; flex: 0 0 auto; width: 42px; height: 42px; padding: 0; border: 1px solid var(--notely-line); border-radius: 999px; color: var(--notely-ink); background: color-mix(in srgb, var(--notely-surface) 84%, transparent); box-shadow: 0 0 0 0 var(--toggle-ring); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform .22s ease, border-color .22s ease, background .22s ease, box-shadow .22s ease;
+  --toggle-ring: rgba(143, 232, 248, .3);
+  position: relative; display: inline-grid; place-items: center; flex: 0 0 auto; width: 42px; height: 42px; padding: 0; border: 1px solid var(--notely-line); border-radius: 999px; color: var(--notely-ink); background: color-mix(in srgb, var(--notely-surface) 84%, transparent); box-shadow: 0 0 0 0 var(--toggle-ring); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform .22s ease, border-color .22s ease, background .22s ease, box-shadow .22s ease;
 }
 .notely-theme-toggle:hover { transform: translateY(-1px); border-color: var(--notely-accent); box-shadow: 0 0 0 4px var(--toggle-ring); }
 .notely-theme-toggle:focus-visible { outline: 3px solid var(--notely-accent); outline-offset: 3px; }
