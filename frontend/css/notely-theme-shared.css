@@ -27,23 +27,7 @@
 :root[data-theme="dark"] { color-scheme: dark; }
 html { background: var(--notely-bg); }
 .landing-nav-actions { display: flex; align-items: center; gap: 12px; }
-.notely-theme-toggle {
-  --toggle-ring: rgba(143, 232, 248, .3);
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-  flex: 0 0 auto;
-  width: 42px;
-  height: 42px;
-  padding: 0;
-  border: 1px solid var(--notely-line);
-  border-radius: 999px;
-  color: var(--notely-ink);
-  background: color-mix(in srgb, var(--notely-surface) 84%, transparent);
-  box-shadow: 0 0 0 0 var(--toggle-ring);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition: transform .22s ease, border-color .22s ease, background .22s ease, box-shadow .22s ease;
+.notely-theme-toggle {\n  --toggle-ring: rgba(143, 232, 248, .3);\n  position: relative; display: inline-grid; place-items: center; flex: 0 0 auto; width: 42px; height: 42px; padding: 0; border: 1px solid var(--notely-line); border-radius: 999px; color: var(--notely-ink); background: color-mix(in srgb, var(--notely-surface) 84%, transparent); box-shadow: 0 0 0 0 var(--toggle-ring); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform .22s ease, border-color .22s ease, background .22s ease, box-shadow .22s ease;
 }
 .notely-theme-toggle:hover { transform: translateY(-1px); border-color: var(--notely-accent); box-shadow: 0 0 0 4px var(--toggle-ring); }
 .notely-theme-toggle:focus-visible { outline: 3px solid var(--notely-accent); outline-offset: 3px; }
@@ -125,26 +109,23 @@ html { background: var(--notely-bg); }
 :root[data-theme="dark"] .nw-title-row .nw-eyebrow,
 :root[data-theme="dark"] .nw-kicker { color: var(--muted); }
 /* Reveal the new theme over the old page, originating at the control. */
-::view-transition-old(root) { animation: none; z-index: 1; }
-::view-transition-new(root) { animation: notely-theme-reveal .62s cubic-bezier(.2,.75,.25,1) both; z-index: 2; }
-@keyframes notely-theme-reveal {
-  from { clip-path: circle(0 at var(--notely-theme-x, 50vw) var(--notely-theme-y, 50vh)); }
-  to { clip-path: circle(150vmax at var(--notely-theme-x, 50vw) var(--notely-theme-y, 50vh)); }
-}
-.notely-theme-fallback {
-  position: fixed;
-  inset: 0;
-  z-index: 2147483000;
-  pointer-events: none;
-  clip-path: circle(0 at var(--notely-theme-x, 50vw) var(--notely-theme-y, 50vh));
-  background: var(--notely-reveal-color, #060c1c);
-  animation: notely-fallback-reveal .62s cubic-bezier(.2,.75,.25,1) forwards;
-}
-@keyframes notely-fallback-reveal {
-  to { clip-path: circle(150vmax at var(--notely-theme-x, 50vw) var(--notely-theme-y, 50vh)); }
-}
+::view-transition-old(root) { animation: none !important; mix-blend-mode: normal; z-index: 1; }
+::view-transition-new(root) { animation: none !important; mix-blend-mode: normal; z-index: 2; }
+
+.notely-theme-fallback { position: fixed; inset: 0; z-index: 2147483000; pointer-events: none; background: var(--notely-reveal-color, #060c1c); clip-path: circle(0px at var(--notely-theme-x, 50vw) var(--notely-theme-y, 50vh)); }
+
 @media (prefers-reduced-motion: reduce) {
   .notely-theme-toggle, .notely-theme-toggle svg { transition: none !important; }
   ::view-transition-old(root), ::view-transition-new(root) { animation: none !important; }
   .notely-theme-fallback { display: none !important; }
 }
+
+/* View Transitions API owns the circular reveal; do not layer a second CSS animation. */
+::view-transition-old(root),::view-transition-new(root){animation:none!important;mix-blend-mode:normal}
+::view-transition-old(root){z-index:1}
+::view-transition-new(root){z-index:2}
+.notely-theme-fallback{position:fixed;inset:0;z-index:2147483000;pointer-events:none;background:var(--notely-reveal-color,#060c1c);clip-path:circle(0px at var(--notely-theme-x,50vw) var(--notely-theme-y,50vh))}
+.notely-theme-toggle svg{transition:opacity .28s ease,transform .45s cubic-bezier(.2,.8,.2,1)}
+:root[data-theme="light"] .notely-theme-toggle .theme-sun{opacity:0;transform:rotate(65deg) scale(.55)}
+:root[data-theme="light"] .notely-theme-toggle .theme-moon{opacity:1;transform:rotate(0) scale(1)}
+@media(prefers-reduced-motion:reduce){.notely-theme-toggle,.notely-theme-toggle svg{transition:none!important}::view-transition-old(root),::view-transition-new(root){animation:none!important}}
