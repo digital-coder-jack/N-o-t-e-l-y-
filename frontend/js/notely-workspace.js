@@ -4,7 +4,8 @@
   var root = document.getElementById('nwContent');
   var title = document.getElementById('nwTitle');
   var state = { view: 'overview', stats: {}, notes: [], files: [], search: [], profile: {}, settings: {}, settingsTab: 'Profile' };
-  var labels = { overview: 'Overview', notes: 'My notes', assistant: 'AI assistant', documents: 'Documents', favorites: 'Favorites', archive: 'Archive', trash: 'Trash', tools: 'Study tools', search: 'Search', settings: 'Settings' };\n  var validViews = Object.keys(labels);
+  var labels = { overview: 'Overview', notes: 'My notes', assistant: 'AI assistant', documents: 'Documents', favorites: 'Favorites', archive: 'Archive', trash: 'Trash', tools: 'Study tools', search: 'Search', settings: 'Settings' };
+  var validViews = Object.keys(labels);
   var esc = function (v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]; }); };
   var toast = function (m, type) { if (window.SS && SS.toast) SS.toast(m, type || 'success'); };
   function btn(text, view, cls) { return '<button class="nw-btn ' + (cls || '') + '" data-view="' + (view || '') + '">' + text + '</button>'; }
@@ -19,7 +20,8 @@
       state.stats = results[0].status === 'fulfilled' ? results[0].value : {};
       state.notes = results[1].status === 'fulfilled' ? (results[1].value.notes || []) : [];
       state.files = results[2].status === 'fulfilled' ? (results[2].value.files || []) : [];
-      if (results[3].status === 'fulfilled' && results[3].value.user) { state.profile = results[3].value.user; var u = state.profile; document.getElementById('nwUserName').textContent = u.name || 'Student'; var avatar = document.querySelector('.nw-avatar'); if (avatar) avatar.textContent = (u.name || u.email || 'N').trim().charAt(0).toUpperCase(); var userIcon = document.querySelector('.nw-user i'); if (userIcon) userIcon.textContent = (u.name || u.email || 'N').trim().charAt(0).toUpperCase(); }\n      if (results[4].status === 'fulfilled') { state.settings = results[4].value || {}; applyAppearance(); }
+      if (results[3].status === 'fulfilled' && results[3].value.user) { state.profile = results[3].value.user; var u = state.profile; document.getElementById('nwUserName').textContent = u.name || 'Student'; var avatar = document.querySelector('.nw-avatar'); if (avatar) avatar.textContent = (u.name || u.email || 'N').trim().charAt(0).toUpperCase(); var userIcon = document.querySelector('.nw-user i'); if (userIcon) userIcon.textContent = (u.name || u.email || 'N').trim().charAt(0).toUpperCase(); }
+      if (results[4].status === 'fulfilled') { state.settings = results[4].value || {}; applyAppearance(); }
       render();
     } catch (e) { root.innerHTML = '<div class="nw-empty">Could not load your workspace. <button class="nw-link" id="nwRetry">Try again</button><br><small>' + esc(e.message) + '</small></div>'; document.getElementById('nwRetry').onclick = load; }
   }
