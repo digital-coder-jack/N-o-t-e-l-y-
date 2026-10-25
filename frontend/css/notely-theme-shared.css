@@ -21,7 +21,7 @@
 }
 :root[data-theme="dark"] { color-scheme: dark; }
 html { background: var(--notely-bg); }
-.notely-theme-toggle {
+.landing-nav-actions { display: flex; align-items: center; gap: 12px; }\n.notely-theme-toggle {
   --toggle-ring: rgba(143, 232, 248, .3);
   position: relative;
   display: inline-grid;
