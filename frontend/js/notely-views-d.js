@@ -58,42 +58,4 @@
       '<button class="button light" data-nav="Calendar">View calendar</button></div></aside></div>';
   };
 
-  V.assistant = function (toast) {
-    var conversations = '<button class="conversation active" data-toast="Conversation opened">' + I('MessageSquare', 16) + '<span><strong>ATP and oxygen</strong><small>Today · Biology 101</small></span></button>' +
-      '<button class="conversation" data-toast="Conversation opened">' + I('MessageSquare', 16) + '<span><strong>Enzyme activation energy</strong><small>Oct 14 · Biology 101</small></span></button>';
-    var sources = ['Cellular respiration · Current note · Lecture 07', 'Ch. 9 — Cellular respiration · PDF · 18 pages', 'Lecture 07 · 42 min · Transcript ready']
-      .map(function (s) {
-        var p = s.split(' · ');
-        return '<button class="assistant-source" data-toast="Opening ' + p[0] + '">' + I('FileText', 15) + '<span><strong>' + p[0] + '</strong><small>' + p.slice(1).join(' · ') + '</small></span></button>';
-      }).join('');
-    var steps = [
-      ['The electron chain backs up', 'Without O₂ to accept electrons at the end of the chain, electron transfer cannot keep running. [1]'],
-      ['The H⁺ gradient fades', 'Proton pumping stops. ATP synthase loses the gradient that powers ATP synthesis. [1, 2]'],
-      ['Glycolysis can still make ATP', 'If fermentation regenerates NAD⁺, glycolysis can continue to yield net 2 ATP per glucose. [1]']
-    ].map(function (s, i) {
-      return '<div class="assistant-step">' + V.el('span', '', String(i + 1)) + '<div><strong>' + s[0] + '</strong><p>' + s[1] + '</p></div></div>';
-    }).join('');
-    return V.pageHeading({ title: 'Study assistant', subtitle: 'A study partner grounded in your course, not a shortcut.' }) +
-      '<div class="assistant-layout"><aside class="conversation-side">' +
-      '<button class="button light" data-toast="New conversation started">' + I('PenLine', 14) + ' New conversation</button>' +
-      V.el('p', 'eyebrow', 'Recent conversations') + conversations +
-      V.el('p', 'eyebrow', 'Grounded in your course') + sources + '</aside>' +
-      '<div class="assistant-main"><small class="assistant-time">Today · 10:42 AM</small>' +
-      V.el('div', 'assistant-question', 'Why does ATP production stop without oxygen?') +
-      '<p class="source-label">✧ Notely · Answer with sources</p>' +
-      '<p class="assistant-intro">Almost! It’s oxidative phosphorylation that stops, not all ATP production. Here’s the chain reaction:</p>' +
-      steps +
-      '<div class="source-citations"><p class="eyebrow">Source citations</p><p>[1] Ch. 9 — Cellular respiration · p. 7</p><p>[2] Lecture 07 · 12:34–14:02</p>' +
-      '<small>Sources are from your Biology 101 materials.</small></div>' +
-      '<div class="assistant-actions"><button class="button light" data-toast="Answer inserted into note">' + I('PenLine', 14) + ' Insert into note</button>' +
-      '<button class="button light" data-toast="Answer copied">' + I('FileText', 14) + ' Copy answer</button></div>' +
-      '<section class="make-stick"><h2>Make it stick</h2><p class="eyebrow">8 proposed flashcards · Not saved</p>' +
-      '<p>Preview this AI-generated set before adding it to your Biology deck.</p>' +
-      '<div class="proposed-card"><p class="eyebrow">Proposed card</p><h3>What is the final electron acceptor in cellular respiration?</h3><p>Oxygen (O₂), which is reduced to water.</p></div>' +
-      '<button class="button light" data-toast="Proposed cards opened">' + I('Layers3', 14) + ' Review 8 proposed cards</button>' +
-      '<small>24 saved Biology cards · This proposal hasn’t changed your deck.</small></section>' +
-      '<div class="assistant-composer"><span>Ask about your notes or materials...</span>' +
-      '<div>' + I('Paperclip', 15) + I('Mic2', 15) + '<button class="button primary" data-toast="Question sent">↑ Send</button></div></div>' +
-      '<small class="composer-note">Always check your sources. AI can make mistakes.</small></div></div>';
-  };
 })();
