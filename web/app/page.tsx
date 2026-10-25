@@ -288,6 +288,12 @@ function FloatingAssistant({ context }: { context: string }) {
     try { window.localStorage.setItem("notely-assistant-draft-" + (chatId || "new"), prompt); } catch { /* storage may be disabled */ }
   }, [prompt, chatId]);
   useEffect(() => {
+    const onVisibility = () => document.documentElement.classList.toggle("na-paused", document.hidden);
+    onVisibility();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
+  useEffect(() => {
     const updateViewport = () => {
       const vv = window.visualViewport;
       const keyboard = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
@@ -310,7 +316,7 @@ function FloatingAssistant({ context }: { context: string }) {
     if (node && !showJump) node.scrollTop = node.scrollHeight;
   }, [messages, loading, showJump]);
 
-  const open = () => { setMode("small"); setUnread(false); window.setTimeout(() => composerRef.current?.focus({ preventScroll: true }), 50); };
+  const open = () => { if (navigator.vibrate) navigator.vibrate(8); setMode("small"); setUnread(false); window.setTimeout(() => composerRef.current?.focus({ preventScroll: true }), 50); };
   const newChat = () => { setChatId(null); setMessages([]); setPrompt(""); setError(""); setHistoryOpen(false); setMode("small"); window.setTimeout(() => composerRef.current?.focus({ preventScroll: true }), 50); };
   const selectChat = async (id: number) => {
     try {
