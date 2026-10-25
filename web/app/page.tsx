@@ -479,7 +479,7 @@ function Documents({ setRoute }: { setRoute: (r: Route) => void }) {
       <ActionButton secondary onClick={browse}>{uploading ? "Uploading…" : "Browse files"}</ActionButton>
     </div>
     {error && <div role="alert" className="surface-panel" style={{ marginTop: 16, color: "#bd5f62" }}>{error}</div>}
-    <div className="toolbar"><div className="filter-pills">{["All materials", "PDFs"].map(item => <button type="button" key={item} className={"pill " + (filter === item ? "active" : "")} onClick={() => setFilter(item)}>{item}{item === "All materials" && <small>{files.length}</small>}</button>)}</div><button type="button" className="select-button" onClick={() => setRoute("assistant")}>Ask AI about a file <ArrowRight /></button></div>
+    <div className="toolbar"><div className="filter-pills">{["All materials", "PDFs"].map(item => <button type="button" key={item} className={"pill " + (filter === item ? "active" : "")} onClick={() => setFilter(item)}>{item}{item === "All materials" && <small>{files.length}</small>}</button>)}</div><button type="button" className="select-button" onClick={() => openNotelyAssistant()}>Ask AI about a file <ArrowRight /></button></div>
     {loading ? <div className="surface-panel">Loading your documents…</div> : visible.length ? <div className="document-grid">{visible.map(file => <div className="document-card" key={file.id}>
       <div className="doc-icon"><FileText /></div><div><strong>{file.filename}</strong><small>{String(file.kind || file.content_type || "File").toUpperCase()} · {Math.max(1, Math.round(Number(file.size_bytes || 0) / 1024))} KB</small></div>
       <span className="ready"><CheckCircle2 /> {file.has_text === false ? "Stored" : "Uploaded"}</span>
