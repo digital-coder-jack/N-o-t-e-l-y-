@@ -442,3 +442,15 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .nw-assistant-rename-form button { min-height:40px; padding:7px 9px; border:1px solid var(--border); border-radius:9px; background:var(--bg); color:var(--ink); }
 .nw-assistant-rename-form small { grid-column:1/-1; color:var(--muted); font-size:10px; }
 @media (prefers-reduced-motion:reduce) { .nw-card[data-note-card],.nw-task-row { transition:none!important; } }
+
+
+.nw-editor-slash-menu { display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:8px; margin:8px 0; border:1px solid var(--border); border-radius:12px; background:var(--card); }
+.nw-editor-slash-menu[hidden] { display:none; }
+.nw-editor-slash-menu span { width:100%; color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.08em; }
+.nw-editor-slash-menu button { min-height:40px; padding:7px 10px; border:1px solid var(--border); border-radius:9px; background:var(--bg); color:var(--ink); cursor:pointer; }
+.nw-loading { position:relative; overflow:hidden; min-height:120px; padding:24px; border:1px solid var(--border); border-radius:var(--radius-card); background:var(--card); color:var(--muted); }
+.nw-loading:after { content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--ink) 5%,transparent),transparent); animation:nw-skeleton 1.3s ease-in-out infinite; pointer-events:none; }
+.nw-error-state { display:grid; gap:8px; padding:24px; border:1px solid var(--border); border-radius:var(--radius-card); background:var(--card); color:var(--ink); }
+.nw-error-state p { color:var(--muted); margin:0; }
+@keyframes nw-skeleton { to { transform:translateX(100%); } }
+@media (prefers-reduced-motion:reduce) { .nw-loading:after { animation:none!important; display:none; } }
