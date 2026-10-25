@@ -334,14 +334,14 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
   .nw-course-card:hover,.nw-mode-card:hover { transform:translateY(-2px); border-color:var(--accent); }
 }
 .nw-btn:disabled,.nw-icon-btn:disabled,.nw-assistant-panel button:disabled { opacity:.48; cursor:not-allowed; transform:none; }
-.nw-assistant-open { overflow:hidden; }
+
 .nw-assistant-panel { position:fixed; inset:0; z-index:9990; display:flex; justify-content:flex-end; color:var(--ink); }
 .nw-assistant-panel[hidden] { display:none; }
-.nw-assistant-scrim { position:absolute; inset:0; background:color-mix(in srgb,var(--bg) 45%,transparent); opacity:0; transition:opacity 180ms ease-out; }
-.nw-assistant-sheet { position:relative; display:flex; flex-direction:column; width:min(480px,100%); height:100%; height:100dvh; padding:calc(12px + env(safe-area-inset-top,0px)) 18px calc(12px + env(safe-area-inset-bottom,0px)); background:var(--bg); border-left:1px solid var(--border); box-shadow:0 0 50px color-mix(in srgb,var(--ink) 12%,transparent); transform:translateX(24px); opacity:.94; transition:transform 180ms ease-out,opacity 180ms ease-out; }
-.nw-assistant-panel.is-open .nw-assistant-scrim { opacity:1; }
-.nw-assistant-panel.is-open .nw-assistant-sheet { transform:translateX(0); opacity:1; }
-.nw-assistant-handle { display:none; width:38px; height:4px; border-radius:999px; background:var(--muted); opacity:.6; margin:0 auto 12px; }
+
+
+
+
+
 .nw-assistant-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:4px 0 14px; border-bottom:1px solid var(--border); }
 .nw-assistant-title { display:flex; align-items:center; gap:10px; min-width:0; }
 .nw-assistant-title h2 { margin:0; font-size:19px; line-height:1.2; }
@@ -591,3 +591,15 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .nw-error-state p { color:var(--muted); margin:0; }
 @keyframes nw-skeleton { to { transform:translateX(100%); } }
 @media (prefers-reduced-motion:reduce) { .nw-loading:after { animation:none!important; display:none; } }
+
+/* Floating assistant corner placement. Animate only transforms and opacity. */
+.nw-assistant-panel { inset:auto; top:auto; left:auto; right:24px; bottom:24px; }
+.nw-assistant-panel.is-maximized { inset:auto; top:5vh; left:4vw; right:4vw; bottom:5vh; width:min(1100px,92vw); height:90vh; max-height:90vh; }
+@media (max-width:760px) {
+  .nw-assistant-panel { inset:auto; top:auto; left:auto; right:6px; bottom:calc(var(--nw-assistant-nav-offset,72px) + var(--nw-assistant-keyboard-offset,0px) + env(safe-area-inset-bottom,0px) + 8px); width:calc(100vw - 12px); height:min(70dvh,680px); max-height:calc(var(--nw-vv-height,100dvh) - var(--nw-assistant-nav-offset,72px) - env(safe-area-inset-bottom,0px) - 18px); }
+  .nw-assistant-panel.is-maximized { inset:env(safe-area-inset-top,0px) 6px calc(var(--nw-assistant-keyboard-offset,0px) + env(safe-area-inset-bottom,0px)) 6px; width:auto; height:auto; max-height:none; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .nw-assistant-launcher,.nw-assistant-launcher-icon,.nw-assistant-launcher-ring,.nw-assistant-message,.nw-assistant-thinking span { animation:none!important; transition:opacity 120ms ease-out!important; }
+  .nw-assistant-panel { transition:opacity 120ms ease-out!important; transform:none!important; }
+}
