@@ -66,10 +66,10 @@ android {
 }
 
 // Extract the supplied icon JSON archive into native assets when the user builds Android.
-val notelyLottieZip = rootProject.file("../../frontend/assets/notely-lottie-icons.zip")
+val notelyLottieSource = rootProject.file("../../frontend/assets/lottie")
 val generatedNotelyLottieAssets = layout.buildDirectory.dir("generated/notelyLottieAssets")
 tasks.register<Copy>("extractNotelyLottieAssets") {
-    from(zipTree(notelyLottieZip))
+    from(notelyLottieSource) { include("*.json") }
     into(generatedNotelyLottieAssets)
     eachFile { path = "lottie/${name}" }
     includeEmptyDirs = false

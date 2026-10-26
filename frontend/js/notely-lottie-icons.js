@@ -3,7 +3,7 @@
   'use strict';
   if (window.__notelyLottieIconsInstalled) return;
   window.__notelyLottieIconsInstalled = true;
-  var registry = window.NotelyLottieRegistry || {trash:'trash-v2.json',copy:'copy.json',archive:'archive.json',book:'book.json',bell:'notification-v3.json',loading:'loading-v2.json',info:'info.json',help:'help.json',alert:'alert-circle.json'};
+  var registry = window.NotelyLottieRegistry || {trash:'lottie/trash-v2.json',copy:'lottie/copy.json',archive:'lottie/archive.json',book:'lottie/book.json',bell:'lottie/notification-v3.json',loading:'lottie/loading-v2.json',info:'lottie/info.json',help:'lottie/help.json',alert:'lottie/alert-circle.json'};
   var ZIP_URL='/assets/notely-lottie-icons.zip',zipPromise=null,lottiePromise=null,jsonCache=new Map(),toastTimer=0;
   var reduced=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   var coarse=!!(window.matchMedia&&window.matchMedia('(pointer: coarse)').matches);
