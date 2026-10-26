@@ -90,7 +90,7 @@ fun AppRoot(repo: Repository) {
 }
 
 @Composable
-private fun AuthFlow(factory: VMFactory, startRoute: String, onBackToLanding: () -> Unit) {
+internal fun AuthFlow(factory: VMFactory, startRoute: String, onBackToLanding: () -> Unit) {
     val nav = rememberNavController()
     val authVm: AuthViewModel = viewModel(factory = factory)
     androidx.activity.compose.BackHandler {
