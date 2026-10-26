@@ -25,6 +25,15 @@ jobs:
         run: node --check frontend/js/notely-workspace.js
       - name: Check shared theme JavaScript syntax
         run: node --check frontend/js/notely-theme.js
+      - name: Check auth and workspace JavaScript syntax
+        run: |
+          node --check frontend/js/auth.js
+          node --check frontend/js/app.js
+          node --check frontend/js/main.js
+          node --check frontend/js/sidebar.js
+          node --check frontend/js/dashboard.js
+          node --check frontend/js/onboarding.js
+          node --check frontend/js/topic.js
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
