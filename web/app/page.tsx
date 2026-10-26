@@ -43,7 +43,7 @@ type Note = {
 
 const NOTES: Note[] = [];
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || "https://study-sphere-ai-mwlq.vercel.app").replace(/\/+$/, "");
+const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || "https://notely-mwlq.vercel.app").replace(/\/+$/, "");
 
 async function workspaceToken(): Promise<string> {
   if (typeof window === "undefined") throw new Error("Workspace requests require a browser.");
