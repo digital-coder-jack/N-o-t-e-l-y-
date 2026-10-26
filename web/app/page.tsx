@@ -1732,12 +1732,7 @@ export default function Page() {
   let content: ReactNode = <Overview setRoute={setRoute} />;
 
   if (route === "notes") content = <Notes setRoute={setRoute} />;
-  else if (route === "assistant") {
-    content = <Overview setRoute={setRoute} />;
-    if (typeof window !== "undefined") {
-      setTimeout(() => openNotelyAssistant(), 0);
-    }
-  } else if (route === "documents") content = <Documents setRoute={setRoute} />;
+  else if (route === "documents") content = <Documents setRoute={setRoute} />;
   else if (["favorites", "archive", "trash"].includes(route)) content = <Notes setRoute={setRoute} filter={route as "favorites" | "archive" | "trash"} />;
   else if (route === "tools") content = <Tools setRoute={setRoute} />;
   else if (route === "quiz" || route === "flashcards" || route === "roadmap" || route === "mindmap" || route === "planner" || route === "summarizer" || route === "homework") content = <ToolDetail route={route} setRoute={setRoute} />;
