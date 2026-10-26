@@ -31,9 +31,10 @@ Study tools:
 
 from __future__ import annotations
 
+import asyncio
 import json
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -169,7 +170,7 @@ async def cancel_stream(chat_id: int, user=Depends(auth.current_user)):
 
 
 @router.post("/chats/{chat_id}/stream")
-async def stream_message(chat_id: int, body: StreamIn, user=Depends(auth.current_user)):
+async def stream_message(chat_id: int, body: StreamIn, request: Request, user=Depends(auth.current_user)):
     """
     Save the user message, then stream the assistant reply as Server-Sent
     Events.
@@ -237,9 +238,27 @@ async def stream_message(chat_id: int, body: StreamIn, user=Depends(auth.current
         try:
             yield _sse({"event": "start", "message_id": assistant_id, "generation": generation})
 
-            async for event, value in ai.chat_stream(
+            stream_iter = ai.chat_stream(
                 history, selection=selection, cancel_event=cancel_event
-            ):
+            ).__aiter__()
+            next_event = None
+            while True:
+                if await request.is_disconnected():
+                    cancel_event.set()
+                    final_event = "cancelled"
+                    break
+                if next_event is None:
+                    next_event = asyncio.create_task(stream_iter.__anext__())
+                finished, _ = await asyncio.wait({next_event}, timeout=14.0)
+                if not finished:
+                    # Comment frames keep proxies alive without being parsed as app events.
+                    yield ": keep-alive\\n\\n"
+                    continue
+                try:
+                    event, value = next_event.result()
+                except StopAsyncIteration:
+                    break
+                next_event = None
                 if event == "meta":
                     provider_used = value
                     yield _sse({"event": "provider", "provider": value})
@@ -252,7 +271,7 @@ async def stream_message(chat_id: int, body: StreamIn, user=Depends(auth.current
                     break
                 elif event == "error":
                     final_event = "error"
-                    error_payload = value if isinstance(value, dict) else {"type": "error", "message": str(value)}
+                    error_payload = value if isinstance(value, dict) else {"type": "error", "message": "AI is temporarily unavailable. Please retry."}
                     yield _sse({"event": "error", "error": error_payload})
         except Exception as exc:  # noqa: BLE001
             final_event = "error"
@@ -274,7 +293,8 @@ async def stream_message(chat_id: int, body: StreamIn, user=Depends(auth.current
             # Release the slot only if we are still the active generation.
             await stream_manager.finish(key, generation)
 
-            yield _sse({
+            if not await request.is_disconnected():
+                yield _sse({
                 "event": final_event,
                 "message_id": assistant_id,
                 "provider": provider_used,
@@ -284,9 +304,10 @@ async def stream_message(chat_id: int, body: StreamIn, user=Depends(auth.current
         event_generator(),
         media_type="text/event-stream",
         headers={
-            "Cache-Control": "no-cache",
+            "Cache-Control": "no-cache, no-transform",
             "Connection": "keep-alive",
             "X-Accel-Buffering": "no",
+            "Content-Encoding": "identity",
         },
     )
 
