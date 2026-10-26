@@ -34,6 +34,7 @@ from backend.routes import chat as chat_routes
 from backend.routes import files as files_routes
 from backend.routes import topics as topics_routes
 from backend.routes import tasks as tasks_routes
+from backend.routes import diagnostics as diagnostics_routes
 from backend.routes import users as users_routes
 from backend.analytics_web import web_analytics_db
 from backend.auth import current_user
@@ -170,6 +171,7 @@ app.include_router(chat_routes.router)
 app.include_router(files_routes.router)
 app.include_router(topics_routes.router)
 app.include_router(tasks_routes.router)
+app.include_router(diagnostics_routes.router)
 
 # ---------------------------------------------------------------------------
 # Web Analytics API Routes
