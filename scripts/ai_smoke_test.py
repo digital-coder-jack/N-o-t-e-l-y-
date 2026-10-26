@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """Notely AI API smoke test. Never prints credentials or provider key values."""
 from __future__ import annotations
-import argparse, asyncio, json, os, secrets, string, time, uuid
+import argparse, asyncio, json, os, secrets, string, sys, time, uuid
+from pathlib import Path
 from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 import httpx
 
 RESULTS: list[dict[str, Any]] = []
@@ -252,6 +257,14 @@ def main():
     parser=argparse.ArgumentParser(description="Notely AI API smoke test")
     parser.add_argument("--base-url",default=os.environ.get("AI_SMOKE_BASE_URL","http://127.0.0.1:3000"))
     parser.add_argument("--diag-token",default=os.environ.get("DIAG_TOKEN"))
+    parser.add_argument("--unit-only",action="store_true",help="Run deterministic provider fallback/error tests without a server")
     args=parser.parse_args()
+    if args.unit_only:
+        asyncio.run(local_provider_unit_tests())
+        print("| Test | Result | Latency | Error class | Detail |")
+        print("|---|---:|---:|---|---|")
+        for row in RESULTS:
+            print(f"| {row['test']} | {row['status']} | {row['latency_ms']} ms | {row['error_class']} | {row['detail']} |")
+        return 1 if any(row["status"] == "FAIL" for row in RESULTS) else 0
     return asyncio.run(run(args.base_url,args.diag_token))
 if __name__=="__main__": raise SystemExit(main())
