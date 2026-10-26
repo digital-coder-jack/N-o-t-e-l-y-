@@ -239,3 +239,13 @@ html { background: var(--notely-bg); }
 @media(prefers-reduced-motion:reduce) {
   *,*::before,*::after { scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important; }
 }
+
+
+/* Workspace entrance and card feedback — never applied to the landing page. */
+@keyframes notely-fade-up{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.app-shell .page-content,.workspace-main .screen{animation:notely-fade-up 240ms cubic-bezier(.16,1,.3,1) both}
+@media(hover:hover) and (pointer:fine){
+  .app-shell .button.primary:hover,.workspace-main .button.primary:hover{transform:translateY(-2px)}
+  .app-shell .tool-card:hover,.app-shell .ws-card:hover,.app-shell .recent-card:hover{transform:translateY(-2px)}
+}
+@media(prefers-reduced-motion:reduce){.app-shell .page-content,.workspace-main .screen{animation:none!important}}

@@ -179,3 +179,33 @@ button,.action-button,.new-note,.nav-button,.note-card { transition-duration:var
 .dark .top-search,.dark .action-button.secondary{background:var(--surface-2);border-color:var(--line);color:var(--ink-soft)}
 @media(max-width:900px){.settings-page-grid{grid-template-columns:1fr}.settings-card{padding:20px}}
 @media(max-width:480px){.settings-theme-options{grid-template-columns:1fr}.settings-info-row{align-items:flex-start}.settings-status,.settings-version{white-space:nowrap}.screen{padding-top:28px}}
+
+
+/* Motion pass: restrained workspace entrance, stagger and shortcut dialog. */
+@keyframes notely-screen-enter{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes notely-overlay-enter{from{opacity:0}to{opacity:1}}
+@keyframes notely-dialog-enter{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+.screen{animation:notely-screen-enter var(--motion-enter,320ms) var(--ease-enter,cubic-bezier(.16,1,.3,1)) both}
+.note-grid>.note-card,.tool-list>button,.search-result{animation:notely-screen-enter 260ms var(--ease-enter,cubic-bezier(.16,1,.3,1)) both}
+.note-grid>.note-card:nth-child(1),.tool-list>button:nth-child(1){animation-delay:0ms}
+.note-grid>.note-card:nth-child(2),.tool-list>button:nth-child(2){animation-delay:40ms}
+.note-grid>.note-card:nth-child(3),.tool-list>button:nth-child(3){animation-delay:80ms}
+.note-grid>.note-card:nth-child(4),.tool-list>button:nth-child(4){animation-delay:120ms}
+.note-grid>.note-card:nth-child(5),.tool-list>button:nth-child(5){animation-delay:160ms}
+.note-grid>.note-card:nth-child(6),.tool-list>button:nth-child(6){animation-delay:200ms}
+.note-grid>.note-card:nth-child(7),.tool-list>button:nth-child(7){animation-delay:240ms}
+.note-grid>.note-card:nth-child(8),.tool-list>button:nth-child(8){animation-delay:280ms}
+.shortcuts-launcher{position:fixed;left:20px;bottom:20px;z-index:90;display:flex;align-items:center;gap:8px;min-height:42px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink-soft);box-shadow:0 8px 26px rgba(6,12,28,.14);font-size:12px;font-weight:600}
+.shortcuts-launcher:hover{transform:translateY(-2px);border-color:var(--blue)}
+.shortcuts-launcher kbd,.shortcut-row kbd{border:1px solid var(--line);border-radius:6px;padding:3px 6px;background:var(--surface-2);font:600 11px var(--font-ui);color:var(--ink-soft)}
+.shortcuts-backdrop{position:fixed;inset:0;z-index:110;display:grid;place-items:center;padding:20px;background:rgba(3,8,20,.55);backdrop-filter:blur(8px);animation:notely-overlay-enter 160ms ease-out}
+.shortcuts-dialog{width:min(100%,480px);padding:24px;border:1px solid var(--line);border-radius:20px;background:var(--surface);color:var(--ink);box-shadow:0 24px 80px rgba(0,0,0,.28);animation:notely-dialog-enter 220ms var(--ease-enter)}
+.shortcuts-dialog-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:20px}
+.shortcuts-dialog h2{margin:6px 0 0;font:600 24px/1.15 var(--font-display);letter-spacing:-.035em}
+.shortcuts-close{display:grid;place-items:center;flex:none;width:36px;height:36px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);font-size:23px;line-height:1;color:var(--ink)}
+.shortcut-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 0;border-top:1px solid var(--line);font-size:13px}
+.shortcuts-dialog>p{margin:16px 0 0;color:var(--muted);font-size:12px;line-height:1.5}
+.dark .shortcuts-launcher,.dark .shortcuts-dialog,.dark .shortcuts-close{background:var(--surface);border-color:var(--line);color:var(--ink)}
+.dark .shortcuts-launcher kbd,.dark .shortcut-row kbd{background:var(--surface-2);border-color:var(--line);color:var(--ink-soft)}
+@media(max-width:480px){.shortcuts-launcher{left:12px;bottom:12px;width:42px;justify-content:center;padding:0}.shortcuts-launcher span,.shortcuts-launcher kbd{display:none}.shortcuts-dialog{padding:18px}}
+@media(prefers-reduced-motion:reduce){.screen,.note-grid>.note-card,.tool-list>button,.search-result,.shortcuts-backdrop,.shortcuts-dialog{animation:none!important}}

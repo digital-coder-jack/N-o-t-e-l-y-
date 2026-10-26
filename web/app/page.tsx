@@ -1575,6 +1575,7 @@ export default function Page() {
   const [route, setRouteState] = useState<Route>("overview");
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   useEffect(() => {
     setRouteState(routeFromPath(window.location.pathname));
@@ -1601,6 +1602,12 @@ export default function Page() {
       const typing = !!target && (target.isContentEditable || /INPUT|TEXTAREA|SELECT/.test(target.tagName));
       if (event.key === "Escape") {
         setMobileOpen(false);
+        setShortcutsOpen(false);
+        return;
+      }
+      if (event.key === "?" && !typing) {
+        event.preventDefault();
+        setShortcutsOpen(true);
         return;
       }
       if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
@@ -1658,6 +1665,18 @@ export default function Page() {
         {content}
       </main>
 
+      <button type="button" className="shortcuts-launcher" aria-label="Open keyboard shortcuts" title="Keyboard shortcuts (?)" onClick={() => setShortcutsOpen(true)}><CircleHelp size={18} /><span>Shortcuts</span><kbd>?</kbd></button>
+      {shortcutsOpen && (
+        <div className="shortcuts-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setShortcutsOpen(false); }}>
+          <section className="shortcuts-dialog" role="dialog" aria-modal="true" aria-labelledby="shortcuts-title">
+            <div className="shortcuts-dialog-head"><div><span className="eyebrow">WORKSPACE HELP</span><h2 id="shortcuts-title">Keyboard shortcuts</h2></div><button type="button" className="shortcuts-close" onClick={() => setShortcutsOpen(false)} aria-label="Close keyboard shortcuts">×</button></div>
+            <div className="shortcut-row"><span>Search workspace</span><kbd>Ctrl / ⌘ K</kbd></div>
+            <div className="shortcut-row"><span>Create a note</span><kbd>Ctrl / ⌘ N</kbd></div>
+            <div className="shortcut-row"><span>Show this guide</span><kbd>?</kbd></div>
+            <p>Shortcuts pause while you type in an input or editor.</p>
+          </section>
+        </div>
+      )}
       <FloatingAssistant context={route === "documents" ? "Documents" : route === "notes" ? "Notes" : route === "tools" ? "Study tools" : "Overview"} />
     </div>
   );
