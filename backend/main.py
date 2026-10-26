@@ -79,8 +79,14 @@ def _validate_environment() -> None:
         "GROQ_MODEL": "Pro Max tier model override",
         "TELEGRAM_BOT_TOKEN": "Telegram bot integration",
         "WEBHOOK_SECRET": "verify Telegram webhook calls",
-        "DB_PATH": "persistent SQLite path (set to a mounted disk in production)",
+        "DB_PATH": "database path (a /tmp path is ephemeral on Vercel)",
         "TELEGRAM_ADMIN_ID": "admin id allowed to read analytics dashboard stats",
+        "DIAG_TOKEN": "protect live AI provider diagnostics",
+        "OPENROUTER_SITE_URL": "optional OpenRouter attribution URL",
+        "OPENROUTER_APP_NAME": "optional OpenRouter attribution title",
+        "AI_STREAM_TIMEOUT": "maximum AI stream duration in seconds",
+        "AI_STREAM_IDLE_TIMEOUT": "maximum idle read time for AI streams",
+        "AI_CACHE_TTL": "in-memory completion cache lifetime in seconds",
     }
 
     configured_ai = [k for k in ai_providers if os.environ.get(k)]
