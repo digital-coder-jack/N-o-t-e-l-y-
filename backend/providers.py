@@ -216,14 +216,16 @@ def _openai_headers(key: str, provider: str) -> dict[str, str]:
 
 
 def _openai_payload(model: str, messages: list[dict], temperature: float,
-                    max_tokens: int, stream: bool) -> dict:
-    return {
+                    max_tokens: int, stream: bool, provider: str) -> dict:
+    payload = {
         "model": model,
         "messages": messages,
         "temperature": temperature,
-        "max_tokens": max_tokens,
         "stream": stream,
     }
+    # OpenRouter documents max_tokens as deprecated; use its current field.
+    payload["max_completion_tokens" if provider == "openrouter" else "max_tokens"] = max_tokens
+    return payload
 
 
 def _gemini_contents(messages: list[dict]) -> tuple[list[dict], dict | None]:
@@ -359,7 +361,7 @@ async def _complete_tier(tier: str, messages: list[dict], temperature: float,
         base = OPENROUTER_BASE_URL if config["provider"] == "openrouter" else GROQ_BASE_URL
         response = await _post_with_retry(
             client, tier, f"{base}/chat/completions",
-            json_body=_openai_payload(config["model"], messages, temperature, max_tokens, False),
+            json_body=_openai_payload(config["model"], messages, temperature, max_tokens, False, config["provider"]),
             headers=_openai_headers(key, config["provider"]),
         )
         return _parse_openai_response(response.json())
@@ -389,7 +391,7 @@ async def probe_tier(tier: str, *, force: bool = False) -> dict:
             try:
                 await _complete_tier(
                     tier, [{"role": "user", "content": "Reply with exactly: OK"}],
-                    temperature=0.0, max_tokens=4, timeout=12.0,
+                    temperature=0.0, max_tokens=16, timeout=12.0,
                 )
                 result = {
                     "tier": tier, "ok": True, "http_status": 200, "error_class": None,
@@ -472,7 +474,7 @@ async def _stream_tier(tier: str, messages: list[dict], temperature: float, max_
             url = f"{base}/chat/completions"
             headers = _openai_headers(key, config["provider"])
             headers["Accept"] = "text/event-stream"
-            body = _openai_payload(config["model"], messages, temperature, max_tokens, True)
+            body = _openai_payload(config["model"], messages, temperature, max_tokens, True, config["provider"])
             params = None
 
         for attempt in range(_RETRY_MAX + 1):
