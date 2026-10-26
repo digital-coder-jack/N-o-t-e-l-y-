@@ -1,0 +1,17 @@
+notely-icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:var(--notely-icon-size,20px);height:var(--notely-icon-size,20px);min-width:var(--notely-icon-size,20px);vertical-align:middle;color:inherit;line-height:0;overflow:visible;contain:layout style;opacity:1}
+notely-icon[hidden]{display:none}
+notely-icon>span{display:block;width:100%;height:100%;visibility:hidden}
+notely-icon.is-ready>span{visibility:visible}
+notely-icon svg{display:block;width:100%!important;height:100%!important;overflow:visible}
+notely-icon svg [stroke="rgb(0,0,0)"],notely-icon svg [stroke="rgb(0, 0, 0)"]{stroke:currentColor!important}
+notely-icon svg [fill="rgb(0,0,0)"],notely-icon svg [fill="rgb(0, 0, 0)"]{fill:currentColor!important}
+notely-icon[name="bell"] svg [fill="rgb(255,255,255)"],notely-icon[name="bell"] svg [fill="rgb(255, 255, 255)"]{fill:var(--notely-icon-surface,var(--surface,var(--card,#fff)))!important}
+notely-icon[name="bell"] svg [fill="rgb(239,55,55)"],notely-icon[name="bell"] svg [fill="rgb(239, 55, 55)"]{fill:#ef4444!important}
+.notely-icon-button{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;transition:background-color .16s ease,border-color .16s ease,color .16s ease,opacity .16s ease,transform .16s ease}
+.notely-icon-button:focus-visible{outline:2px solid var(--accent,#8fe8f8);outline-offset:3px}
+.notely-icon-button:active:not(:disabled){transform:scale(.97)}
+.notely-icon-button:disabled,[aria-disabled="true"].notely-icon-button{opacity:.48;cursor:not-allowed}
+.notely-deleting{pointer-events:none;opacity:0!important;transform:scale(.94)!important;transition:opacity .18s ease,transform .18s ease}
+.notely-icon-toast{position:fixed;z-index:10000;left:50%;bottom:max(20px,env(safe-area-inset-bottom));transform:translateX(-50%);padding:9px 13px;border:1px solid var(--border,rgba(127,127,127,.25));border-radius:12px;background:var(--card,#111827);color:var(--ink,#fff);box-shadow:0 8px 30px #0002;font-size:13px;pointer-events:none;opacity:0;transition:opacity .16s ease}
+.notely-icon-toast.visible{opacity:1}
+@media(prefers-reduced-motion:reduce){.notely-icon-button,.notely-deleting,.notely-icon-toast{transition:none!important}}

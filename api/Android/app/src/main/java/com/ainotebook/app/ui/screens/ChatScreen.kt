@@ -46,6 +46,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -71,6 +72,8 @@ import androidx.compose.ui.unit.dp
 import com.ainotebook.app.data.ChatMessage
 import com.ainotebook.app.ui.ChatViewModel
 import com.ainotebook.app.ui.components.AssistantAvatar
+import com.ainotebook.app.ui.components.NotelyIcon
+import com.ainotebook.app.ui.components.NotelyIconTrigger
 import com.ainotebook.app.ui.components.BrandLogo
 import com.ainotebook.app.ui.components.MarkdownText
 import com.ainotebook.app.ui.components.TypingDots
@@ -433,11 +436,7 @@ private fun ChatInputBar(
                 contentAlignment = Alignment.Center
             ) {
                 if (streaming) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(22.dp),
-                        color = Color.White,
-                        strokeWidth = 2.dp
-                    )
+                    NotelyIcon(name = "loading", trigger = NotelyIconTrigger.Loop, size = 22.dp, color = Color.White)
                 } else {
                     Icon(
                         Icons.AutoMirrored.Filled.Send,
@@ -637,12 +636,12 @@ private fun AssistantMessage(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 var copied by remember(msg.content) { mutableStateOf(false) }
-                MessageAction(
-                    icon = if (copied) Icons.Default.Check else Icons.Default.ContentCopy,
-                    label = if (copied) "Copied" else "Copy"
-                ) {
+                TextButton(onClick = {
                     clipboard.setText(AnnotatedString(msg.content))
                     copied = true
+                }) {
+                    NotelyIcon(name = "copy", trigger = NotelyIconTrigger.Click, pressed = copied, size = 16.dp, contentDescription = null)
+                    Text(if (copied) "Copied" else "Copy")
                 }
                 MessageAction(Icons.Default.Share, "Share") {
                     val send = Intent(Intent.ACTION_SEND).apply {

@@ -121,7 +121,7 @@ fun GradientBrush(): Brush = Brush.linearGradient(listOf(BrandOrange, BrandPink,
 
 @Composable
 fun LoadingBox(modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Indigo) }
+    Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) { NotelyIcon(name = "loading", trigger = NotelyIconTrigger.Loop, size = 24.dp, color = Indigo) }
 }
 
 @Composable

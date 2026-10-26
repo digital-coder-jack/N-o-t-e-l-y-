@@ -65,7 +65,20 @@ android {
     }
 }
 
+// Extract the supplied icon JSON archive into native assets when the user builds Android.
+val notelyLottieZip = rootProject.file("../../frontend/assets/notely-lottie-icons.zip")
+val generatedNotelyLottieAssets = layout.buildDirectory.dir("generated/notelyLottieAssets")
+tasks.register<Copy>("extractNotelyLottieAssets") {
+    from(zipTree(notelyLottieZip))
+    into(generatedNotelyLottieAssets)
+    eachFile { path = "lottie/${name}" }
+    includeEmptyDirs = false
+}
+android.sourceSets.getByName("main").assets.srcDir(generatedNotelyLottieAssets)
+tasks.named("preBuild").configure { dependsOn("extractNotelyLottieAssets") }
+
 dependencies {
+    implementation("com.airbnb.android:lottie-compose:6.6.2")
     val composeBom = platform("androidx.compose:compose-bom:2024.06.00")
     implementation(composeBom)
 

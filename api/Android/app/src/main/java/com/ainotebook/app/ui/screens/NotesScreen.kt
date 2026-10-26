@@ -40,6 +40,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ainotebook.app.ui.NotesViewModel
+import com.ainotebook.app.ui.components.NotelyIcon
+import com.ainotebook.app.ui.components.NotelyIconTrigger
 import com.ainotebook.app.ui.theme.MutedText
 
 @Composable
@@ -78,7 +80,7 @@ fun NotesScreen(vm: NotesViewModel, onOpenTools: () -> Unit) {
 
         if (state.loading) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+                NotelyIcon(name = "loading", trigger = NotelyIconTrigger.Loop, size = 24.dp)
             }
         }
 
