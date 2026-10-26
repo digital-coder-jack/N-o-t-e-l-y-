@@ -325,7 +325,7 @@ async def topic_chat(topic_id: int, body: TopicChatIn, request: Request, user=De
                     pending = asyncio.create_task(iterator.__anext__())
                 finished, _ = await asyncio.wait({pending}, timeout=14.0)
                 if not finished:
-                    yield ": keep-alive\\n\\n"
+                    yield ": keep-alive\n\n"
                     continue
                 try:
                     event, value = pending.result()
