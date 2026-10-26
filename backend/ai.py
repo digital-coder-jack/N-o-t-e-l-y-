@@ -167,40 +167,22 @@ def _extract_json(raw: str):
 
 
 async def generate_quiz(topic: str, num_questions: int = 5, selection: str | None = "auto") -> list[dict]:
-    """
-    Return a list of {question, options:[...], answer:index} dicts.
-    Falls back to an empty list if parsing fails.
-    """
-    reply = await groq_chat(
-        [
-            {"role": "system", "content":
-                "You are a quiz generator. Respond ONLY with valid JSON, no prose."},
-            {"role": "user", "content":
-                f"Generate {num_questions} multiple-choice questions about '{topic}'. "
-                f"Return a JSON array where each item has: "
-                f'"question" (string), "options" (array of 4 strings), '
-                f'"answer" (integer index 0-3 of the correct option), '
-                f'and "explanation" (short string). Output ONLY the JSON array.'},
-        ],
-        temperature=0.6,
-        max_tokens=2000,
-        selection=selection,
+    """Return validated multiple-choice questions; repair malformed JSON once."""
+    prompt = (
+        f"Generate exactly {num_questions} multiple-choice questions about '{topic}'. "
+        'Return a JSON array; every item must have "question" (string), "options" '
+        '(exactly 4 strings), "answer" (integer 0-3), and "explanation" (string). '
+        "Output only valid JSON."
     )
-    data = _extract_json(reply)
+    data = await _generate_json(prompt, selection=selection, max_tokens=2000, expected="quiz")
     if not isinstance(data, list):
         return []
-    cleaned = []
-    for item in data:
-        if (isinstance(item, dict) and "question" in item
-                and isinstance(item.get("options"), list)):
-            cleaned.append({
-                "question": str(item.get("question", "")),
-                "options": [str(o) for o in item["options"]][:4],
-                "answer": int(item.get("answer", 0)) if str(item.get("answer", 0)).isdigit() else 0,
-                "explanation": str(item.get("explanation", "")),
-            })
-    return cleaned
-
+    return [{
+        "question": str(item["question"]),
+        "options": [str(option) for option in item["options"]],
+        "answer": int(item["answer"]),
+        "explanation": str(item.get("explanation", "")),
+    } for item in data]
 
 # ---------------------------------------------------------------------------
 # TOPIC WORKSPACE GENERATORS  (AI Learning OS)
@@ -259,18 +241,61 @@ async def generate_topic_section(topic: str, kind: str, selection: str | None = 
     )
 
 
-async def _generate_json(prompt: str, selection: str | None = "auto", max_tokens: int = 2600):
-    """Run a JSON-only generation and return parsed data (or None)."""
-    reply = await groq_chat(
-        [{"role": "system", "content":
-            "You are a structured data generator. Respond ONLY with valid JSON. "
-            "No prose, no markdown fences."},
-         {"role": "user", "content": prompt}],
-        temperature=0.4,
-        max_tokens=max_tokens,
-        selection=selection,
+def _valid_json_shape(data, expected: str | None) -> bool:
+    if data is None:
+        return False
+    if expected == "object":
+        return isinstance(data, dict) and bool(data.get("label"))
+    if expected == "quiz":
+        return isinstance(data, list) and bool(data) and all(
+            isinstance(item, dict)
+            and isinstance(item.get("question"), str) and item["question"].strip()
+            and isinstance(item.get("options"), list) and len(item["options"]) == 4
+            and all(isinstance(option, str) and option.strip() for option in item["options"])
+            and str(item.get("answer", "")).isdigit()
+            and 0 <= int(item["answer"]) <= 3
+            for item in data
+        )
+    if expected == "flashcards":
+        return isinstance(data, list) and bool(data) and all(
+            isinstance(item, dict) and str(item.get("front", "")).strip()
+            and str(item.get("back", "")).strip() for item in data
+        )
+    if expected == "topic_quiz":
+        return isinstance(data, list) and bool(data) and all(
+            isinstance(item, dict) and str(item.get("question", "")).strip()
+            and str(item.get("type", "mcq")).lower() in ("mcq", "tf", "fill")
+            for item in data
+        )
+    if expected == "array":
+        return isinstance(data, list) and bool(data)
+    return isinstance(data, (dict, list))
+
+
+async def _generate_json(
+    prompt: str, selection: str | None = "auto", max_tokens: int = 2600,
+    expected: str | None = None,
+):
+    """Generate JSON, validate its expected shape, then repair once if needed."""
+    strict_prompt = (
+        prompt + "\n\nYour previous output was invalid or did not match the required schema. "
+        "Repair it and return ONLY one valid JSON value matching the schema. "
+        "Do not include markdown fences, comments, or explanatory prose."
     )
-    return _extract_json(reply)
+    for attempt in range(2):
+        reply = await groq_chat(
+            [{"role": "system", "content":
+                "You are a structured data generator. Respond ONLY with valid JSON. "
+                "No prose, no markdown fences."},
+             {"role": "user", "content": prompt if attempt == 0 else strict_prompt}],
+            temperature=0.2 if attempt else 0.4,
+            max_tokens=max_tokens,
+            selection=selection,
+        )
+        data = _extract_json(reply)
+        if _valid_json_shape(data, expected):
+            return data
+    return None
 
 
 async def generate_mindmap(topic: str, selection: str | None = "auto") -> dict | None:
@@ -282,6 +307,7 @@ async def generate_mindmap(topic: str, selection: str | None = "auto") -> dict |
         "Include 5-8 main branches, each with 2-4 sub-branches. Every node needs a 'note'. "
         "Output ONLY the JSON object.",
         selection=selection,
+        expected="object",
     )
     return data if isinstance(data, dict) and data.get("label") else None
 
@@ -296,6 +322,7 @@ async def generate_roadmap(topic: str, selection: str | None = "auto") -> list |
         '"practice" (array of 2 strings), "resources" (array of 2 strings). '
         "Output ONLY the JSON array.",
         selection=selection,
+        expected="array",
     )
     return data if isinstance(data, list) and data else None
 
@@ -324,6 +351,7 @@ async def generate_topic_quiz(topic: str, difficulty: str = "medium",
         '"answer" (for mcq/tf: integer index of correct option; for fill: the answer string), '
         '"explanation" (short string). Output ONLY the JSON array.',
         selection=selection,
+        expected="topic_quiz",
     )
     if not isinstance(data, list):
         return None
@@ -369,24 +397,13 @@ TOPIC_CHAT_SYSTEM = (
 
 
 async def generate_flashcards(topic: str, num_cards: int = 8, selection: str | None = "auto") -> list[dict]:
-    """Return a list of {front, back} flashcards."""
-    reply = await groq_chat(
-        [
-            {"role": "system", "content":
-                "You are a flashcard generator. Respond ONLY with valid JSON, no prose."},
-            {"role": "user", "content":
-                f"Generate {num_cards} study flashcards about '{topic}'. "
-                f'Return a JSON array where each item has "front" (a question or term) '
-                f'and "back" (the answer or definition). Output ONLY the JSON array.'},
-        ],
-        temperature=0.6,
-        max_tokens=2000,
-        selection=selection,
+    """Return validated flashcards; malformed JSON is repaired once."""
+    prompt = (
+        f"Generate exactly {num_cards} study flashcards about '{topic}'. "
+        'Return a JSON array; every item must contain "front" and "back", both non-empty strings. '
+        "Output only valid JSON."
     )
-    data = _extract_json(reply)
+    data = await _generate_json(prompt, selection=selection, max_tokens=2000, expected="flashcards")
     if not isinstance(data, list):
         return []
-    return [
-        {"front": str(it.get("front", "")), "back": str(it.get("back", ""))}
-        for it in data if isinstance(it, dict) and "front" in it
-    ]
+    return [{"front": str(item["front"]), "back": str(item["back"])} for item in data]
