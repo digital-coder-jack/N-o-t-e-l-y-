@@ -252,7 +252,7 @@ async def stream_message(chat_id: int, body: StreamIn, request: Request, user=De
                 finished, _ = await asyncio.wait({next_event}, timeout=14.0)
                 if not finished:
                     # Comment frames keep proxies alive without being parsed as app events.
-                    yield ": keep-alive\\n\\n"
+                    yield ": keep-alive\n\n"
                     continue
                 try:
                     event, value = next_event.result()
