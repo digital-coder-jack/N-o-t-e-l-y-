@@ -12,6 +12,7 @@ import json
 import logging
 import os
 import random
+import re
 import time
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
@@ -251,7 +252,7 @@ def _gemini_payload(
     current_model = (model or GEMINI_MODEL).lower()
     match = __import__("re").match(r"^gemini-(\d+)\.(\d+)", current_model)
     if not match or not (int(match.group(1)) >= 4 or
-                         (int(match.group(1)) == 3 and int(match.group(2)) < 6)):
+                         (int(match.group(1)) == 3 and int(match.group(2)) >= 6)):
         generation_config["temperature"] = temperature
     payload = {"contents": contents, "generationConfig": generation_config}
     if system:
