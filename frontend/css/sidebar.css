@@ -309,7 +309,6 @@
   border: 2px solid var(--bg-1);
   z-index: 1;
 }
-.side-user-trigger .avatar .status-dot.guest { background: var(--warning); }
 
 .side-user-trigger .meta { flex: 1; min-width: 0; overflow: hidden; }
 .side-user-trigger .meta b {
