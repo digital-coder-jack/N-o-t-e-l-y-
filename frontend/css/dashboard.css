@@ -154,13 +154,6 @@ a.recent-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 
 .settings-card .field input { padding-left: 1rem; }
 .settings-card .field input.with-icon { padding-left: 2.8rem; }
 
-/* ========== GUEST BANNER ========== */
-.guest-banner { padding: 1rem 1.4rem; }
-.guest-banner-content { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; }
-.guest-banner-text { display: flex; align-items: center; gap: 1rem; flex: 1; }
-.guest-banner-text i { font-size: 1.4rem; color: var(--accent); }
-.guest-banner-text strong { display: block; font-size: 1rem; margin-bottom: .15rem; }
-.guest-banner-text p { font-size: .85rem; color: var(--text-dim); margin: 0; }
 
 /* ========== FOCUS (keyboard) ========== */
 .sidebar-toggle:focus-visible,

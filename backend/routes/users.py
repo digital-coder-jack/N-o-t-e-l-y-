@@ -7,7 +7,6 @@ Authentication & user-profile API.
 Endpoints (all prefixed with /api):
   POST /api/auth/signup           -> create account, returns JWT
   POST /api/auth/login            -> login, returns JWT
-  POST /api/auth/guest            -> create a guest account, returns JWT
   POST /api/auth/forgot-password  -> issue a reset token
   POST /api/auth/reset-password   -> set new password with reset token
   GET  /api/auth/me               -> current user profile
@@ -248,6 +247,6 @@ async def update_settings(body: SettingsUpdateIn, user=Depends(auth.current_user
 
 @router.delete("/account")
 async def delete_account(user=Depends(auth.current_user)):
-    # Guest accounts are already disposable, but we allow deleting real ones too
+    # Deleting an account removes its server-side account data.
     db.delete_user_account(user["id"])
     return {"message": "Account deleted successfully."}

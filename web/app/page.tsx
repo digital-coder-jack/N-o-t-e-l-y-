@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Archive, ArrowRight, BarChart3, Bell, BookOpen, CalendarDays, Check, CheckCircle2,
   ChevronDown, ChevronLeft, ChevronRight, CircleHelp, Cloud, FileText, FolderOpen, Grid2X2, Home,
@@ -25,7 +25,6 @@ type Route =
   | "summarizer"
   | "homework"
   | "search"
-  | "assistant"
   | "settings";
 
 type Note = {
@@ -50,12 +49,8 @@ async function workspaceToken(): Promise<string> {
   if (typeof window === "undefined") throw new Error("Workspace requests require a browser.");
   const saved = window.localStorage.getItem("ss_token");
   if (saved) return saved;
-  const response = await fetch(API_BASE + "/api/auth/guest", { method: "POST" });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok || !payload.token) throw new Error(payload.detail || "Could not start a workspace session.");
-  window.localStorage.setItem("ss_token", payload.token);
-  if (payload.user) window.localStorage.setItem("ss_user", JSON.stringify(payload.user));
-  return payload.token as string;
+  window.location.assign("/login");
+  throw new Error("Sign in to continue.");
 }
 
 async function apiRequest<T = any>(path: string, init: RequestInit = {}): Promise<T> {
@@ -116,7 +111,6 @@ function routeFromPath(path: string): Route {
   if (key === "summarizer") return "summarizer";
   if (key === "homework") return "homework";
   if (key === "search") return "search";
-  if (key === "assistant") return "assistant";
   if (key === "settings") return "settings";
   return "overview";
 }
@@ -125,6 +119,94 @@ function pathFor(route: Route) {
   if (route === "overview") return "/";
   if (route === "settings") return "/settings";
   return "/#/" + route;
+}
+
+
+function TrialStatusBanner() {
+  const [user, setUser] = useState<any>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [endedDismissed, setEndedDismissed] = useState(false);
+  const [reminderDismissed, setReminderDismissed] = useState(false);
+
+  useEffect(() => {
+    let live = true;
+    apiRequest<{ user: any }>("/api/auth/me").then((result) => {
+      if (!live) return;
+      setUser(result.user || null);
+      if (result.user?.trial_expired) document.body.classList.add("trial-readonly");
+      if (result.user?.is_trial && (result.user.trial_days_left === 2 || result.user.trial_days_left === 1)) {
+        const key = "notely-trial-reminder-" + result.user.id + "-" + result.user.trial_days_left;
+        setReminderDismissed(Boolean(localStorage.getItem(key)));
+      }
+    }).catch(() => undefined);
+    return () => { live = false; };
+  }, []);
+
+  if (!user?.is_trial) return null;
+  const days = Number(user.trial_days_left || 0);
+  const reminderKey = "notely-trial-reminder-" + user.id + "-" + days;
+  const dismissReminder = () => { try { localStorage.setItem(reminderKey, "1"); } catch { /* continue if storage is unavailable */ } setReminderDismissed(true); };
+  return (
+    <>
+      <div className="trial-status-anchor">
+        <button type="button" className="trial-status-pill" aria-expanded={detailsOpen} onClick={() => setDetailsOpen((v) => !v)}>
+          {user.trial_expired ? "Trial ended" : "Trial: " + days + (days === 1 ? " day left" : " days left")}
+        </button>
+        {detailsOpen && <section className="trial-status-popover" role="dialog" aria-label="Trial details">
+          <strong>{user.trial_expired ? "Your trial has ended" : "Your seven-day trial"}</strong>
+          <p>{user.trial_expired ? "Your notes and materials stay safe in read-only mode." : "Everything is unlocked while your trial is active."}</p>
+          <button type="button" onClick={() => setDetailsOpen(false)}>Close</button>
+          <small>Upgrade payments are not connected yet.</small>
+        </section>}
+      </div>
+      {!user.trial_expired && (days === 2 || days === 1) && !reminderDismissed && (
+        <aside className="trial-reminder-card" role="status">
+          <div><strong>{days === 2 ? "Your trial ends in two days" : "Your trial ends today"}</strong><p>Your saved work stays yours. Review upgrade options before the trial ends.</p></div>
+          <button type="button" aria-label="Dismiss trial reminder" onClick={dismissReminder}>×</button>
+        </aside>
+      )}
+      {user.trial_expired && !endedDismissed && (
+        <div className="trial-ended-backdrop" role="dialog" aria-modal="true" aria-labelledby="trial-ended-title">
+          <section className="trial-ended-card">
+            <span className="trial-ended-mark">N</span><span className="eyebrow">YOUR NEXT CHAPTER</span>
+            <h1 id="trial-ended-title">Your trial has ended.</h1>
+            <p>Your notes and materials are safe. You can still read your work; creating, editing and AI features are paused until you upgrade.</p>
+            <button type="button" className="action-button" onClick={() => setEndedDismissed(true)}>Continue to read-only workspace</button>
+            <button type="button" className="trial-ended-secondary" onClick={() => setDetailsOpen(true)}>View upgrade options</button>
+            {detailsOpen && <p className="trial-upgrade-note">Payments are not connected yet. Your saved work remains available.</p>}
+          </section>
+        </div>
+      )}
+    </>
+  );
+}
+
+function AuroraOrb({ size = 28 }: { size?: number }) {
+  const id = useId().replace(/:/g, "");
+  return (
+    <svg className="na-aurora-orb-svg" width={size} height={size} viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+      <defs>
+        <radialGradient id={`na-sphere-${id}`} cx="27%" cy="17%" r="88%"><stop offset="0" stopColor="#263b5c"/><stop offset=".48" stopColor="#0b1428"/><stop offset="1" stopColor="#030611"/></radialGradient>
+        <clipPath id={`na-clip-${id}`}><circle cx="32" cy="32" r="23"/></clipPath>
+        <filter id={`na-glow-${id}`} x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="2.4"/></filter>
+        <linearGradient id={`na-rim-${id}`} x1="0" y1="0" x2="1" y2="1"><stop stopColor="#a5f3fc"/><stop offset=".52" stopColor="#22d3ee"/><stop offset="1" stopColor="#a855f7"/></linearGradient>
+      </defs>
+      <ellipse cx="32" cy="52" rx="20" ry="5" fill="#22d3ee" opacity=".24" filter={`url(#na-glow-${id})`}/>
+      <ellipse cx="32" cy="32" rx="29" ry="13" fill="none" stroke="#22d3ee" strokeWidth="2.2" opacity=".2" transform="rotate(-18 32 32)"/>
+      <ellipse cx="32" cy="32" rx="29" ry="13" fill="none" stroke={`url(#na-rim-${id})`} strokeWidth="1.6" transform="rotate(-18 32 32)"/>
+      <circle cx="32" cy="32" r="24" fill={`url(#na-sphere-${id})`} stroke="#b7efff" strokeOpacity=".5" strokeWidth="1"/>
+      <g clipPath={`url(#na-clip-${id})`}>
+        <circle cx="22" cy="25" r="16" fill="#22d3ee" opacity=".86" filter={`url(#na-glow-${id})`}/>
+        <circle cx="40" cy="26" r="16" fill="#a855f7" opacity=".8" filter={`url(#na-glow-${id})`}/>
+        <circle cx="36" cy="43" r="15" fill="#ec4899" opacity=".7" filter={`url(#na-glow-${id})`}/>
+        <path d="M14 24 Q25 10 39 19" fill="none" stroke="#fff" strokeOpacity=".42" strokeWidth="2.2" strokeLinecap="round"/>
+        <ellipse cx="23" cy="18" rx="10" ry="4" fill="#fff" opacity=".2" transform="rotate(-30 23 18)"/>
+      </g>
+      <circle cx="32" cy="32" r="23.4" fill="none" stroke="#e4fbff" strokeOpacity=".5" strokeWidth=".8"/>
+      <path d="M32 23 L35 29 L41 32 L35 35 L32 41 L29 35 L23 32 L29 29 Z" fill="#fff"/>
+      <circle cx="32" cy="32" r="2" fill="#fff"/>
+    </svg>
+  );
 }
 
 function AppLogo({ compact = false }: { compact?: boolean }) {
@@ -154,7 +236,6 @@ function Sidebar({
   const primary = [
     ["overview", "Overview", Home],
     ["notes", "My Notes", FileText],
-    ["assistant", "AI Assistant", Sparkles],
     ["documents", "Documents", FolderOpen],
   ] as const;
 
@@ -357,13 +438,14 @@ function FloatingAssistant({ context }: { context: string }) {
     window.addEventListener("notely:assistant-open", onOpen);
     window.addEventListener("keydown", onKeys);
     window.addEventListener("popstate", onPopState);
+    const deleteTimers = deleteTimersRef.current;
 
     return () => {
       cancelled = true;
       window.removeEventListener("notely:assistant-open", onOpen);
       window.removeEventListener("keydown", onKeys);
       window.removeEventListener("popstate", onPopState);
-      Object.values(deleteTimersRef.current).forEach(window.clearTimeout);
+      Object.values(deleteTimers).forEach(window.clearTimeout);
       controllerRef.current?.abort();
     };
   }, []);
@@ -629,7 +711,7 @@ function FloatingAssistant({ context }: { context: string }) {
         onClick={open}
       >
         <span className="na-launcher-ring" />
-        <span className="na-launcher-icon">✦</span>
+        <span className="na-launcher-icon"><AuroraOrb size={42} /></span>
         {unread && <span className="na-launcher-badge" />}
       </button>
 
@@ -643,7 +725,7 @@ function FloatingAssistant({ context }: { context: string }) {
         >
           <header className="na-header">
             <div className="na-brand">
-              <span><Sparkles /></span>
+              <span><AuroraOrb size={28} /></span>
               <div>
                 <strong>Notely Assistant</strong>
                 <small>Stay in your study flow</small>
@@ -1592,7 +1674,7 @@ export default function Page() {
       archive: "Archive", trash: "Trash", tools: "Study Tools", quiz: "Quiz Generator",
       flashcards: "Flashcards", roadmap: "Study Roadmap", mindmap: "Mind Maps",
       planner: "Revision Planner", summarizer: "Text Summarizer", homework: "Homework Helper",
-      search: "Search", assistant: "Notely Assistant", settings: "Settings"
+      search: "Search", settings: "Settings"
     };
     document.title = labels[route] + " — Notely";
   }, [route]);
@@ -1651,12 +1733,7 @@ export default function Page() {
   let content: ReactNode = <Overview setRoute={setRoute} />;
 
   if (route === "notes") content = <Notes setRoute={setRoute} />;
-  else if (route === "assistant") {
-    content = <Overview setRoute={setRoute} />;
-    if (typeof window !== "undefined") {
-      setTimeout(() => openNotelyAssistant(), 0);
-    }
-  } else if (route === "documents") content = <Documents setRoute={setRoute} />;
+  else if (route === "documents") content = <Documents setRoute={setRoute} />;
   else if (["favorites", "archive", "trash"].includes(route)) content = <Notes setRoute={setRoute} filter={route as "favorites" | "archive" | "trash"} />;
   else if (route === "tools") content = <Tools setRoute={setRoute} />;
   else if (route === "quiz" || route === "flashcards" || route === "roadmap" || route === "mindmap" || route === "planner" || route === "summarizer" || route === "homework") content = <ToolDetail route={route} setRoute={setRoute} />;
@@ -1665,6 +1742,7 @@ export default function Page() {
 
   return (
     <div className="workspace">
+      <TrialStatusBanner />
       <Sidebar
         route={route}
         setRoute={setRoute}

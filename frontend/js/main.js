@@ -29,9 +29,9 @@ function init() {
     });
   }
 
-  // Wire Start Learning buttons to guest login
-  document.getElementById('startLearning')?.addEventListener('click', startAsGuest);
-  document.getElementById('ctaButton')?.addEventListener('click', startAsGuest);
+  // Start Learning now leads to account creation; trial starts server-side on signup.
+  document.getElementById('startLearning')?.addEventListener('click', startTrial);
+  document.getElementById('ctaButton')?.addEventListener('click', startTrial);
 
   typingEffect();
   countUp();
@@ -39,25 +39,11 @@ function init() {
   gsapHero();
 }
 
-/* ---------- Start as guest ---------- */
-async function startAsGuest(e) {
-  if (e) e.preventDefault();
-  const btn = e.currentTarget;
-  const originalText = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
-  
-  try {
-    const data = await SS.api('/api/auth/guest', { method: 'POST', auth: false });
-    SS.setSession(data.token, data.user);
-    sessionStorage.setItem('ss_show_welcome', 'true');
-    SS.toast('Welcome! Let\'s start learning.');
-    setTimeout(() => (window.location.href = '/dashboard.html'), 500);
-  } catch (err) {
-    SS.toast(err.message, 'error');
-    btn.disabled = false;
-    btn.innerHTML = originalText;
-  }
+/* ---------- Start a trial ---------- */
+function startTrial(event) {
+  if (event) event.preventDefault();
+  if (window.SS && SS.isAuthed()) window.location.href = '/dashboard.html';
+  else window.location.href = '/signup';
 }
 
 /* ---------- Typing text effect ---------- */

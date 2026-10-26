@@ -1,8 +1,7 @@
 /* =====================================================================
    Notely  -  onboarding.js
    ---------------------------------------------------------------------
-   Beautiful multi-step onboarding wizard shown ONCE after any auth
-   method (login / signup / guest / OAuth). Collects education level,
+   Beautiful multi-step onboarding wizard shown ONCE after a successful login or signup. Collects education level,
    study goal, interests, daily time, learning style, experience and
    lightweight account/security preferences. Answers are persisted to
    the backend (PUT /api/auth/settings, category "onboarding") and
@@ -22,13 +21,8 @@
   document.addEventListener('DOMContentLoaded', function () {
     if (localStorage.getItem(LS_KEY) === '1') return;
 
-    // Wait for a session (guest login may still be in flight).
-    var tries = 0;
-    (function waitAuth() {
-      if (SS.isAuthed()) return checkServer();
-      if (++tries > 40) return; // ~10s, give up quietly
-      setTimeout(waitAuth, 250);
-    })();
+    if (!SS.isAuthed()) { window.location.replace('/login'); return; }
+    checkServer();
 
     function checkServer() {
       SS.api('/api/auth/settings')

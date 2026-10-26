@@ -1,135 +1,60 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" data-theme="dark">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <link rel="icon" type="image/png" href="/assets/logo.png" />
-  <link rel="manifest" href="/manifest.json">
-<link rel="icon" type="image/png" href="/assets/logo.png">
-<link rel="apple-touch-icon" href="/assets/logo.png">
-  <meta name="theme-color" content="#5558ac">
-  <script>
-    (function () {
-      try {
-        var r = document.documentElement;
-        r.setAttribute('data-theme', localStorage.getItem('ss_theme') || 'dark');
-        r.setAttribute('data-font', localStorage.getItem('ss_font') || 'md');
-      } catch (e) { document.documentElement.setAttribute('data-theme', 'dark'); }
-    })();
-  </script>
-  <title>Create account · Notely</title>
-  <meta name="theme-color" content="#5558ac" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Notely" />
-  <link rel="manifest" href="/manifest.json" />
-  <link rel="apple-touch-icon" href="/assets/logo.png" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
-  <link rel="stylesheet" href="/css/style.css" />
-  <link rel="stylesheet" href="/css/auth.css" />
-  <link rel="stylesheet" href="/css/responsive.css" />
-
-  <!-- Vercel Speed Insights -->
-  <script type="module">
-    import { injectSpeedInsights } from 'https://cdn.jsdelivr.net/npm/@vercel/speed-insights@2.0.0/dist/index.mjs';
-    injectSpeedInsights();
-  </script>
-
-  <!-- Premium layer (loaded last to override legacy tokens) -->
-  <link rel="stylesheet" href="/css/components.css" />
-  <!-- Figma redesign overlay (loaded last) -->
-  <link rel="stylesheet" href="/css/figma-redesign.css" />
-  <link rel="stylesheet" href="/css/notely-theme.css" />
-  <link rel="stylesheet" href="/css/notely-shutter.css" />
-  <script>(function(){try{if(sessionStorage.getItem('notely-shutter-next')==='1')document.documentElement.classList.add('notely-shutter-pending');}catch(e){}})();</script>
-  <link rel="stylesheet" href="/css/notely-lottie-icons.css" />
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#060c1c">
+<meta name="description" content="Start your seven-day Notely trial and bring your study space together."><title>Start your free trial · Notely</title>
+<link rel="icon" href="/assets/logo.png"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css"><link rel="stylesheet" href="/css/notely-theme.css"><link rel="stylesheet" href="/css/notely-theme-shared.css"><link rel="stylesheet" href="/css/notely-shutter.css"><link rel="stylesheet" href="/css/auth-cinema.css">
+<script>(function(){try{var t=localStorage.getItem('notely-theme')||localStorage.getItem('ss_theme');if(t!=='light'&&t!=='dark')t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t;}catch(e){document.documentElement.dataset.theme='dark';}})();</script>
 </head>
-<body>
-  <div id="notely-shutter" class="notely-shutter-overlay" aria-hidden="true"><div class="notely-shutter-inner"><img src="/assets/logo.png" alt="Notely"></div></div>
-  <div id="particles-js"></div>
-  <div id="toast-wrap"></div>
-  <a class="back-home" href="/"><i class="fas fa-arrow-left"></i> Home</a>
-  <button class="theme-toggle floating" id="themeToggle" aria-label="Toggle theme" title="Toggle light / dark">
-    <i class="fas fa-moon"></i><i class="fas fa-sun"></i>
-  </button>
-
-	  <main class="auth-wrap">
-	    <aside class="auth-visual" aria-label="Notely workspace preview">
-	      <span class="auth-visual-kicker"><i class="fas fa-sparkles"></i> Start with intention</span>
-	      <h2>Your best learning system is the one you’ll <em>return to.</em></h2>
-	      <p>Build a personal knowledge workspace that helps every question become something useful.</p>
-	      <div class="auth-preview">
-	        <div class="auth-preview-head"><span class="preview-dot"></span><strong>Your first workspace</strong><span class="preview-status">New</span></div>
-	        <div class="preview-line wide"></div><div class="preview-line short"></div>
-	        <div class="preview-insight"><i class="fas fa-compass"></i><span><b>Make room for ideas</b><small>Notes, chats, and plans in one view</small></span><i class="fas fa-arrow-up-right-from-square"></i></div>
-	      </div>
-	      <div class="auth-proof"><span><i class="fas fa-check"></i> Free to get started</span><span><i class="fas fa-check"></i> Your space, your pace</span></div>
-	    </aside>
-	    <section class="auth-card glass">
-      <a class="brand" href="/"><span class="logo"><img src="/assets/logo.png" alt="Notely Logo" class="logo-img" /></span><span>Notely</span></a>
-      <h1>Create your account</h1>
-      <p class="sub">Start studying smarter in under a minute</p>
-
-      <div class="form-msg" id="formMsg"></div>
-
-      <form id="signupForm" novalidate>
-        <div class="field">
-          <label for="name">Full name</label>
-          <div class="input-wrap">
-            <i class="fas fa-user lead-icon"></i>
-            <input type="text" id="name" name="name" placeholder="Jane Doe" autocomplete="name" required />
-          </div>
-        </div>
-        <div class="field">
-          <label for="username">Username</label>
-          <div class="input-wrap">
-            <i class="fas fa-at lead-icon"></i>
-            <input type="text" id="username" name="username" placeholder="janedoe" required />
-          </div>
-        </div>
-        <div class="field">
-          <label for="email">Email</label>
-          <div class="input-wrap">
-            <i class="fas fa-envelope lead-icon"></i>
-            <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" required />
-          </div>
-        </div>
-        <div class="field">
-          <label for="password">Password</label>
-          <div class="input-wrap">
-            <i class="fas fa-lock lead-icon"></i>
-            <input type="password" id="password" name="password" placeholder="At least 6 characters" autocomplete="new-password" required />
-            <button type="button" class="toggle-pw" data-target="password"><i class="fas fa-eye"></i></button>
-          </div>
-          <div class="pw-strength"><span id="pwBar"></span></div>
-        </div>
-        <div class="field">
-          <label for="confirm_password">Confirm Password</label>
-          <div class="input-wrap">
-            <i class="fas fa-shield-halved lead-icon"></i>
-            <input type="password" id="confirm_password" name="confirm_password" placeholder="••••••••" required />
-            <button type="button" class="toggle-pw" data-target="confirm_password"><i class="fas fa-eye"></i></button>
-          </div>
-        </div>
-        <button type="submit" class="btn block" id="submitBtn"><i class="fas fa-user-plus"></i> Create account</button>
-      </form>
-
-      <div class="auth-or">or</div>
-      <button type="button" class="btn ghost block" data-guest><i class="fas fa-user-secret"></i> Continue as Guest</button>
-
-      <p class="auth-foot">Already have an account? <a href="/login">Log in</a></p>
-    </section>
-  </main>
-
-  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
-  <script src="/js/config.js"></script>
-  <script src="/js/app.js"></script>
-  <script src="/js/motion.js"></script>
-  <script src="/js/pwa.js"></script>
-  <script src="/js/auth.js"></script>
-  <script src="/js/notely-shutter.js"></script>
-  <script defer src="/js/notely-lottie-registry.js"></script>
-  <script defer src="/js/notely-lottie-icons.js"></script>
-</body>
-</html>
+<body data-auth-initial="signup">
+<div id="notely-shutter" class="notely-shutter-overlay" aria-hidden="true"><div class="notely-shutter-inner"><img src="/assets/logo.png" alt=""></div></div>
+<div class="cinema-bar cinema-bar-top" aria-hidden="true"></div><div class="cinema-bar cinema-bar-bottom" aria-hidden="true"></div>
+<div class="auth-ambient" aria-hidden="true"><span></span><span></span><span></span></div>
+<button class="auth-theme-toggle notely-theme-toggle" type="button" data-notely-theme-toggle aria-label="Switch theme" title="Switch theme"><svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4m0-14.2-1.4 1.4M6.3 17.7l-1.4 1.4"></path></svg><svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"></path></svg></button>
+<a class="auth-back-home" href="/">← <span>Home</span></a>
+<main class="auth-cinema">
+<section class="auth-story" aria-label="Welcome to Notely">
+<a class="auth-brand" href="/" aria-label="Notely home"><img src="/assets/logo.png" alt=""><span>Notely</span></a>
+<span class="auth-kicker">WELCOME TO NOTELY</span>
+<h1><span>Your study space</span><span>starts <em>here.</em></span></h1>
+<p class="auth-lede">Seven days of full access to a calmer, more connected way to learn.</p>
+<span class="trial-pill"><span aria-hidden="true"></span> 7-day free trial</span>
+<div class="study-cards" aria-hidden="true">
+<div class="study-note study-note-back"><div class="study-note-top"><span>NOTELY</span><span>STUDY NOTE</span></div><i class="note-spark"></i><b></b><b></b><b></b><small>01 / 03</small></div>
+<div class="study-note study-note-mid"><div class="study-note-top"><span>NOTELY</span><span>STUDY NOTE</span></div><i class="note-spark"></i><b></b><b></b><b></b><small>02 / 03</small></div>
+<div class="study-note study-note-front"><div class="study-note-top"><span>NOTELY</span><span>STUDY NOTE</span></div><i class="note-spark"></i><b></b><b></b><b></b><small>03 / 03</small></div>
+</div>
+<p class="auth-story-foot"><span></span> Notes, practice and planning in one place.</p>
+</section>
+<section class="auth-card" aria-label="Account access">
+<div class="auth-card-top"><span class="auth-card-eyebrow">YOUR NEXT CHAPTER</span><span class="auth-mobile-trial">7 days free</span></div>
+<div class="auth-segment" role="tablist" aria-label="Choose sign up or log in">
+<button type="button" role="tab" id="authTabSignup" data-auth-tab="signup" aria-selected="false">Sign up</button><button type="button" role="tab" id="authTabLogin" data-auth-tab="login" aria-selected="true">Log in</button><span class="auth-segment-highlight" aria-hidden="true"></span>
+</div>
+<div class="form-msg" id="formMsg" role="status" aria-live="polite"></div>
+<section class="auth-panel" data-auth-panel="signup" role="tabpanel" aria-labelledby="authTabSignup" hidden>
+<h2>Start your free trial</h2><p class="auth-panel-copy">Seven days. Everything unlocked. Your work stays yours.</p>
+<button type="button" class="auth-google" data-google-signin><span class="google-mark" aria-hidden="true">G</span> Continue with Google</button><div class="auth-divider"><span>or use email</span></div>
+<form id="signupForm" novalidate>
+<div class="auth-field"><label for="name">Your name</label><input id="name" name="name" type="text" autocomplete="name" placeholder="Alex Morgan" required></div>
+<div class="auth-field"><label for="email">Email address</label><input id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required></div>
+<div class="auth-field"><label for="signupPassword">Password</label><div class="auth-password-wrap"><input id="signupPassword" name="password" type="password" autocomplete="new-password" placeholder="At least 8 characters" minlength="8" required><button type="button" class="auth-show-password" data-target="signupPassword" aria-label="Show password">Show</button></div><div class="auth-strength" aria-label="Password strength"><span id="pwBar"></span></div><small class="auth-hint" id="pwHint">Use 8+ characters with a number for a stronger password.</small></div>
+<button type="submit" class="auth-submit" id="signupSubmit">Start free trial <span aria-hidden="true">↗</span></button>
+</form><p class="auth-terms">Your trial starts when your account is created. No payment is taken.</p>
+</section>
+<section class="auth-panel" data-auth-panel="login" role="tabpanel" aria-labelledby="authTabLogin">
+<h2>Welcome back.</h2><p class="auth-panel-copy">Pick up where your ideas left off.</p>
+<button type="button" class="auth-google" data-google-signin><span class="google-mark" aria-hidden="true">G</span> Continue with Google</button><div class="auth-divider"><span>or use email</span></div>
+<form id="loginForm" novalidate>
+<div class="auth-field"><label for="identifier">Email or username</label><input id="identifier" name="identifier" type="text" autocomplete="username" placeholder="you@example.com" required></div>
+<div class="auth-field"><div class="auth-label-row"><label for="password">Password</label><a href="/forgot">Forgot password?</a></div><div class="auth-password-wrap"><input id="password" name="password" type="password" autocomplete="current-password" placeholder="Your password" required><button type="button" class="auth-show-password" data-target="password" aria-label="Show password">Show</button></div></div>
+<button type="submit" class="auth-submit" id="submitBtn">Log in <span aria-hidden="true">↗</span></button>
+</form><p class="auth-terms">Your notes and materials stay connected to your account.</p>
+</section>
+<p class="auth-switch-copy"><span data-auth-switch-copy>New to Notely?</span> <button type="button" data-auth-switch-link data-auth-tab="signup">Start your trial</button></p>
+</section>
+</main><div class="auth-cinematic-wipe" aria-hidden="true"></div>
+<script src="/js/config.js"></script><script src="/js/app.js"></script><script src="/js/auth.js"></script><script src="/js/notely-theme.js"></script><script src="/js/notely-shutter.js"></script>
+</body></html>
