@@ -80,20 +80,22 @@ private val BOTTOM_ITEMS = listOf(
 @Composable
 fun AppRoot(repo: Repository) {
     val factory = remember(repo) { VMFactory(repo) }
-    val token by repo.tokenFlow.collectAsState(initial = null)
-    val isAuthed = !token.isNullOrBlank()
-
-    if (isAuthed) {
+    // Distinguish a session that has not loaded yet from a genuinely logged-out user.
+    val token by repo.tokenFlow.collectAsState(initial = "__NOTELY_SESSION_LOADING__")
+    val sessionLoading = token == "__NOTELY_SESSION_LOADING__"
+    val isAuthed = !sessionLoading && !token.isNullOrBlank()
+    NativeLaunchFlow(factory = factory, isAuthed = isAuthed, sessionLoading = sessionLoading) {
         MainShell(factory)
-    } else {
-        AuthFlow(factory)
     }
 }
 
 @Composable
-private fun AuthFlow(factory: VMFactory) {
+private fun AuthFlow(factory: VMFactory, startRoute: String, onBackToLanding: () -> Unit) {
     val nav = rememberNavController()
     val authVm: AuthViewModel = viewModel(factory = factory)
+    androidx.activity.compose.BackHandler {
+        onBackToLanding()
+    }
 
     NavHost(
         navController = nav,
@@ -106,14 +108,14 @@ private fun AuthFlow(factory: VMFactory) {
         composable(Routes.LOGIN) {
             LoginScreen(
                 vm = authVm,
-                onLoggedIn = { /* token flow flips AppRoot to MainShell */ },
+                onLoggedIn = { /* token flow triggers the shuttered workspace transition */ },
                 onGoSignup = { nav.navigate(Routes.SIGNUP) }
             )
         }
         composable(Routes.SIGNUP) {
             SignupScreen(
                 vm = authVm,
-                onSignedUp = { },
+                onSignedUp = { /* token flow triggers the shuttered workspace transition */ },
                 onGoLogin = { nav.popBackStack() }
             )
         }
