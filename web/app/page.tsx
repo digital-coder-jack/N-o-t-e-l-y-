@@ -145,7 +145,7 @@ function TrialStatusBanner() {
   if (!user?.is_trial) return null;
   const days = Number(user.trial_days_left || 0);
   const reminderKey = "notely-trial-reminder-" + user.id + "-" + days;
-  const dismissReminder = () => { try { localStorage.setItem(reminderKey, "1"); } catch {} setReminderDismissed(true); };
+  const dismissReminder = () => { try { localStorage.setItem(reminderKey, "1"); } catch { /* continue if storage is unavailable */ } setReminderDismissed(true); };
   return (
     <>
       <div className="trial-status-anchor">
