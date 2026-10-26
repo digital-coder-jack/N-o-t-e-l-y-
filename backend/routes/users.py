@@ -7,7 +7,6 @@ Authentication & user-profile API.
 Endpoints (all prefixed with /api):
   POST /api/auth/signup           -> create account, returns JWT
   POST /api/auth/login            -> login, returns JWT
-  POST /api/auth/guest            -> create a guest account, returns JWT
   POST /api/auth/forgot-password  -> issue a reset token
   POST /api/auth/reset-password   -> set new password with reset token
   GET  /api/auth/me               -> current user profile

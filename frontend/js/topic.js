@@ -59,7 +59,7 @@
   /* ---------- boot ---------- */
   async function boot() {
     try {
-      if (!SS.isAuthed()) await SS.ensureGuestSession();
+      if (!SS.isAuthed()) { window.location.replace("/login"); return; }
       if (!topicId && topicQuery) {
         const res = await SS.api('/api/topics', { method: 'POST', body: { title: topicQuery } });
         topicId = res.topic.id;

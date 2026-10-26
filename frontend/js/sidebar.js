@@ -19,7 +19,7 @@
      │  🌙 theme  ◉ profile     │          └──────┘
      └──────────────────────────┘
 
-   Behaviour preserved: guest auto-login, mobile drawer, collapse
+   Behaviour preserved: authenticated session, mobile drawer, collapse
    persistence, keyboard nav, profile dropdown.
    ===================================================================== */
 
@@ -29,25 +29,13 @@
   var aside = document.getElementById('sidebar');
   if (!aside) return;
 
-  /* ---- Guest mode: render first, login in background ---- */
-  if (!SS.isAuthed()) {
-    SS.api('/api/auth/guest', { method: 'POST', auth: false })
-      .then(function (data) {
-        if (data && data.token) {
-          SS.setSession(data.token, data.user);
-          renderUserFooter(SS.getUser());
-        }
-      })
-      .catch(function (err) { console.warn('Guest login pending:', err && err.message); });
-  }
+  if (!SS.isAuthed()) { window.location.replace('/login'); return; }
 
   var active = aside.dataset.active || '';
   var user = SS.getUser();
 
   /* ---- Navigation catalogue (grouped) ---- */
   var items = [
-    { id: 'assistant', href: '/dashboard?openAssistant=1&newChat=1', icon: 'fa-pen-to-square', label: 'Notely Assistant', primary: true },
-
     { section: 'Workspace' },
     { id: 'dashboard',  href: '/dashboard',              icon: 'fa-house',             label: 'Home' },
     { id: 'notes',      href: '/tools#notes',            icon: 'fa-note-sticky',       label: 'Notes' },
@@ -144,16 +132,15 @@
   }
 
   function userFooterHtml(u) {
-    var name = u.name || (u.is_guest ? 'Guest' : 'User');
+    var name = u.name || 'User';
     var init = (name || 'G').trim().charAt(0).toUpperCase() || 'G';
-    var sub = u.email || u.username || (u.is_guest ? 'Guest mode' : '');
-    var isGuest = !!u.is_guest || !SS.isAuthed();
+    var sub = u.email || u.username || '';
 
     return '' +
       '<div class="side-user-card" id="sideUserCard">' +
         '<button class="side-user-trigger" id="sideUserTrigger" aria-haspopup="true" aria-expanded="false" aria-label="Account menu" title="Account">' +
           '<span class="avatar" aria-hidden="true"><span class="avatar-inner">' + escapeHtml(init) + '</span>' +
-            '<span class="status-dot' + (isGuest ? ' guest' : '') + '"></span>' +
+            '<span class="status-dot' + '' + '"></span>' +
           '</span>' +
           '<span class="meta">' +
             '<b>' + escapeHtml(name) + '</b>' +

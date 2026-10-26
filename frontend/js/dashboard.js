@@ -13,7 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (nameEl) nameEl.textContent = (user.name || 'Welcome back').split(' ')[0] || 'Welcome back';
 
   setSubtitle();
-  if (user.is_guest) showGuestBanner();
 
   initTopicLauncher();
   renderWorkspaceCards();
@@ -551,26 +550,6 @@ function withAlpha(color, alpha) {
 /* =====================================================================
    Guest banner + utils
    ===================================================================== */
-function showGuestBanner() {
-  const content = document.querySelector('.content');
-  const topbar = content && content.querySelector('.topbar');
-  if (!content || !topbar) return;
-  const banner = document.createElement('div');
-  banner.className = 'guest-banner glass';
-  banner.innerHTML = `
-    <div class="guest-banner-content">
-      <div class="guest-banner-text">
-        <i class="fas fa-user-secret" aria-hidden="true"></i>
-        <div>
-          <strong>You're using guest mode</strong>
-          <p>Your chats and notes are temporary. Create a free account to keep them.</p>
-        </div>
-      </div>
-      <a href="/signup" class="btn small primary"><i class="fas fa-user-plus" aria-hidden="true"></i> Create account</a>
-    </div>`;
-  content.insertBefore(banner, topbar.nextSibling);
-}
-
 function escapeHtml(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
