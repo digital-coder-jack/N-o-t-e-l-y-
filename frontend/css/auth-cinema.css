@@ -30,3 +30,8 @@ html,body{min-height:100%;background:var(--auth-bg);color:var(--auth-ink);font-f
 html.auth-theme-transition,html.auth-theme-transition body{transition:background-color .24s ease,color .24s ease,border-color .24s ease}
 ::view-transition-old(root),::view-transition-new(root){animation-duration:260ms}
 @media(prefers-reduced-motion:reduce){.auth-panel-in{animation:none!important}::view-transition-old(root),::view-transition-new(root){animation-duration:1ms!important}}
+
+.auth-field.is-invalid input{border-color:#e34e70!important;animation:auth-field-shake .28s ease both}
+.auth-field.is-invalid label{color:#e34e70}
+@keyframes auth-field-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+@media(prefers-reduced-motion:reduce){.auth-field.is-invalid input{animation:none!important}}
