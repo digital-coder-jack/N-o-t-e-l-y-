@@ -438,13 +438,14 @@ function FloatingAssistant({ context }: { context: string }) {
     window.addEventListener("notely:assistant-open", onOpen);
     window.addEventListener("keydown", onKeys);
     window.addEventListener("popstate", onPopState);
+    const deleteTimers = deleteTimersRef.current;
 
     return () => {
       cancelled = true;
       window.removeEventListener("notely:assistant-open", onOpen);
       window.removeEventListener("keydown", onKeys);
       window.removeEventListener("popstate", onPopState);
-      Object.values(deleteTimersRef.current).forEach(window.clearTimeout);
+      Object.values(deleteTimers).forEach(window.clearTimeout);
       controllerRef.current?.abort();
     };
   }, []);
