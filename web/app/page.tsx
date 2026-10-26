@@ -511,7 +511,6 @@ function FloatingAssistant({ context }: { context: string }) {
   const newChat = () => {
     setChatId(null);
     setMessages([]);
-    lastQuestionRef.current = question;
     setPrompt("");
     setError("");
     setHistoryOpen(false);
@@ -590,6 +589,7 @@ function FloatingAssistant({ context }: { context: string }) {
     const question = value.trim();
     if (!question) return;
 
+    lastQuestionRef.current = question;
     setPrompt("");
     setError("");
     setLoading(true);
