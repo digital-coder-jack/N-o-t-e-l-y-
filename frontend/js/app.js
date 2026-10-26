@@ -61,7 +61,7 @@ const SS = (() => {
 
   /* ---------- API ----------
      Attaches the authenticated session when required and surfaces clean errors.
-     Trial limits are enforced by the server; expired sessions are never replaced by guests. */
+     Trial limits are enforced by the server; expired sessions require sign-in. */
   async function api(path, opts = {}) {
     const { method = 'GET', body, auth = true, raw = false, signal } = opts;
 

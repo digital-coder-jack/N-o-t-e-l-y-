@@ -154,7 +154,7 @@
           '<a class="dropdown-item" href="/analytics" role="menuitem"><i class="fas fa-chart-line"></i> Progress</a>' +
           '<div class="dropdown-sep"></div>' +
           '<button class="dropdown-item danger" id="logoutBtn" role="menuitem">' +
-            '<i class="fas fa-right-from-bracket"></i> ' + (isGuest ? 'Exit guest mode' : 'Log out') +
+            '<i class="fas fa-right-from-bracket"></i> Log out' +
           '</button>' +
         '</div>' +
       '</div>';
