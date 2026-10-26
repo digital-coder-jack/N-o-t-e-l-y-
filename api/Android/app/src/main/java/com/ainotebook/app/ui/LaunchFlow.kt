@@ -1,6 +1,7 @@
 package com.ainotebook.app.ui
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -31,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.border
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
@@ -128,6 +130,11 @@ internal fun NativeLaunchFlow(
 @Composable
 private fun IntroScene(reducedMotion: Boolean, onSkip: () -> Unit) {
     var phase by remember { mutableStateOf(0) }
+    val markSize by animateDpAsState(
+        targetValue = if (phase >= 1) 94.dp else 18.dp,
+        animationSpec = tween(if (reducedMotion) 100 else 550),
+        label = "notely-intro-mark"
+    )
     LaunchedEffect(reducedMotion) {
         if (reducedMotion) { phase = 3; return@LaunchedEffect }
         delay(350); phase = 1
@@ -137,8 +144,9 @@ private fun IntroScene(reducedMotion: Boolean, onSkip: () -> Unit) {
     Box(Modifier.fillMaxSize().background(ShutterInk), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Box(
-                Modifier.size(if (phase >= 1) 94.dp else 18.dp)
+                Modifier.size(markSize)
                     .clip(CircleShape)
+                    .then(if (phase >= 1) Modifier.border(2.dp, ShutterCyan, CircleShape) else Modifier)
                     .background(if (phase >= 1) Color.Transparent else ShutterCyan),
                 contentAlignment = Alignment.Center
             ) {

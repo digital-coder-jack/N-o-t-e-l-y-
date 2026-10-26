@@ -2,7 +2,7 @@
   'use strict';
   var KEY='notely-shutter-next', LOCK='notely-shutter-lock', active=false;
   var reduced=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  function path(url){try{return new URL(url,location.href).pathname.replace(/\\/+$/,'')||'/';}catch(e){return '';}}
+  function path(url){try{return new URL(url,location.href).pathname.replace(/\/+$/,'')||'/';}catch(e){return '';}}
   function isTarget(p){return p==='/'||p==='/signup'||p==='/login'||p==='/dashboard';}
   function ensureOverlay(){
     var el=document.getElementById('pre')||document.getElementById('notely-shutter');
@@ -57,7 +57,7 @@
     if(e.persisted){active=false;document.documentElement.classList.remove('notely-shutter-pending');var el=document.getElementById('pre')||document.getElementById('notely-shutter');if(el){if(el.id!=='pre')el.remove();else el.style.display='none';}document.body.style.overflow='';}
   });
   document.addEventListener('DOMContentLoaded',liftOnArrival,{once:true});
-  if(/^\\/(login|signup)$/.test(path(location.href))&&history&&history.pushState){
+  if(/^\/(login|signup)$/.test(path(location.href))&&history&&history.pushState){
     try{if(!history.state||!history.state.notelyAuthGuard)history.pushState({notelyAuthGuard:true},'',location.href);
       window.addEventListener('popstate',function(){navigate('/',true);});
     }catch(e){}
