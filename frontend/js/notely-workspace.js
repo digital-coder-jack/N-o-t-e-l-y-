@@ -15,12 +15,12 @@
   async function api(path, opts) { return SS.api(path, opts || {}); }
   async function load() {
     try {
-      if (!SS.isAuthed()) await SS.ensureGuestSession();
+      if (!SS.isAuthed()) { window.location.replace('/login'); return; }
       var results = await Promise.allSettled([api('/api/stats'), api('/api/tools/notes'), api('/api/files'), api('/api/auth/me'), api('/api/auth/settings'), api('/api/topics'), api('/api/tasks')]);
       state.stats = results[0].status === 'fulfilled' ? results[0].value : {};
       state.notes = results[1].status === 'fulfilled' ? (results[1].value.notes || []) : [];
       state.files = results[2].status === 'fulfilled' ? (results[2].value.files || []) : [];
-      if (results[3].status === 'fulfilled' && results[3].value.user) { state.profile = results[3].value.user; var u = state.profile; document.getElementById('nwUserName').textContent = u.name || 'Student'; var avatar = document.querySelector('.nw-avatar'); if (avatar) avatar.textContent = (u.name || u.email || 'N').trim().charAt(0).toUpperCase(); var userIcon = document.querySelector('.nw-user i'); if (userIcon) userIcon.textContent = (u.name || u.email || 'N').trim().charAt(0).toUpperCase(); }
+      if (results[3].status === 'fulfilled' && results[3].value.user) { state.profile = results[3].value.user; renderTrialStatus(); var u = state.profile; document.getElementById('nwUserName').textContent = u.name || 'Student'; var avatar = document.querySelector('.nw-avatar'); if (avatar) avatar.textContent = (u.name || u.email || 'N').trim().charAt(0).toUpperCase(); var userIcon = document.querySelector('.nw-user i'); if (userIcon) userIcon.textContent = (u.name || u.email || 'N').trim().charAt(0).toUpperCase(); }
       if (results[4].status === 'fulfilled') { state.settings = results[4].value || {}; applyAppearance(); }
       state.topics = results[5].status === 'fulfilled' ? (results[5].value.topics || []) : [];
       state.tasks = results[6].status === 'fulfilled' ? (results[6].value.tasks || []) : [];
@@ -108,6 +108,38 @@
 
   // In-place study assistant. Uses the existing /api/chats CRUD + SSE stream contract.
   var assistantState = { mode:'closed', open:false, chats:[], chatId:null, messages:[], streaming:false, controller:null, opener:null, historyOpen:false, pendingDeletes:{}, contextEnabled:true, contextMode:'all', unread:false };
+
+  function renderTrialStatus() {
+    var user = state.profile || {}, badge = document.getElementById('nwTrialBadge');
+    if (!badge || !user.is_trial) { if (badge) badge.hidden = true; return; }
+    var days = Number(user.trial_days_left || 0);
+    badge.hidden = false; badge.textContent = user.trial_expired ? 'Trial ended' : 'Trial: ' + days + (days === 1 ? ' day left' : ' days left');
+    badge.onclick = function () {
+      var old = document.getElementById('nwTrialPopover');
+      if (old) { old.remove(); badge.setAttribute('aria-expanded','false'); return; }
+      var pop = document.createElement('section'); pop.id='nwTrialPopover'; pop.className='nw-trial-popover'; pop.setAttribute('role','dialog'); pop.setAttribute('aria-label','Trial details');
+      pop.innerHTML='<strong>'+(user.trial_expired?'Your trial has ended':days+(days===1?' day left':' days left'))+'</strong><p>Your saved notes and materials stay yours. Upgrade is a placeholder for now; no payments are processed.</p><button type="button" data-trial-upgrade>View upgrade options</button>';
+      badge.parentElement.appendChild(pop); badge.setAttribute('aria-expanded','true');
+      pop.querySelector('[data-trial-upgrade]').onclick=function(){pop.innerHTML='<strong>Upgrade options</strong><p>Payments are not connected yet. Your saved work remains available.</p><button type="button" data-trial-close>Close</button>';pop.querySelector('[data-trial-close]').onclick=function(){pop.remove();badge.setAttribute('aria-expanded','false');};};
+    };
+    if (user.trial_expired) showTrialEnded();
+    else if ((days===2||days===1) && !localStorage.getItem('notely-trial-reminder-'+user.id+'-'+days)) showTrialReminder(days,user.id);
+  }
+  function showTrialReminder(days,userId){
+    if(document.getElementById('nwTrialReminder'))return;
+    var card=document.createElement('aside');card.id='nwTrialReminder';card.className='nw-trial-reminder';card.setAttribute('role','status');
+    card.innerHTML='<div><strong>'+(days===2?'Your trial ends in two days':'Your trial ends today')+'</strong><p>Your notes will stay safe. Review your plan before the trial ends.</p></div><button type="button" aria-label="Dismiss reminder">×</button>';
+    document.body.appendChild(card);card.querySelector('button').onclick=function(){localStorage.setItem('notely-trial-reminder-'+userId+'-'+days,'1');card.remove();};
+  }
+  function showTrialEnded(){
+    if(document.getElementById('nwTrialEnded'))return;
+    document.body.classList.add('nw-trial-readonly');
+    var overlay=document.createElement('div');overlay.id='nwTrialEnded';overlay.className='nw-trial-ended';overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-labelledby','nwTrialEndedTitle');
+    overlay.innerHTML='<section><span class="nw-trial-ended-mark" aria-hidden="true">N</span><span class="nw-eyebrow">YOUR NEXT CHAPTER</span><h1 id="nwTrialEndedTitle">Your trial has ended.</h1><p>Your notes and materials are safe. You can still read your work; creating, editing and AI features are paused until you upgrade.</p><button type="button" data-trial-readonly>Continue to read-only workspace</button><button type="button" class="nw-trial-upgrade" data-trial-upgrade>View upgrade options</button></section>';
+    document.body.appendChild(overlay);overlay.querySelector('[data-trial-readonly]').onclick=function(){overlay.remove();};
+    overlay.querySelector('[data-trial-upgrade]').onclick=function(){var b=document.getElementById('nwTrialBadge');if(b)b.click();};
+  }
+
   function assistantEscape(v) { return esc(v == null ? '' : v); }
   function assistantMarkdown(value) {
     var safe = assistantEscape(value);
