@@ -1475,6 +1475,7 @@ function SettingsScreen() {
     const root = document.documentElement;
     root.dataset.theme = theme;
     root.classList.toggle("dark", theme === "dark");
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme === "dark" ? "#060c1c" : "#f4f7fc");
     try { localStorage.setItem("notely-theme", theme); } catch { /* Theme still works for this session. */ }
   }, [theme]);
 
@@ -1583,6 +1584,18 @@ export default function Page() {
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
+
+
+  useEffect(() => {
+    const labels: Record<Route, string> = {
+      overview: "Overview", notes: "My Notes", documents: "Documents", favorites: "Favorites",
+      archive: "Archive", trash: "Trash", tools: "Study Tools", quiz: "Quiz Generator",
+      flashcards: "Flashcards", roadmap: "Study Roadmap", mindmap: "Mind Maps",
+      planner: "Revision Planner", summarizer: "Text Summarizer", homework: "Homework Helper",
+      search: "Search", assistant: "Notely Assistant", settings: "Settings"
+    };
+    document.title = labels[route] + " — Notely";
+  }, [route]);
 
   const setRoute = (next: Route) => {
     window.history.pushState({}, "", pathFor(next));

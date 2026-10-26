@@ -5,6 +5,21 @@ export const metadata: Metadata = {
   title: "Notely — Study at warp speed",
   description:
     "A focused study workspace for notes, flashcards, quizzes and planning.",
+  applicationName: "Notely",
+  icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
+  openGraph: {
+    type: "website",
+    siteName: "Notely",
+    title: "Notely — Study at warp speed",
+    description: "A focused workspace for notes, recall and study planning.",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Notely study workspace" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Notely — Study at warp speed",
+    description: "A focused workspace for notes, recall and study planning.",
+    images: ["/opengraph-image"],
+  },
 };
 
 export const viewport: Viewport = {
