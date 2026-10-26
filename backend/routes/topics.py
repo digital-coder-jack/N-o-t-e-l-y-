@@ -32,11 +32,12 @@ Notes quality-of-life:
 
 from __future__ import annotations
 
+import asyncio
 import json
 from urllib.parse import urlparse
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -290,7 +291,7 @@ async def generate_section(
 # TOPIC-AWARE CHAT (SSE)
 # ===========================================================================
 @router.post("/topics/{topic_id}/chat")
-async def topic_chat(topic_id: int, body: TopicChatIn, user=Depends(auth.current_user)):
+async def topic_chat(topic_id: int, body: TopicChatIn, request: Request, user=Depends(auth.current_user)):
     topic = db.get_topic(user["id"], topic_id)
     if topic is None:
         raise HTTPException(status_code=404, detail="Topic not found.")
@@ -306,27 +307,65 @@ async def topic_chat(topic_id: int, body: TopicChatIn, user=Depends(auth.current
     selection = _user_model(user)
 
     async def gen():
+        iterator = providers.chat_stream(
+            history, selection=selection, temperature=0.7, max_tokens=1500
+        ).__aiter__()
+        pending = None
+        disconnected = False
         try:
             yield _sse({"event": "start"})
-            async for event, value in providers.chat_stream(
-                history, selection=selection, temperature=0.7, max_tokens=1500
-            ):
+            while True:
+                if await request.is_disconnected():
+                    disconnected = True
+                    if pending is not None and not pending.done():
+                        pending.cancel()
+                        await asyncio.gather(pending, return_exceptions=True)
+                    break
+                if pending is None:
+                    pending = asyncio.create_task(iterator.__anext__())
+                finished, _ = await asyncio.wait({pending}, timeout=14.0)
+                if not finished:
+                    yield ": keep-alive\\n\\n"
+                    continue
+                try:
+                    event, value = pending.result()
+                except StopAsyncIteration:
+                    break
+                pending = None
                 if event == "meta":
                     yield _sse({"event": "provider", "provider": value})
                 elif event == "token":
                     yield _sse({"event": "token", "token": value})
+                elif event == "cancelled":
+                    yield _sse({"event": "cancelled", "reason": str(value)})
+                    break
                 elif event == "error":
-                    err = value if isinstance(value, dict) else {"message": str(value)}
+                    err = value if isinstance(value, dict) else {"type": "unavailable", "message": "AI is temporarily unavailable. Please retry."}
                     yield _sse({"event": "error", "error": err})
+                    break
         except Exception:
-            yield _sse({"event": "error", "error": {"message": "stream interrupted"}})
+            if not disconnected:
+                yield _sse({"event": "error", "error": {"type": "unavailable", "message": "Notely could not finish this response. Please retry."}})
         finally:
-            yield _sse({"event": "done"})
+            if pending is not None and not pending.done():
+                pending.cancel()
+                await asyncio.gather(pending, return_exceptions=True)
+            try:
+                await iterator.aclose()
+            except Exception:
+                pass
+            if not disconnected:
+                yield _sse({"event": "done"})
 
     return StreamingResponse(
         gen(),
         media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+            "Content-Encoding": "identity",
+        },
     )
 
 
