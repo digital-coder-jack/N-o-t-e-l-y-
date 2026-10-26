@@ -29,7 +29,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from backend import database as db
+from backend import database as db, providers
 from backend.routes import chat as chat_routes
 from backend.routes import files as files_routes
 from backend.routes import topics as topics_routes
@@ -123,6 +123,16 @@ def _validate_environment() -> None:
 _validate_environment()
 
 app = FastAPI(title="Notely", docs_url=None, redoc_url=None)
+
+@app.exception_handler(providers.ProviderFailure)
+async def ai_provider_error_handler(request: Request, exc: providers.ProviderFailure):
+    """Keep upstream failures friendly and free of provider response bodies."""
+    return JSONResponse(
+        status_code=503,
+        content={"detail": exc.friendly_message, "error_class": exc.error_class},
+        headers={"Cache-Control": "no-store"},
+    )
+
 
 # ---------------------------------------------------------------------------
 # CORS — the frontend now lives on a DIFFERENT origin (Vercel) than this API
