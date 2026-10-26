@@ -7,7 +7,7 @@
 fastapi==0.115.8
 uvicorn[standard]==0.34.0
 gunicorn==23.0.0              # production process manager (Render/Railway)
-python-multipart==0.0.20      # required by FastAPI for file uploads / forms
+python-multipart==0.0.31      # required by FastAPI for file uploads / forms
 
 # --- Telegram bot (optional; imported lazily) -----------------------
 python-telegram-bot==21.10
@@ -19,7 +19,7 @@ httpx==0.28.1
 pydantic==2.10.6
 
 # --- File text extraction for the upload feature --------------------
-pypdf==5.1.0                  # PDF text extraction
+pypdf==6.13.0                  # PDF text extraction
 python-docx==1.1.2            # DOCX text extraction
 
 # NOTE: Password hashing and JWT are implemented with the Python
