@@ -29,6 +29,25 @@ export default function AuthPage({ initialMode = "login" }: { initialMode?: "log
     return () => window.removeEventListener("pointermove", pointer);
   }, []);
 
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    const root = document.documentElement;
+    const apply = () => {
+      setTheme(next);
+      root.dataset.theme = next;
+      root.style.colorScheme = next;
+      localStorage.setItem("notely-theme", next);
+      document.querySelector('meta[name="theme-color"]')?.setAttribute("content", next === "dark" ? "#060c1c" : "#f3f6fd");
+    };
+    const doc = document as Document & { startViewTransition?: (callback: () => void) => { finished: Promise<void> } };
+    if (!matchMedia("(prefers-reduced-motion: reduce)").matches && doc.startViewTransition) doc.startViewTransition(apply);
+    else {
+      root.classList.add("auth-theme-transition");
+      apply();
+      window.setTimeout(() => root.classList.remove("auth-theme-transition"), 260);
+    }
+  };
+
   const switchMode = (next: "login" | "signup") => { setMode(next); setError(""); setInvalidFields([]); setPassword(""); window.history.replaceState(null, "", next === "signup" ? "/signup" : "/login"); };
   const clearInvalid = (field: string) => setInvalidFields(current => current.filter(item => item !== field));
   const fieldClass = (field: string) => "auth-field" + (invalidFields.includes(field) ? " is-invalid" : "");
@@ -57,7 +76,7 @@ export default function AuthPage({ initialMode = "login" }: { initialMode?: "log
     <main className="auth-cinema next-auth-cinema">
       <div className="cinema-bar cinema-bar-top" aria-hidden="true" /><div className="cinema-bar cinema-bar-bottom" aria-hidden="true" />
       <div className="auth-ambient" aria-hidden="true"><span /><span /><span /></div>
-      <button type="button" className="auth-theme-toggle" aria-label="Toggle theme" aria-pressed={theme === "dark"} onClick={() => { const next=theme==="dark"?"light":"dark";const root=document.documentElement;const apply=()=>{setTheme(next);root.dataset.theme=next;root.style.colorScheme=next;localStorage.setItem("notely-theme",next);document.querySelector('meta[name="theme-color"]')?.setAttribute("content",next==="dark"?"#060c1c":"#f3f6fd");};const d=document as Document & {startViewTransition?: (cb:()=>void)=>{finished:Promise<void>}};if(!matchMedia("(prefers-reduced-motion: reduce)").matches&&d.startViewTransition)d.startViewTransition(apply);else{root.classList.add("auth-theme-transition");apply();window.setTimeout(()=>root.classList.remove("auth-theme-transition"),260);} }}><span>{theme === "dark" ? "☼" : "☾"}</span></button>
+      <button type="button" className="auth-theme-toggle" aria-label="Toggle theme" aria-pressed={theme === "dark"} onClick={toggleTheme}><span>{theme === "dark" ? "☼" : "☾"}</span></button>
       <section className="auth-story">
         <a className="auth-brand" href="/"><img src="/assets/logo.png" alt="" /><span>Notely</span></a><span className="auth-kicker">WELCOME TO NOTELY</span>
         <h1><span>Your study space</span><span>starts <em>here.</em></span></h1><p className="auth-lede">Seven days of full access to a calmer, more connected way to learn.</p><span className="trial-pill"><span />7-day free trial</span>
