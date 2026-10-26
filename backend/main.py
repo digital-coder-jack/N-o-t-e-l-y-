@@ -29,7 +29,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from backend import database as db
+from backend import database as db, providers
 from backend.routes import chat as chat_routes
 from backend.routes import files as files_routes
 from backend.routes import topics as topics_routes
@@ -79,8 +79,14 @@ def _validate_environment() -> None:
         "GROQ_MODEL": "Pro Max tier model override",
         "TELEGRAM_BOT_TOKEN": "Telegram bot integration",
         "WEBHOOK_SECRET": "verify Telegram webhook calls",
-        "DB_PATH": "persistent SQLite path (set to a mounted disk in production)",
+        "DB_PATH": "database path (a /tmp path is ephemeral on Vercel)",
         "TELEGRAM_ADMIN_ID": "admin id allowed to read analytics dashboard stats",
+        "DIAG_TOKEN": "protect live AI provider diagnostics",
+        "OPENROUTER_SITE_URL": "optional OpenRouter attribution URL",
+        "OPENROUTER_APP_NAME": "optional OpenRouter attribution title",
+        "AI_STREAM_TIMEOUT": "maximum AI stream duration in seconds",
+        "AI_STREAM_IDLE_TIMEOUT": "maximum idle read time for AI streams",
+        "AI_CACHE_TTL": "in-memory completion cache lifetime in seconds",
     }
 
     configured_ai = [k for k in ai_providers if os.environ.get(k)]
@@ -124,6 +130,16 @@ _validate_environment()
 
 app = FastAPI(title="Notely", docs_url=None, redoc_url=None)
 
+@app.exception_handler(providers.ProviderFailure)
+async def ai_provider_error_handler(request: Request, exc: providers.ProviderFailure):
+    """Keep upstream failures friendly and free of provider response bodies."""
+    return JSONResponse(
+        status_code=503,
+        content={"detail": exc.friendly_message, "error_class": exc.error_class},
+        headers={"Cache-Control": "no-store"},
+    )
+
+
 # ---------------------------------------------------------------------------
 # CORS — the frontend now lives on a DIFFERENT origin (Vercel) than this API
 # (Render / Railway), so CORS must explicitly allow that origin.
@@ -131,10 +147,8 @@ app = FastAPI(title="Notely", docs_url=None, redoc_url=None)
 # Configure with the ALLOWED_ORIGINS env var, e.g.:
 #   ALLOWED_ORIGINS=https://your-app.vercel.app,https://www.yourdomain.com
 #
-# Comma-separated. If unset, we fall back to "*" (open) so the app keeps
-# working out-of-the-box, but you should pin it to your real frontend
-# origin(s) in production. We also allow all *.vercel.app preview URLs via a
-# regex so Vercel preview deployments work without reconfiguring.
+# Comma-separated. If unset, use a narrow Notely production + local-wrapper
+# default. Configure preview origins explicitly in ALLOWED_ORIGINS when needed.
 # ---------------------------------------------------------------------------
 _raw_origins = os.environ.get("ALLOWED_ORIGINS", "").strip()
 _DEFAULT_ORIGINS = [
@@ -150,10 +164,11 @@ ALLOWED_ORIGINS = (
     [origin.strip() for origin in _raw_origins.split(",") if origin.strip()]
     if _raw_origins else _DEFAULT_ORIGINS
 )
-# Vercel preview URLs and local development origins are allowed without "*" .
+# Only local development and Capacitor origins are pattern-matched; production
+# web origins must be explicitly listed in ALLOWED_ORIGINS.
 _ALLOW_ORIGIN_REGEX = (
-    r"^(https://([a-z0-9-]+\.)*vercel\.app|https?://localhost(:\d+)?|"
-    r"http://127\.0\.0\.1(:\d+)?|https://localhost|capacitor://localhost)$"
+    r"^(https?://localhost(:\d+)?|http://127\.0\.0\.1(:\d+)?|"
+    r"https://localhost|capacitor://localhost)$"
 )
 
 app.add_middleware(

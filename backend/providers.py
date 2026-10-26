@@ -12,6 +12,7 @@ import json
 import logging
 import os
 import random
+import re
 import time
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
@@ -86,6 +87,10 @@ class ProviderFailure(Exception):
         super().__init__(error_class)
         self.error_class = error_class
         self.http_status = http_status
+
+    @property
+    def friendly_message(self) -> str:
+        return _FRIENDLY_ERRORS.get(self.error_class, _FRIENDLY_ERRORS["unavailable"])
 
 
 def _normalize_selection(selection: str | None) -> str:
@@ -211,14 +216,16 @@ def _openai_headers(key: str, provider: str) -> dict[str, str]:
 
 
 def _openai_payload(model: str, messages: list[dict], temperature: float,
-                    max_tokens: int, stream: bool) -> dict:
-    return {
+                    max_tokens: int, stream: bool, provider: str) -> dict:
+    payload = {
         "model": model,
         "messages": messages,
         "temperature": temperature,
-        "max_tokens": max_tokens,
         "stream": stream,
     }
+    # OpenRouter documents max_tokens as deprecated; use its current field.
+    payload["max_completion_tokens" if provider == "openrouter" else "max_tokens"] = max_tokens
+    return payload
 
 
 def _gemini_contents(messages: list[dict]) -> tuple[list[dict], dict | None]:
@@ -237,11 +244,19 @@ def _gemini_contents(messages: list[dict]) -> tuple[list[dict], dict | None]:
     return contents, ({"parts": system_parts} if system_parts else None)
 
 
-def _gemini_payload(messages: list[dict], temperature: float, max_tokens: int) -> dict:
+def _gemini_payload(
+    messages: list[dict], temperature: float, max_tokens: int, model: str | None = None
+) -> dict:
     contents, system = _gemini_contents(messages)
-    payload = {"contents": contents, "generationConfig": {
-        "temperature": temperature, "maxOutputTokens": max_tokens,
-    }}
+    generation_config = {"maxOutputTokens": max_tokens}
+    # Gemini 3.6+ ignores custom temperature and documents that it may reject
+    # those parameters; omit it for current Gemini 3.8/4+ models.
+    current_model = (model or TIER_CONFIG["default"]["model"]).lower()
+    match = __import__("re").match(r"^gemini-(\d+)\.(\d+)", current_model)
+    if not match or not (int(match.group(1)) >= 4 or
+                         (int(match.group(1)) == 3 and int(match.group(2)) >= 6)):
+        generation_config["temperature"] = temperature
+    payload = {"contents": contents, "generationConfig": generation_config}
     if system:
         payload["systemInstruction"] = system
     return payload
@@ -338,7 +353,7 @@ async def _complete_tier(tier: str, messages: list[dict], temperature: float,
             response = await _post_with_retry(
                 client, tier,
                 f"{GEMINI_BASE_URL}/models/{config['model']}:generateContent",
-                json_body=_gemini_payload(messages, temperature, max_tokens),
+                json_body=_gemini_payload(messages, temperature, max_tokens, config["model"]),
                 headers={"x-goog-api-key": key, "Content-Type": "application/json", "Accept": "application/json"},
             )
             data = response.json()
@@ -346,7 +361,7 @@ async def _complete_tier(tier: str, messages: list[dict], temperature: float,
         base = OPENROUTER_BASE_URL if config["provider"] == "openrouter" else GROQ_BASE_URL
         response = await _post_with_retry(
             client, tier, f"{base}/chat/completions",
-            json_body=_openai_payload(config["model"], messages, temperature, max_tokens, False),
+            json_body=_openai_payload(config["model"], messages, temperature, max_tokens, False, config["provider"]),
             headers=_openai_headers(key, config["provider"]),
         )
         return _parse_openai_response(response.json())
@@ -376,7 +391,7 @@ async def probe_tier(tier: str, *, force: bool = False) -> dict:
             try:
                 await _complete_tier(
                     tier, [{"role": "user", "content": "Reply with exactly: OK"}],
-                    temperature=0.0, max_tokens=4, timeout=12.0,
+                    temperature=0.0, max_tokens=16, timeout=12.0,
                 )
                 result = {
                     "tier": tier, "ok": True, "http_status": 200, "error_class": None,
@@ -438,7 +453,7 @@ async def chat(messages: list[dict], *, selection: str | None = "auto", temperat
             last_error = "parse_error"
             _record_failure(tier, last_error)
     logger.warning("AI request exhausted fallback chain error_class=%s", last_error)
-    return order[-1], _FRIENDLY_ERRORS.get(last_error, _FRIENDLY_ERRORS["unavailable"])
+    raise ProviderFailure(last_error)
 
 
 async def _stream_tier(tier: str, messages: list[dict], temperature: float, max_tokens: int,
@@ -447,19 +462,19 @@ async def _stream_tier(tier: str, messages: list[dict], temperature: float, max_
     key = provider_key(tier)
     if not key:
         raise ProviderFailure("not_configured")
-    timeout = httpx.Timeout(connect=_CONNECT_TIMEOUT, read=_STREAM_IDLE_TIMEOUT, write=10.0, pool=_CONNECT_TIMEOUT)
+    timeout = httpx.Timeout(connect=_CONNECT_TIMEOUT, read=min(_FIRST_TOKEN_TIMEOUT, _STREAM_IDLE_TIMEOUT), write=10.0, pool=_CONNECT_TIMEOUT)
     async with httpx.AsyncClient(timeout=timeout) as client:
         if config["provider"] == "gemini":
             url = f"{GEMINI_BASE_URL}/models/{config['model']}:streamGenerateContent"
             headers = {"x-goog-api-key": key, "Content-Type": "application/json", "Accept": "text/event-stream"}
-            body = _gemini_payload(messages, temperature, max_tokens)
+            body = _gemini_payload(messages, temperature, max_tokens, config["model"])
             params = {"alt": "sse"}
         else:
             base = OPENROUTER_BASE_URL if config["provider"] == "openrouter" else GROQ_BASE_URL
             url = f"{base}/chat/completions"
             headers = _openai_headers(key, config["provider"])
             headers["Accept"] = "text/event-stream"
-            body = _openai_payload(config["model"], messages, temperature, max_tokens, True)
+            body = _openai_payload(config["model"], messages, temperature, max_tokens, True, config["provider"])
             params = None
 
         for attempt in range(_RETRY_MAX + 1):

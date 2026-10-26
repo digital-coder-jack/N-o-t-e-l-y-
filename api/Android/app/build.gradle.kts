@@ -23,7 +23,7 @@ android {
         // (e.g. -PapiBaseUrl=https://your-backend.example.com) or per build
         // type below. Falls back to the current production deployment.
         val apiBaseUrl = (project.findProperty("apiBaseUrl") as String?)
-            ?: "https://study-sphere-ai-mwlq.vercel.app"
+            ?: "https://notely-mwlq.vercel.app"
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
     }
 
@@ -32,7 +32,7 @@ android {
             // Point debug builds at your local/dev backend if you like.
             val debugApiBaseUrl = (project.findProperty("apiBaseUrlDebug") as String?)
                 ?: (project.findProperty("apiBaseUrl") as String?)
-                ?: "https://study-sphere-ai-mwlq.vercel.app"
+                ?: "https://notely-mwlq.vercel.app"
             buildConfigField("String", "API_BASE_URL", "\"$debugApiBaseUrl\"")
         }
         release {

@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import {
-  Archive, ArrowRight, BarChart3, Bell, BookOpen, CalendarDays, Check, CheckCircle2,
+  AlertCircle, Archive, ArrowRight, BarChart3, Bell, BookOpen, CalendarDays, Check, CheckCircle2,
   ChevronDown, ChevronLeft, ChevronRight, CircleHelp, Cloud, FileText, FolderOpen, Grid2X2, Home,
   LayoutList, Menu, MessageCircle, MoreHorizontal, PanelLeftClose, PanelLeftOpen,
   Paperclip, PenLine, Plus, Search, Settings, ShieldCheck, Sparkles, Star, Trash2,
@@ -43,7 +43,7 @@ type Note = {
 
 const NOTES: Note[] = [];
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || "https://study-sphere-ai-mwlq.vercel.app").replace(/\/+$/, "");
+const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || "https://notely-mwlq.vercel.app").replace(/\/+$/, "");
 
 async function workspaceToken(): Promise<string> {
   if (typeof window === "undefined") throw new Error("Workspace requests require a browser.");
@@ -361,6 +361,7 @@ function FloatingAssistant({ context }: { context: string }) {
   const [chatId, setChatId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const lastQuestionRef = useRef("");
   const [historyOpen, setHistoryOpen] = useState(false);
   const [contextEnabled, setContextEnabled] = useState(true);
   const [unread, setUnread] = useState(false);
@@ -588,6 +589,7 @@ function FloatingAssistant({ context }: { context: string }) {
     const question = value.trim();
     if (!question) return;
 
+    lastQuestionRef.current = question;
     setPrompt("");
     setError("");
     setLoading(true);
@@ -801,7 +803,13 @@ function FloatingAssistant({ context }: { context: string }) {
                 </button>
               )}
 
-              {error && <p className="na-error" role="alert">{error}</p>}
+              {error && (
+                <div className="na-error" role="alert">
+                  <AlertCircle size={16} aria-hidden="true" />
+                  <span>{error}</span>
+                  <button type="button" disabled={loading || !lastQuestionRef.current} onClick={() => void send(lastQuestionRef.current)}>Retry</button>
+                </div>
+              )}
               {undoChat && (
                 <div className="na-undo">
                   <span>Chat queued for deletion.</span>
