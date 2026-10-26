@@ -690,3 +690,5 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 body.nw-trial-readonly [data-new-note],body.nw-trial-readonly .nw-top-new,body.nw-trial-readonly #nwAssistantLauncher{display:none!important}
 @media(max-width:760px){.nw-trial-pill{min-height:34px;padding:0 8px;font-size:10px}.nw-trial-popover{right:8px}.nw-trial-reminder{top:70px;right:12px}}
 @media(prefers-reduced-motion:reduce){.nw-trial-ended,.nw-trial-reminder{animation:none!important}}
+
+body.nw-trial-readonly .nw-assistant-panel{display:none!important}

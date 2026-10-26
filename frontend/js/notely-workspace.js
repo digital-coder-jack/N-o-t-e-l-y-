@@ -134,6 +134,7 @@
   function showTrialEnded(){
     if(document.getElementById('nwTrialEnded'))return;
     document.body.classList.add('nw-trial-readonly');
+    if (typeof minimizeAssistant === 'function') minimizeAssistant();
     var overlay=document.createElement('div');overlay.id='nwTrialEnded';overlay.className='nw-trial-ended';overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-labelledby','nwTrialEndedTitle');
     overlay.innerHTML='<section><span class="nw-trial-ended-mark" aria-hidden="true">N</span><span class="nw-eyebrow">YOUR NEXT CHAPTER</span><h1 id="nwTrialEndedTitle">Your trial has ended.</h1><p>Your notes and materials are safe. You can still read your work; creating, editing and AI features are paused until you upgrade.</p><button type="button" data-trial-readonly>Continue to read-only workspace</button><button type="button" class="nw-trial-upgrade" data-trial-upgrade>View upgrade options</button></section>';
     document.body.appendChild(overlay);overlay.querySelector('[data-trial-readonly]').onclick=function(){overlay.remove();};

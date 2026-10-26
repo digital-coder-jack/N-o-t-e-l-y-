@@ -279,3 +279,6 @@ html,body{min-height:100%;background:var(--auth-bg);color:var(--auth-ink);font-f
 .na-launcher.is-generating .na-aurora-orb-svg defs+ellipse{animation:na-spin 1.2s linear infinite;transform-origin:32px 32px}
 @keyframes na-orb-answer{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
 @media(prefers-reduced-motion:reduce){.na-launcher-icon,.na-aurora-orb-svg{animation:none!important;transition:opacity 120ms ease!important}}
+
+html,body{transition:background-color .32s ease,color .32s ease}
+.trial-readonly .na-window{display:none!important}
