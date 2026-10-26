@@ -241,11 +241,19 @@ def _gemini_contents(messages: list[dict]) -> tuple[list[dict], dict | None]:
     return contents, ({"parts": system_parts} if system_parts else None)
 
 
-def _gemini_payload(messages: list[dict], temperature: float, max_tokens: int) -> dict:
+def _gemini_payload(
+    messages: list[dict], temperature: float, max_tokens: int, model: str | None = None
+) -> dict:
     contents, system = _gemini_contents(messages)
-    payload = {"contents": contents, "generationConfig": {
-        "temperature": temperature, "maxOutputTokens": max_tokens,
-    }}
+    generation_config = {"maxOutputTokens": max_tokens}
+    # Gemini 3.6+ ignores custom temperature and documents that it may reject
+    # those parameters; omit it for current Gemini 3.8/4+ models.
+    current_model = (model or GEMINI_MODEL).lower()
+    match = __import__("re").match(r"^gemini-(\d+)\.(\d+)", current_model)
+    if not match or not (int(match.group(1)) >= 4 or
+                         (int(match.group(1)) == 3 and int(match.group(2)) < 6)):
+        generation_config["temperature"] = temperature
+    payload = {"contents": contents, "generationConfig": generation_config}
     if system:
         payload["systemInstruction"] = system
     return payload
@@ -342,7 +350,7 @@ async def _complete_tier(tier: str, messages: list[dict], temperature: float,
             response = await _post_with_retry(
                 client, tier,
                 f"{GEMINI_BASE_URL}/models/{config['model']}:generateContent",
-                json_body=_gemini_payload(messages, temperature, max_tokens),
+                json_body=_gemini_payload(messages, temperature, max_tokens, config["model"]),
                 headers={"x-goog-api-key": key, "Content-Type": "application/json", "Accept": "application/json"},
             )
             data = response.json()
@@ -456,7 +464,7 @@ async def _stream_tier(tier: str, messages: list[dict], temperature: float, max_
         if config["provider"] == "gemini":
             url = f"{GEMINI_BASE_URL}/models/{config['model']}:streamGenerateContent"
             headers = {"x-goog-api-key": key, "Content-Type": "application/json", "Accept": "text/event-stream"}
-            body = _gemini_payload(messages, temperature, max_tokens)
+            body = _gemini_payload(messages, temperature, max_tokens, config["model"])
             params = {"alt": "sse"}
         else:
             base = OPENROUTER_BASE_URL if config["provider"] == "openrouter" else GROQ_BASE_URL
