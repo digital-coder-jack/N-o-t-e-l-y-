@@ -97,7 +97,7 @@ private fun AuthFlow(factory: VMFactory) {
 
     NavHost(
         navController = nav,
-        startDestination = Routes.LOGIN,
+        startDestination = startRoute,
         enterTransition = { slideInHorizontally(tween(300)) { it / 2 } + fadeIn(tween(300)) },
         exitTransition = { fadeOut(tween(200)) },
         popEnterTransition = { fadeIn(tween(300)) },
