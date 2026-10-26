@@ -65,7 +65,7 @@ object StreamClient {
     private const val MAX_BACKOFF_MS = 4_000L
     private const val CALL_TIMEOUT_SECONDS = 0L          // 0 = no overall cap (streaming can be long)
     private const val READ_TIMEOUT_SECONDS = 90L         // idle read timeout between tokens
-    private const val CONNECT_TIMEOUT_SECONDS = 20L
+    private const val CONNECT_TIMEOUT_SECONDS = 5L
 
     fun streamMessage(
         chatId: Int,
@@ -390,7 +390,9 @@ object StreamClient {
     private fun extractError(obj: JsonObject): String? {
         (obj["error"])?.let { el ->
             (el as? JsonObject)?.let { eo ->
-                return "Notely is temporarily unavailable. Please try again."
+                val message = eo["message"]?.jsonPrimitive?.contentOrNull
+                return message?.takeIf { it.isNotBlank() }
+                    ?: "Notely is temporarily unavailable. Please try again."
             }
             el.jsonPrimitive.contentOrNull?.let { return "Notely is temporarily unavailable. Please try again." }
         }
