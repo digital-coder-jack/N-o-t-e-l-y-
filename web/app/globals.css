@@ -216,3 +216,6 @@ button,.action-button,.new-note,.nav-button,.note-card { transition-duration:var
 .not-found-page p{max-width:54ch;margin:0 0 28px;color:var(--muted);font-size:16px;line-height:1.65}
 .not-found-page .action-button{min-height:46px;border-radius:999px}
 .dark .not-found-page{color:var(--ink)}
+
+:where(.stat-number,.stat-value,.focus-time,.timer,.score-value,.progress-label){font-variant-numeric:tabular-nums}
+:where(.page-title>p,.settings-card p,.empty-state p,.note-card p,.ai-message>p){max-width:65ch;line-height:1.6}

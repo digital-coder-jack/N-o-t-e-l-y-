@@ -36,7 +36,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
-      <head><script dangerouslySetInnerHTML={{ __html: `try { const t = localStorage.getItem("notely-theme"); if (t === "light" || t === "dark") { document.documentElement.dataset.theme = t; document.documentElement.classList.toggle("dark", t === "dark"); } } catch (e) {}` }} /></head><body>{children}</body>
+      <head><script dangerouslySetInnerHTML={{ __html: `try { const t = localStorage.getItem("notely-theme"); if (t === "light" || t === "dark") { document.documentElement.dataset.theme = t; document.documentElement.classList.toggle("dark", t === "dark"); const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute("content", t === "dark" ? "#060c1c" : "#f4f7fc"); } } catch (e) {}` }} /></head><body>{children}</body>
     </html>
   );
 }
