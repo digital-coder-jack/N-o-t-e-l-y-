@@ -245,6 +245,9 @@ async def stream_message(chat_id: int, body: StreamIn, request: Request, user=De
             while True:
                 if await request.is_disconnected():
                     cancel_event.set()
+                    if next_event is not None and not next_event.done():
+                        next_event.cancel()
+                        await asyncio.gather(next_event, return_exceptions=True)
                     final_event = "cancelled"
                     break
                 if next_event is None:
