@@ -27,7 +27,7 @@ import re
 
 from backend import database as db
 from backend import providers
-from backend.groq_client import groq_chat, groq_chat_stream
+from backend.providers import groq_chat, groq_chat_stream
 
 SYSTEM_BASE = (
     "You are AI Notebook, a friendly and knowledgeable study assistant for "
