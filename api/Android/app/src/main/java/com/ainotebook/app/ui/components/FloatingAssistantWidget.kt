@@ -222,7 +222,7 @@ fun FloatingAssistantWidget(
                 containerColor = Color.Transparent,
                 contentColor = Color.White
             ) {
-                Box(Modifier.fillMaxSize()) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     AuroraOrb(size = 62.dp, generating = chatState.streaming)
                     Box(Modifier.align(Alignment.TopEnd).padding(3.dp).size(12.dp).graphicsLayer { scaleX = badgeScale; scaleY = badgeScale }.clip(CircleShape).background(MaterialTheme.colorScheme.primary))
                 }
