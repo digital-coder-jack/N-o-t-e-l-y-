@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import io
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 
 from backend import ai, auth, database as db
 
@@ -67,7 +67,9 @@ def _extract_txt(data: bytes) -> str:
 
 
 @router.post("/upload")
-async def upload(file: UploadFile = File(...), user=Depends(auth.current_user)):
+async def upload(file: UploadFile = File(...), topic_id: int | None = Form(default=None), user=Depends(auth.current_user)):
+    if topic_id is not None and db.get_topic(user["id"], topic_id) is None:
+        raise HTTPException(status_code=404, detail="Course notebook not found.")
     data = await file.read()
     if len(data) > MAX_BYTES:
         raise HTTPException(status_code=413, detail="File too large (max 8 MB).")
@@ -96,11 +98,12 @@ async def upload(file: UploadFile = File(...), user=Depends(auth.current_user)):
 
     extracted = (text or "").strip()[:EXTRACT_LIMIT]
     upload_id = db.add_upload(
-        user["id"], name, content_type, len(data), extracted or None
+        user["id"], name, content_type, len(data), extracted or None, topic_id
     )
 
     return {
         "id": upload_id,
+        "topic_id": topic_id,
         "filename": name,
         "kind": kind,
         "size_bytes": len(data),
@@ -111,8 +114,10 @@ async def upload(file: UploadFile = File(...), user=Depends(auth.current_user)):
 
 
 @router.get("")
-async def list_files(user=Depends(auth.current_user)):
-    return {"files": [dict(f) for f in db.list_uploads(user["id"])]}
+async def list_files(topic_id: int | None = Query(default=None), user=Depends(auth.current_user)):
+    if topic_id is not None and db.get_topic(user["id"], topic_id) is None:
+        raise HTTPException(status_code=404, detail="Course notebook not found.")
+    return {"files": [dict(f) for f in db.list_uploads(user["id"], topic_id)]}
 
 
 @router.delete("/{upload_id}")

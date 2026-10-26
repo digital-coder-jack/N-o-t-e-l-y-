@@ -33,6 +33,8 @@ Notes quality-of-life:
 from __future__ import annotations
 
 import json
+from urllib.parse import urlparse
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
@@ -77,6 +79,11 @@ class FlagsIn(BaseModel):
     favorite: bool | None = None
 
 
+class CourseLinkIn(BaseModel):
+    title: str = Field(min_length=1, max_length=160)
+    url: str = Field(min_length=8, max_length=2000)
+
+
 class ProgressIn(BaseModel):
     progress: dict = Field(default_factory=dict)
 
@@ -99,7 +106,7 @@ async def list_topics(user=Depends(auth.current_user)):
     topics = []
     for t in db.list_topics(user["id"]):
         d = dict(t)
-        d["sections"] = [dict(a) for a in db.list_artifacts(t["id"])]
+        d["sections"] = [{"kind": a["kind"], "variant": a["variant"], "updated_at": a["updated_at"]} for a in db.list_artifacts(t["id"])]
         topics.append(d)
     return {"topics": topics}
 
@@ -112,6 +119,54 @@ async def create_topic(body: TopicIn, user=Depends(auth.current_user)):
         return {"topic": dict(existing), "created": False}
     topic_id = db.create_topic(user["id"], title, body.emoji or "📚")
     return {"topic": dict(db.get_topic(user["id"], topic_id)), "created": True}
+
+
+@router.post("/topics/{topic_id}/links")
+async def add_course_link(topic_id: int, body: CourseLinkIn, user=Depends(auth.current_user)):
+    topic = db.get_topic(user["id"], topic_id)
+    if topic is None:
+        raise HTTPException(status_code=404, detail="Course notebook not found.")
+    url = body.url.strip()
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        raise HTTPException(status_code=400, detail="Enter a valid http or https link.")
+    title = body.title.strip()
+    if not title:
+        raise HTTPException(status_code=400, detail="Enter a link title.")
+    existing = db.get_artifact(topic_id, "links", "")
+    links = []
+    if existing:
+        try:
+            links = json.loads(existing["content"])
+            if not isinstance(links, list):
+                links = []
+        except (TypeError, ValueError):
+            links = []
+    link = {"id": uuid4().hex, "title": title, "url": url}
+    links.append(link)
+    db.upsert_artifact(topic_id, "links", json.dumps(links), "")
+    return {"link": link, "links": links}
+
+
+@router.delete("/topics/{topic_id}/links/{link_id}")
+async def delete_course_link(topic_id: int, link_id: str, user=Depends(auth.current_user)):
+    if db.get_topic(user["id"], topic_id) is None:
+        raise HTTPException(status_code=404, detail="Course notebook not found.")
+    existing = db.get_artifact(topic_id, "links", "")
+    if not existing:
+        raise HTTPException(status_code=404, detail="Course link not found.")
+    try:
+        links = json.loads(existing["content"])
+    except (TypeError, ValueError):
+        links = []
+    filtered = [link for link in links if str(link.get("id")) != link_id]
+    if len(filtered) == len(links):
+        raise HTTPException(status_code=404, detail="Course link not found.")
+    if filtered:
+        db.upsert_artifact(topic_id, "links", json.dumps(filtered), "")
+    else:
+        db.upsert_artifact(topic_id, "links", "[]", "")
+    return {"deleted": True}
 
 
 @router.get("/topics/{topic_id}")

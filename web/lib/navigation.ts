@@ -1,13 +1,11 @@
 import {
   BookOpen,
-  BrainCircuit,
   CalendarDays,
   CheckSquare,
   FileText,
   FolderKanban,
   Gauge,
   Lightbulb,
-  MessageCircle,
   NotebookPen,
   Settings,
   Sparkles,
@@ -33,8 +31,6 @@ export const ALL_SECTIONS: NavSection[] = [
     id: "ai",
     title: "AI tools",
     items: [
-      { id: "chat", label: "AI Chat", icon: MessageCircle, shortcut: "C", aiGlow: true },
-      { id: "study", label: "Study assistant", icon: BrainCircuit, aiGlow: true, badge: { label: "AI", variant: "ai" } },
       { id: "flashcards", label: "Flashcards", icon: NotebookPen },
       { id: "quizzes", label: "Quizzes", icon: Lightbulb },
     ],
