@@ -5,7 +5,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   // Already logged in? skip auth pages.
   if (SS.isAuthed() && (location.pathname.includes('login') || location.pathname.includes('signup'))) {
-    window.location.href = '/dashboard';
+    if (window.NotelyShutter) window.NotelyShutter.navigate('/dashboard'); else { try { sessionStorage.setItem('notely-shutter-next', '1'); } catch (_) {} window.location.href = '/dashboard'; }
     return;
   }
 
@@ -36,7 +36,7 @@ async function handleGuest(e) {
     sessionStorage.setItem('ss_show_welcome', 'true');
     localStorage.removeItem('ainb_onboarded');
     SS.toast('Exploring as guest. Sign up anytime to save your work!');
-    setTimeout(() => (window.location.href = '/dashboard'), 500);
+    setTimeout(() => { if (window.NotelyShutter) window.NotelyShutter.navigate('/dashboard'); else { try { sessionStorage.setItem('notely-shutter-next', '1'); } catch (_) {} window.location.href = '/dashboard'; } }, 100);
   } catch (err) {
     msg(err.message);
     busy(btn, false);
@@ -140,7 +140,7 @@ async function handleSignup(e) {
     sessionStorage.setItem('ss_show_welcome', 'true');
     localStorage.removeItem('ainb_onboarded');
     SS.toast('Account created! Welcome, ' + ((data.user && data.user.name) || 'friend') + '.');
-    setTimeout(() => (window.location.href = '/dashboard'), 600);
+    setTimeout(() => { if (window.NotelyShutter) window.NotelyShutter.navigate('/dashboard'); else { try { sessionStorage.setItem('notely-shutter-next', '1'); } catch (_) {} window.location.href = '/dashboard'; } }, 100);
   } catch (err) {
     msg(err.message);
     busy(btn, false);

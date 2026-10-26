@@ -1,0 +1,32 @@
+/* One shared cyan-logo shutter for landing, auth and workspace navigation. */
+#pre.notely-shutter {
+  transform: none;
+  will-change: transform, opacity;
+  pointer-events: auto;
+}
+.notely-shutter-overlay {
+  position: fixed; inset: 0; z-index: 100000;
+  display: grid; place-items: center;
+  background: var(--lime, #8fe8f8);
+  color: var(--theme-contrast-ink, #060c1c);
+  transform: translateY(-100%);
+  will-change: transform, opacity;
+  pointer-events: auto;
+}
+.notely-shutter-overlay .notely-shutter-inner {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  width: min(76vw, 420px); text-align: center;
+}
+.notely-shutter-overlay img { display: block; width: clamp(72px, 10vw, 128px); max-height: 96px; height: auto; object-fit: contain; }
+#pre.notely-shutter.is-covered, .notely-shutter-overlay.is-covered { transform: translateY(0); }
+#pre.notely-shutter.is-lifting, .notely-shutter-overlay.is-lifting { transform: translateY(-100%); }
+html.notely-shutter-pending body > *:not(#notely-shutter):not(#pre) { opacity: 0 !important; }
+html.notely-shutter-pending #notely-shutter,
+html.notely-shutter-pending #pre { opacity: 1 !important; }
+html.notely-shutter-pending body { overflow: hidden; }
+html.notely-shutter-pending .auth-wrap, html.notely-shutter-pending .auth-visual, html.notely-shutter-pending .auth-card { animation: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  #pre.notely-shutter, .notely-shutter-overlay { transition: opacity .12s ease !important; transform: none !important; }
+  #pre.notely-shutter.is-covered, .notely-shutter-overlay.is-covered { opacity: 1; }
+  #pre.notely-shutter.is-lifting, .notely-shutter-overlay.is-lifting { opacity: 0; }
+}
