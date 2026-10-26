@@ -18,26 +18,49 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import com.ainotebook.app.data.AccentTone
 
-val NotelyIndigo = Color(0xFF5759B2)
-val NotelyInk = Color(0xFF303340)
-val NotelyMuted = Color(0xFF7D8088)
-val NotelyBackground = Color(0xFFF5F4EF)
-val NotelySurface = Color(0xFFFFFDF8)
-val NotelyLavender = Color(0xFFEBEBFA)
-val NotelyLine = Color(0xFFE3E0D8)
-val NotelyGreen = Color(0xFF467866)
-val NotelyAmber = Color(0xFFB27A21)
+/** Platform counterpart to the web spacing/radius/motion tokens. */
+object NotelyTokens {
+    val space1 = 4.dp
+    val space2 = 8.dp
+    val space3 = 12.dp
+    val space4 = 16.dp
+    val space5 = 24.dp
+    val space6 = 32.dp
+    val space7 = 48.dp
+    val space8 = 64.dp
+    val radiusSmall = 8.dp
+    val radiusMedium = 12.dp
+    val radiusCard = 16.dp
+    val radiusLarge = 24.dp
+    val radiusPill = 999.dp
+    const val motionFast = 120
+    const val motionBase = 200
+    const val motionEnter = 320
+    const val motionFeature = 600
+}
 
-val BrandOrange = Color(0xFFB27A21)
-val BrandPink = Color(0xFF9B5D72)
-val BrandViolet = NotelyIndigo
-val BrandBlue = NotelyIndigo
+// Semantic palette mirrored from frontend/css/notely-theme.css.
+val NotelyIndigo = Color(0xFF1F6FB5)
+val NotelyInk = Color(0xFF17233C)
+val NotelyMuted = Color(0xFF53647E)
+val NotelyBackground = Color(0xFFF4F7FC)
+val NotelySurface = Color(0xFFFFFFFF)
+val NotelyLavender = Color(0xFFEAF3FA)
+val NotelyLine = Color(0xFFD8E2EF)
+val NotelyGreen = Color(0xFF08785D)
+val NotelyAmber = Color(0xFF875400)
+
+val BrandOrange = Color(0xFF875400)
+val BrandPink = Color(0xFFC64F7B)
+val BrandViolet = Color(0xFF7B70E8)
+val BrandBlue = Color(0xFF1F6FB5)
 val Indigo = NotelyIndigo
-val Violet = Color(0xFF7A78C7)
-val Cyan = Color(0xFF467866)
+val Violet = BrandViolet
+val Cyan = Color(0xFF8FE8F8)
 
 val SpaceBg = NotelyBackground
 val SpaceSurface = NotelySurface
@@ -52,33 +75,33 @@ val LightHairline = NotelyLine
 val LightMuted = NotelyMuted
 
 private val DarkColors = darkColorScheme(
-    primary = NotelyIndigo,
-    onPrimary = Color.White,
-    primaryContainer = NotelyIndigo.copy(alpha = 0.22f),
-    onPrimaryContainer = Color.White,
-    secondary = NotelyGreen,
+    primary = Cyan,
+    onPrimary = Color(0xFF060C1C),
+    primaryContainer = Color(0xFF163044),
+    onPrimaryContainer = Color(0xFFF4F6FF),
+    secondary = Color(0xFF1F6FB5),
     onSecondary = Color.White,
-    tertiary = NotelyAmber,
-    onTertiary = Color.White,
-    background = Color(0xFF252522),
-    onBackground = Color(0xFFF7F4EE),
-    surface = Color(0xFF2D2D29),
-    onSurface = Color(0xFFF7F4EE),
-    surfaceVariant = Color(0xFF3A3A35),
-    onSurfaceVariant = Color(0xFFD0CEC5),
-    outline = Color(0xFF56564F),
-    error = Color(0xFFD66C6C),
-    onError = Color.White
+    tertiary = Color(0xFFFFD48A),
+    onTertiary = Color(0xFF17233C),
+    background = Color(0xFF060C1C),
+    onBackground = Color(0xFFF4F6FF),
+    surface = Color(0xFF0D162B),
+    onSurface = Color(0xFFF4F6FF),
+    surfaceVariant = Color(0xFF172442),
+    onSurfaceVariant = Color(0xFFC8D2E9),
+    outline = Color(0xFF3A4A67),
+    error = Color(0xFFFF7E9D),
+    onError = Color(0xFF060C1C)
 )
 
 private val LightColors = lightColorScheme(
     primary = NotelyIndigo,
     onPrimary = Color.White,
-    primaryContainer = NotelyLavender,
-    onPrimaryContainer = NotelyInk,
-    secondary = NotelyGreen,
+    primaryContainer = Color(0xFFDDF7FB),
+    onPrimaryContainer = Color(0xFF12314A),
+    secondary = Color(0xFF1F6FB5),
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFE9F1EC),
+    secondaryContainer = Color(0xFFE6F0FB),
     onSecondaryContainer = NotelyInk,
     tertiary = NotelyAmber,
     onTertiary = Color.White,
@@ -90,13 +113,13 @@ private val LightColors = lightColorScheme(
     onSurfaceVariant = NotelyMuted,
     outline = NotelyLine,
     outlineVariant = NotelyLine,
-    error = Color(0xFFB34848),
+    error = Color(0xFFB4234B),
     onError = Color.White
 )
 
 private val AppTypography = Typography().run {
     copy(
-        displaySmall = displaySmall.copy(fontFamily = FontFamily.Serif, fontWeight = FontWeight.Normal, letterSpacing = (-0.6).sp),
+        displaySmall = displaySmall.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Normal, letterSpacing = (-0.6).sp),
         headlineLarge = headlineLarge.copy(fontFamily = FontFamily.Serif, fontWeight = FontWeight.Normal),
         headlineMedium = headlineMedium.copy(fontFamily = FontFamily.Serif, fontWeight = FontWeight.Normal, letterSpacing = (-0.5).sp),
         headlineSmall = headlineSmall.copy(fontFamily = FontFamily.Serif, fontWeight = FontWeight.Normal, letterSpacing = (-0.3).sp),
