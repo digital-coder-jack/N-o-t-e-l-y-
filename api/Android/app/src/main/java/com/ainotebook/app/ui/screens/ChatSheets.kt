@@ -44,6 +44,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ainotebook.app.data.Chat
 import com.ainotebook.app.ui.ChatViewModel
+import com.ainotebook.app.ui.components.NotelyIcon
+import com.ainotebook.app.ui.components.NotelyIconTrigger
 import com.ainotebook.app.ui.theme.Cyan
 import com.ainotebook.app.ui.theme.Indigo
 import com.ainotebook.app.ui.theme.MutedText
@@ -139,7 +141,7 @@ fun ChatHistorySheet(vm: ChatViewModel, onDismiss: () -> Unit) {
     deleteTarget?.let { chat ->
         AlertDialog(
             onDismissRequest = { deleteTarget = null },
-            title = { Text("Delete conversation?") },
+            title = { Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) { NotelyIcon(name = "trash", trigger = NotelyIconTrigger.Hover, size = 28.dp); Text("Delete conversation?") } },
             text = { Text("\"${chat.title}\" will be permanently removed.") },
             confirmButton = {
                 TextButton(onClick = { vm.deleteChat(chat.id); deleteTarget = null }) {
@@ -197,7 +199,7 @@ private fun ChatHistoryRow(
             Icon(Icons.Default.DriveFileRenameOutline, contentDescription = "Rename", tint = MutedText, modifier = Modifier.size(17.dp))
         }
         IconButton(onClick = onDelete, modifier = Modifier.size(34.dp)) {
-            Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MutedText, modifier = Modifier.size(17.dp))
+            NotelyIcon(name = "trash", trigger = NotelyIconTrigger.Hover, size = 20.dp, contentDescription = "Delete")
         }
     }
 }

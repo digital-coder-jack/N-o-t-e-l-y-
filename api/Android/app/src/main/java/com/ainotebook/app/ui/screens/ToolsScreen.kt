@@ -51,6 +51,8 @@ import androidx.compose.ui.unit.dp
 import com.ainotebook.app.ui.Tool
 import com.ainotebook.app.ui.ToolsViewModel
 import com.ainotebook.app.ui.components.BrandLogo
+import com.ainotebook.app.ui.components.NotelyIcon
+import com.ainotebook.app.ui.components.NotelyIconTrigger
 import com.ainotebook.app.ui.components.ErrorBanner
 import com.ainotebook.app.ui.components.GlassCard
 import com.ainotebook.app.ui.components.MarkdownText
@@ -227,7 +229,7 @@ private fun ToolDetail(vm: ToolsViewModel, tool: Tool, onBack: () -> Unit) {
                 elevation = null
             ) {
                 if (state.loading) {
-                    CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                    NotelyIcon(name = "loading", trigger = NotelyIconTrigger.Loop, size = 20.dp, color = Color.White)
                 } else {
                     Text("Generate", fontWeight = FontWeight.SemiBold, color = Color.White)
                 }

@@ -39,6 +39,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ainotebook.app.ui.DashboardViewModel
+import com.ainotebook.app.ui.components.NotelyIcon
+import com.ainotebook.app.ui.components.NotelyIconTrigger
 import com.ainotebook.app.ui.theme.NotelyBackground
 import com.ainotebook.app.ui.theme.NotelyGreen
 import com.ainotebook.app.ui.theme.NotelyIndigo
@@ -136,7 +138,7 @@ private fun DashboardCard(background: Color = NotelySurface, modifier: Modifier 
 private fun NotebookRow(title: String, detail: String, icon: androidx.compose.ui.graphics.vector.ImageVector) {
     DashboardCard(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = NotelyIndigo, modifier = Modifier.size(22.dp))
+            NotelyIcon(name = "book", trigger = NotelyIconTrigger.Hover, size = 24.dp, color = NotelyIndigo)
             Spacer(Modifier.width(14.dp))
             Column { Text(title, style = MaterialTheme.typography.titleMedium); Text(detail, style = MaterialTheme.typography.labelMedium, color = NotelyMuted) }
         }

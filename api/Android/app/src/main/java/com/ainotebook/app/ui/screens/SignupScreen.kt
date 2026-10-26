@@ -36,6 +36,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.ainotebook.app.ui.AuthViewModel
+import com.ainotebook.app.ui.components.NotelyIcon
+import com.ainotebook.app.ui.components.NotelyIconTrigger
 import com.ainotebook.app.ui.theme.NotelyBackground
 import com.ainotebook.app.ui.theme.NotelyGreen
 import com.ainotebook.app.ui.theme.NotelyIndigo
@@ -70,7 +72,7 @@ fun SignupScreen(vm: AuthViewModel, onSignedUp: () -> Unit, onGoLogin: () -> Uni
         Text("✓  Strong password", style = MaterialTheme.typography.bodyMedium, color = NotelyGreen, modifier = Modifier.padding(top = 18.dp))
         Text("☑  I agree to the Terms of Service and Privacy Policy.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 22.dp))
         Button(onClick = { vm.signup(name, username, email, password, confirm) }, enabled = !state.loading, colors = ButtonDefaults.buttonColors(containerColor = NotelyIndigo), shape = RoundedCornerShape(8.dp), modifier = Modifier.padding(top = 22.dp)) {
-            if (state.loading) CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.height(18.dp)) else Text("Create account")
+            if (state.loading) NotelyIcon(name = "loading", trigger = NotelyIconTrigger.Loop, size = 18.dp, color = Color.White) else Text("Create account")
         }
         TextButton(onClick = onGoLogin, modifier = Modifier.padding(top = 12.dp)) { Text("Already have an account?  Sign in →", color = MaterialTheme.colorScheme.onSurface) }
         Text("Notely · Privacy · Terms · A study partner, not a shortcut.", style = MaterialTheme.typography.labelSmall, color = NotelyMuted, modifier = Modifier.padding(top = 36.dp))

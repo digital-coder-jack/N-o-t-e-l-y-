@@ -36,6 +36,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.ainotebook.app.ui.AuthViewModel
+import com.ainotebook.app.ui.components.NotelyIcon
+import com.ainotebook.app.ui.components.NotelyIconTrigger
 import com.ainotebook.app.ui.theme.NotelyBackground
 import com.ainotebook.app.ui.theme.NotelyIndigo
 import com.ainotebook.app.ui.theme.NotelyLine
@@ -63,7 +65,7 @@ fun LoginScreen(vm: AuthViewModel, onLoggedIn: () -> Unit, onGoSignup: () -> Uni
         AuthField("Password", password, { password = it; vm.clearError() }, KeyboardType.Password, true)
         Text("☑  Keep me signed in", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 14.dp))
         Button(onClick = { vm.login(identifier, password) }, enabled = !state.loading, colors = ButtonDefaults.buttonColors(containerColor = NotelyIndigo), shape = RoundedCornerShape(8.dp), modifier = Modifier.padding(top = 24.dp)) {
-            if (state.loading) CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.height(18.dp)) else Text("Sign in to Notely")
+            if (state.loading) NotelyIcon(name = "loading", trigger = NotelyIconTrigger.Loop, size = 18.dp, color = Color.White) else Text("Sign in to Notely")
         }
         TextButton(onClick = onGoSignup, modifier = Modifier.padding(top = 14.dp)) { Text("New here?  Create an account →", color = MaterialTheme.colorScheme.onSurface) }
         Text("Your notes stay private. We never use your coursework to train AI models.", style = MaterialTheme.typography.labelMedium, color = NotelyMuted, modifier = Modifier.padding(top = 36.dp))
