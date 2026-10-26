@@ -451,7 +451,7 @@ async def _stream_tier(tier: str, messages: list[dict], temperature: float, max_
     key = provider_key(tier)
     if not key:
         raise ProviderFailure("not_configured")
-    timeout = httpx.Timeout(connect=_CONNECT_TIMEOUT, read=_STREAM_IDLE_TIMEOUT, write=10.0, pool=_CONNECT_TIMEOUT)
+    timeout = httpx.Timeout(connect=_CONNECT_TIMEOUT, read=min(_FIRST_TOKEN_TIMEOUT, _STREAM_IDLE_TIMEOUT), write=10.0, pool=_CONNECT_TIMEOUT)
     async with httpx.AsyncClient(timeout=timeout) as client:
         if config["provider"] == "gemini":
             url = f"{GEMINI_BASE_URL}/models/{config['model']}:streamGenerateContent"
