@@ -36,7 +36,7 @@ export default function AuthPage({ initialMode = "login" }: { initialMode?: "log
   const submit = async (event: FormEvent) => {
     event.preventDefault(); setError("");
     if (mode === "signup" && !name.trim()) { setInvalidFields(["name"]); setError("Add your name to get started."); return; }
-    if (mode === "signup" && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { setError("Enter a valid email address."); return; }
+    if (mode === "signup" && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { setInvalidFields(["email"]); setError("Enter a valid email address."); return; }
     if (mode === "signup" && password.length < 8) { setInvalidFields(["password"]); setError("Use at least 8 characters for your password."); return; }
     if (mode === "login" && (!identifier.trim() || !password)) { setInvalidFields([...(identifier.trim() ? [] : ["identifier"]), ...(!password ? ["password"] : [])]); setError("Enter your email or username and password."); return; }
     setLoading(true);
