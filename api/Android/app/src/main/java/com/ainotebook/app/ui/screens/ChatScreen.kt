@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
@@ -159,18 +160,21 @@ fun ChatScreen(
                     Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Icon(
+                        Icons.Default.ErrorOutline,
+                        contentDescription = "AI response error",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.size(8.dp))
                     Text(
                         errorMessage,
                         modifier = Modifier.weight(1f),
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall
                     )
-                    Text(
-                        "Dismiss",
-                        modifier = Modifier.clickable { vm.clearError() }.padding(start = 12.dp),
-                        color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.labelMedium
-                    )
+                    TextButton(onClick = { vm.regenerateLast() }) { Text("Retry") }
+                    TextButton(onClick = { vm.clearError() }) { Text("Dismiss") }
                 }
             }
 
