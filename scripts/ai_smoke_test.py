@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """Notely AI API smoke test. Never prints credentials or provider key values."""
 from __future__ import annotations
-import argparse, asyncio, json, os, secrets, string, time, uuid
+import argparse, asyncio, json, os, secrets, string, sys, time, uuid
+from pathlib import Path
 from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 import httpx
 
 RESULTS: list[dict[str, Any]] = []
