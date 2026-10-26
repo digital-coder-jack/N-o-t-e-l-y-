@@ -20,9 +20,6 @@ interface ApiService {
     @POST("api/auth/signup")
     suspend fun signup(@Body body: SignupRequest): AuthResponse
 
-    @POST("api/auth/guest")
-    suspend fun guest(): AuthResponse
-
     @GET("api/auth/me")
     suspend fun me(): MeResponse
 

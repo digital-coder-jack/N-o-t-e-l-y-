@@ -32,7 +32,7 @@ import json
 import os
 import sqlite3
 from contextlib import closing
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 # ---------------------------------------------------------------------------
 # Database location
@@ -122,7 +122,9 @@ def init_db() -> None:
                 reset_token     TEXT,
                 reset_expires   TEXT,
                 created_at      TEXT    DEFAULT (datetime('now')),
-                last_login      TEXT
+                last_login      TEXT,
+                trial_started_at TEXT,
+                trial_ends_at    TEXT
             )
             """
         )
@@ -292,7 +294,8 @@ def init_db() -> None:
             # study time, learning style, experience, security preferences).
             "ALTER TABLE user_settings ADD COLUMN onboarding TEXT",
             "ALTER TABLE uploads ADD COLUMN topic_id INTEGER",
-            "ALTER TABLE uploads ADD COLUMN topic_id INTEGER",
+            "ALTER TABLE users ADD COLUMN trial_started_at TEXT",
+            "ALTER TABLE users ADD COLUMN trial_ends_at TEXT",
         ):
             try:
                 conn.execute(ddl)
@@ -354,10 +357,13 @@ def create_user(name: str, email: str, password_hash: str,
     """Insert a new user. Returns new id, or None on duplicate email/username."""
     try:
         with closing(get_connection()) as conn:
+            trial_started = datetime.now(timezone.utc)
+            trial_ends = trial_started + timedelta(days=7)
             cur = conn.execute(
-                "INSERT INTO users (name, email, username, password_hash, telegram_id) "
-                "VALUES (?, ?, ?, ?, ?)",
-                (name.strip(), email.strip().lower(), username, password_hash, telegram_id),
+                "INSERT INTO users (name, email, username, password_hash, telegram_id, trial_started_at, trial_ends_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (name.strip(), email.strip().lower(), username, password_hash, telegram_id,
+                 trial_started.isoformat(timespec="seconds"), trial_ends.isoformat(timespec="seconds")),
             )
             user_id = cur.lastrowid
             # Initialize default settings

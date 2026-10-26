@@ -55,8 +55,8 @@ class AuthViewModel(private val repo: Repository) : ViewModel() {
             _state.value = AuthUiState(error = "Please fill in all fields.")
         !email.contains("@") || !email.contains(".") ->  // ← ADD THIS
             _state.value = AuthUiState(error = "Please enter a valid email address.")
-        password.length < 6 ->
-            _state.value = AuthUiState(error = "Password must be at least 6 characters.")
+        password.length < 8 ->
+            _state.value = AuthUiState(error = "Use at least 8 characters.")
         password != confirm ->
             _state.value = AuthUiState(error = "Passwords do not match.")
         else -> run {
@@ -64,8 +64,6 @@ class AuthViewModel(private val repo: Repository) : ViewModel() {
         }
     }
 }
-
-    fun guest() = run { repo.guest() }
 
   private fun friendly(e: Exception): String {
     if (e is retrofit2.HttpException) {
