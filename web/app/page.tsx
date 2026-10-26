@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Archive, ArrowRight, BarChart3, Bell, BookOpen, CalendarDays, Check, CheckCircle2,
   ChevronDown, ChevronLeft, ChevronRight, CircleHelp, Cloud, FileText, FolderOpen, Grid2X2, Home,
@@ -178,6 +178,34 @@ function TrialStatusBanner() {
         </div>
       )}
     </>
+  );
+}
+
+function AuroraOrb({ size = 28 }: { size?: number }) {
+  const id = useId().replace(/:/g, "");
+  return (
+    <svg className="na-aurora-orb-svg" width={size} height={size} viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+      <defs>
+        <radialGradient id={`na-sphere-${id}`} cx="27%" cy="17%" r="88%"><stop offset="0" stopColor="#263b5c"/><stop offset=".48" stopColor="#0b1428"/><stop offset="1" stopColor="#030611"/></radialGradient>
+        <clipPath id={`na-clip-${id}`}><circle cx="32" cy="32" r="23"/></clipPath>
+        <filter id={`na-glow-${id}`} x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="2.4"/></filter>
+        <linearGradient id={`na-rim-${id}`} x1="0" y1="0" x2="1" y2="1"><stop stopColor="#a5f3fc"/><stop offset=".52" stopColor="#22d3ee"/><stop offset="1" stopColor="#a855f7"/></linearGradient>
+      </defs>
+      <ellipse cx="32" cy="52" rx="20" ry="5" fill="#22d3ee" opacity=".24" filter={`url(#na-glow-${id})`}/>
+      <ellipse cx="32" cy="32" rx="29" ry="13" fill="none" stroke="#22d3ee" strokeWidth="2.2" opacity=".2" transform="rotate(-18 32 32)"/>
+      <ellipse cx="32" cy="32" rx="29" ry="13" fill="none" stroke={`url(#na-rim-${id})`} strokeWidth="1.6" transform="rotate(-18 32 32)"/>
+      <circle cx="32" cy="32" r="24" fill={`url(#na-sphere-${id})`} stroke="#b7efff" strokeOpacity=".5" strokeWidth="1"/>
+      <g clipPath={`url(#na-clip-${id})`}>
+        <circle cx="22" cy="25" r="16" fill="#22d3ee" opacity=".86" filter={`url(#na-glow-${id})`}/>
+        <circle cx="40" cy="26" r="16" fill="#a855f7" opacity=".8" filter={`url(#na-glow-${id})`}/>
+        <circle cx="36" cy="43" r="15" fill="#ec4899" opacity=".7" filter={`url(#na-glow-${id})`}/>
+        <path d="M14 24 Q25 10 39 19" fill="none" stroke="#fff" strokeOpacity=".42" strokeWidth="2.2" strokeLinecap="round"/>
+        <ellipse cx="23" cy="18" rx="10" ry="4" fill="#fff" opacity=".2" transform="rotate(-30 23 18)"/>
+      </g>
+      <circle cx="32" cy="32" r="23.4" fill="none" stroke="#e4fbff" strokeOpacity=".5" strokeWidth=".8"/>
+      <path d="M32 23 L35 29 L41 32 L35 35 L32 41 L29 35 L23 32 L29 29 Z" fill="#fff"/>
+      <circle cx="32" cy="32" r="2" fill="#fff"/>
+    </svg>
   );
 }
 
@@ -682,7 +710,7 @@ function FloatingAssistant({ context }: { context: string }) {
         onClick={open}
       >
         <span className="na-launcher-ring" />
-        <span className="na-launcher-icon">✦</span>
+        <span className="na-launcher-icon"><AuroraOrb size={42} /></span>
         {unread && <span className="na-launcher-badge" />}
       </button>
 
@@ -696,7 +724,7 @@ function FloatingAssistant({ context }: { context: string }) {
         >
           <header className="na-header">
             <div className="na-brand">
-              <span><Sparkles /></span>
+              <span><AuroraOrb size={28} /></span>
               <div>
                 <strong>Notely Assistant</strong>
                 <small>Stay in your study flow</small>

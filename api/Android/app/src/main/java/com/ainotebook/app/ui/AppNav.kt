@@ -147,7 +147,6 @@ private fun MainShell(factory: VMFactory) {
     var trialDetailsOpen by rememberSaveable { mutableStateOf(false) }
     var trialReminderDismissed by rememberSaveable { mutableStateOf(false) }
     var trialEndedDismissed by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(userState.user?.trial_expired) { if (userState.user?.trial_expired == true) { assistantMode = 0; trialEndedDismissed = false } }
     LaunchedEffect(assistantMode) { widgetPrefs.edit().putInt("mode", assistantMode).apply() }
     androidx.activity.compose.BackHandler(enabled = assistantMode > 0) {
         assistantMode = if (assistantMode == 2) 1 else 0
@@ -160,6 +159,7 @@ private fun MainShell(factory: VMFactory) {
     val profileVm: ProfileViewModel = viewModel(factory = factory)
 
     val userState by profileVm.state.collectAsState()
+    LaunchedEffect(userState.user?.trial_expired) { if (userState.user?.trial_expired == true) { assistantMode = 0; trialEndedDismissed = false } }
     val networkMonitor = LocalNetworkMonitor.current
     val isOnline by networkMonitor.isOnline.collectAsState(initial = networkMonitor.currentlyOnline())
 

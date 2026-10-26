@@ -300,7 +300,7 @@ const SS = (() => {
 
   /* ---------- boot common UI ---------- */
   function initBootTransition() {
-    if (document.querySelector('.ainb-boot')) return;
+    if (document.querySelector('.auth-cinema') || document.querySelector('.ainb-boot')) return;
     const overlay = document.createElement('div');
     overlay.className = 'ainb-boot';
     overlay.setAttribute('aria-label', 'Loading Notely');
