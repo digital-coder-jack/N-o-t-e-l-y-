@@ -41,12 +41,10 @@ import androidx.compose.ui.unit.sp
 import com.ainotebook.app.ui.DashboardViewModel
 import com.ainotebook.app.ui.components.NotelyIcon
 import com.ainotebook.app.ui.components.NotelyIconTrigger
-import com.ainotebook.app.ui.theme.NotelyBackground
 import com.ainotebook.app.ui.theme.NotelyGreen
 import com.ainotebook.app.ui.theme.NotelyIndigo
 import com.ainotebook.app.ui.theme.NotelyLavender
 import com.ainotebook.app.ui.theme.NotelyLine
-import com.ainotebook.app.ui.theme.NotelyMuted
 import com.ainotebook.app.ui.theme.NotelySurface
 
 private val CardShape = RoundedCornerShape(12.dp)
@@ -60,12 +58,12 @@ fun DashboardScreen(
     onOpenTools: () -> Unit
 ) {
     LazyColumn(
-        modifier = Modifier.fillMaxSize().background(NotelyBackground),
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
         contentPadding = PaddingValues(bottom = 32.dp)
     ) {
         item {
             DashboardHeader(userName)
-            Text("A calmer place to pick up where you left off.", style = MaterialTheme.typography.bodyMedium, color = NotelyMuted, modifier = Modifier.padding(horizontal = 20.dp))
+            Text("A calmer place to pick up where you left off.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 20.dp))
         }
         item {
             DashboardCard(NotelyLavender, Modifier.padding(20.dp, 24.dp, 20.dp, 8.dp)) {
@@ -73,7 +71,7 @@ fun DashboardScreen(
                 Text("Cellular respiration", style = MaterialTheme.typography.headlineSmall)
                 Text("How does a proton gradient become usable energy? Continue your note before today’s study group.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 10.dp))
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 12.dp)) {
-                    Text("8 note pages", style = MaterialTheme.typography.labelMedium, color = NotelyMuted)
+                    Text("8 note pages", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.width(10.dp))
                     Text("All changes saved", style = MaterialTheme.typography.labelMedium, color = NotelyGreen)
                 }
@@ -112,7 +110,7 @@ fun DashboardScreen(
                 Text("Your study rhythm", style = MaterialTheme.typography.titleLarge)
                 Text("20 / 30 min", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(top = 8.dp))
                 LinearProgressIndicator(progress = { .38f }, modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), color = NotelyIndigo, trackColor = NotelyLine)
-                Text("Today’s study goal · 10 minutes to go", style = MaterialTheme.typography.labelMedium, color = NotelyMuted)
+                Text("Today’s study goal · 10 minutes to go", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -122,7 +120,7 @@ fun DashboardScreen(
 private fun DashboardHeader(userName: String) {
     Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 22.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
         Text("Notely", style = MaterialTheme.typography.titleLarge)
-        Text("JL", style = MaterialTheme.typography.labelMedium, color = NotelyMuted)
+        Text("JL", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
     Text("Good morning, ${userName.ifBlank { "Jamie" }}", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(horizontal = 20.dp))
 }
@@ -140,7 +138,7 @@ private fun NotebookRow(title: String, detail: String, icon: androidx.compose.ui
         Row(verticalAlignment = Alignment.CenterVertically) {
             NotelyIcon(name = "book", trigger = NotelyIconTrigger.Hover, size = 24.dp, color = NotelyIndigo)
             Spacer(Modifier.width(14.dp))
-            Column { Text(title, style = MaterialTheme.typography.titleMedium); Text(detail, style = MaterialTheme.typography.labelMedium, color = NotelyMuted) }
+            Column { Text(title, style = MaterialTheme.typography.titleMedium); Text(detail, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
     }
 }
@@ -150,13 +148,13 @@ private fun TaskRow(title: String, detail: String) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 10.dp)) {
         Icon(Icons.Default.CheckBoxOutlineBlank, contentDescription = null, tint = NotelyIndigo, modifier = Modifier.size(22.dp))
         Spacer(Modifier.width(12.dp))
-        Column { Text(title, style = MaterialTheme.typography.labelLarge); Text(detail, style = MaterialTheme.typography.labelMedium, color = NotelyMuted) }
+        Column { Text(title, style = MaterialTheme.typography.labelLarge); Text(detail, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
     }
 }
 
 @Composable
 private fun SectionLabel(text: String) {
-    Text(text, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = NotelyMuted, modifier = Modifier.padding(start = 20.dp, top = 16.dp, bottom = 4.dp))
+    Text(text, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 20.dp, top = 16.dp, bottom = 4.dp))
 }
 
 @Composable

@@ -38,11 +38,9 @@ import androidx.compose.ui.unit.dp
 import com.ainotebook.app.ui.AuthViewModel
 import com.ainotebook.app.ui.components.NotelyIcon
 import com.ainotebook.app.ui.components.NotelyIconTrigger
-import com.ainotebook.app.ui.theme.NotelyBackground
 import com.ainotebook.app.ui.theme.NotelyGreen
 import com.ainotebook.app.ui.theme.NotelyIndigo
 import com.ainotebook.app.ui.theme.NotelyLine
-import com.ainotebook.app.ui.theme.NotelyMuted
 
 @Composable
 fun SignupScreen(vm: AuthViewModel, onSignedUp: () -> Unit, onGoLogin: () -> Unit) {
@@ -55,27 +53,27 @@ fun SignupScreen(vm: AuthViewModel, onSignedUp: () -> Unit, onGoLogin: () -> Uni
     LaunchedEffect(state.success) { if (state.success) onSignedUp() }
 
     Column(
-        modifier = Modifier.fillMaxSize().background(NotelyBackground).statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp, vertical = 24.dp),
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp, vertical = 24.dp),
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         Text("Notely", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(42.dp))
-        Text("YOUR STUDENT WORKSPACE", style = MaterialTheme.typography.labelSmall, color = NotelyMuted)
+        Text("YOUR STUDENT WORKSPACE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text("Create your account", style = MaterialTheme.typography.displaySmall, modifier = Modifier.padding(top = 16.dp))
-        Text("One workspace for everything you’re learning.", style = MaterialTheme.typography.bodyLarge, color = NotelyMuted, modifier = Modifier.padding(top = 8.dp))
+        Text("One workspace for everything you’re learning.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
         OutlinedButton(onClick = onSignedUp, shape = RoundedCornerShape(9.dp), border = androidx.compose.foundation.BorderStroke(1.dp, NotelyLine), modifier = Modifier.padding(top = 26.dp)) { Text("Sign up with Google", color = MaterialTheme.colorScheme.onSurface) }
-        Text("OR SIGN UP WITH EMAIL", style = MaterialTheme.typography.labelMedium, color = NotelyMuted, modifier = Modifier.padding(top = 28.dp, bottom = 18.dp))
+        Text("OR SIGN UP WITH EMAIL", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 28.dp, bottom = 18.dp))
         AuthField("Full name", name, { name = it; vm.clearError() })
         AuthField("Student email", email, { email = it; vm.clearError() }, KeyboardType.Email)
         AuthField("Create password", password, { password = it; vm.clearError() }, KeyboardType.Password, true)
-        Text("Use at least 8 characters, including a number.", style = MaterialTheme.typography.labelMedium, color = NotelyMuted)
+        Text("Use at least 8 characters, including a number.", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text("✓  Strong password", style = MaterialTheme.typography.bodyMedium, color = NotelyGreen, modifier = Modifier.padding(top = 18.dp))
         Text("☑  I agree to the Terms of Service and Privacy Policy.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 22.dp))
         Button(onClick = { vm.signup(name, username, email, password, confirm) }, enabled = !state.loading, colors = ButtonDefaults.buttonColors(containerColor = NotelyIndigo), shape = RoundedCornerShape(8.dp), modifier = Modifier.padding(top = 22.dp)) {
             if (state.loading) NotelyIcon(name = "loading", trigger = NotelyIconTrigger.Loop, size = 18.dp, color = Color.White) else Text("Create account")
         }
         TextButton(onClick = onGoLogin, modifier = Modifier.padding(top = 12.dp)) { Text("Already have an account?  Sign in →", color = MaterialTheme.colorScheme.onSurface) }
-        Text("Notely · Privacy · Terms · A study partner, not a shortcut.", style = MaterialTheme.typography.labelSmall, color = NotelyMuted, modifier = Modifier.padding(top = 36.dp))
+        Text("Notely · Privacy · Terms · A study partner, not a shortcut.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 36.dp))
     }
 }
 

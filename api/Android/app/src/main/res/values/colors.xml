@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="space_bg">#FFFFFF</color>
-    <color name="brand_indigo">#6D7BFF</color>
-    <color name="ic_launcher_background">#FFFFFF</color>
+    <color name="space_bg">#060C1C</color>
+    <color name="brand_indigo">#1F6FB5</color>
+    <color name="ic_launcher_background">#060C1C</color>
+    <color name="notely_navy">#060C1C</color>
+    <color name="notely_cyan">#8FE8F8</color>
 </resources>

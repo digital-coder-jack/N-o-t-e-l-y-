@@ -1462,6 +1462,67 @@ function SearchScreen({ setRoute }: { setRoute: (r: Route) => void }) {
   );
 }
 
+
+function SettingsScreen() {
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
+
+  useEffect(() => {
+    const saved = document.documentElement.dataset.theme || localStorage.getItem("notely-theme");
+    if (saved === "light" || saved === "dark") setTheme(saved);
+  }, []);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.theme = theme;
+    root.classList.toggle("dark", theme === "dark");
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme === "dark" ? "#060c1c" : "#f4f7fc");
+    try { localStorage.setItem("notely-theme", theme); } catch { /* Theme still works for this session. */ }
+  }, [theme]);
+
+  return (
+    <div className="screen">
+      <PageTitle eyebrow="MAKE IT YOURS" title="Settings" description="Tune your workspace without leaving your study flow." />
+      <div className="settings-page-grid">
+        <section className="settings-card" aria-labelledby="settings-appearance">
+          <div className="settings-card-heading">
+            <span className="settings-card-icon"><Settings size={18} /></span>
+            <div><h2 id="settings-appearance">Appearance</h2><p>Choose the workspace theme that feels right for you.</p></div>
+          </div>
+          <div className="settings-theme-options" role="group" aria-label="Theme">
+            <button type="button" className={`settings-theme-option ${theme === "light" ? "selected" : ""}`} aria-pressed={theme === "light"} onClick={() => setTheme("light")}>
+              <span className="theme-preview theme-preview-light" aria-hidden="true"><i /><i /><i /></span>
+              <span><strong>Light</strong><small>Bright, clear surfaces</small></span>
+              {theme === "light" && <CheckCircle2 size={18} aria-hidden="true" />}
+            </button>
+            <button type="button" className={`settings-theme-option ${theme === "dark" ? "selected" : ""}`} aria-pressed={theme === "dark"} onClick={() => setTheme("dark")}>
+              <span className="theme-preview theme-preview-dark" aria-hidden="true"><i /><i /><i /></span>
+              <span><strong>Dark</strong><small>Deep navy, soft contrast</small></span>
+              {theme === "dark" && <CheckCircle2 size={18} aria-hidden="true" />}
+            </button>
+          </div>
+          <p className="settings-helper"><CheckCircle2 size={15} /> Theme changes apply instantly and are saved on this device.</p>
+        </section>
+        <section className="settings-card" aria-labelledby="settings-access">
+          <div className="settings-card-heading">
+            <span className="settings-card-icon"><ShieldCheck size={18} /></span>
+            <div><h2 id="settings-access">Privacy & security</h2><p>Keep your workspace and account access in mind.</p></div>
+          </div>
+          <div className="settings-info-row"><span><strong>Session</strong><small>Your workspace uses its existing session.</small></span><span className="settings-status">Active workspace</span></div>
+          <div className="settings-info-row"><span><strong>Saved preferences</strong><small>Theme and sidebar preferences stay on this device.</small></span><CheckCircle2 size={17} /></div>
+        </section>
+        <section className="settings-card" aria-labelledby="settings-about">
+          <div className="settings-card-heading">
+            <span className="settings-card-icon"><BookOpen size={18} /></span>
+            <div><h2 id="settings-about">About Notely</h2><p>A focused workspace for notes, recall and study planning.</p></div>
+          </div>
+          <div className="settings-info-row"><span><strong>Product</strong><small>Notely Study Workspace</small></span><span className="settings-version">Web</span></div>
+          <div className="settings-info-row"><span><strong>Open-source notices</strong><small>License information is available in the repository's LICENSE file.</small></span><a href="https://github.com/digital-coder-jack/N-o-t-e-l-y-/blob/main/LICENSE" target="_blank" rel="noreferrer">View license <ArrowRight size={14} /></a></div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
 function PageTitle({ eyebrow, title, description, action }: { eyebrow?: string; title: string; description?: string; action?: ReactNode }) {
   return (
     <div className="page-title">
@@ -1515,6 +1576,7 @@ export default function Page() {
   const [route, setRouteState] = useState<Route>("overview");
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   useEffect(() => {
     setRouteState(routeFromPath(window.location.pathname));
@@ -1522,6 +1584,18 @@ export default function Page() {
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
+
+
+  useEffect(() => {
+    const labels: Record<Route, string> = {
+      overview: "Overview", notes: "My Notes", documents: "Documents", favorites: "Favorites",
+      archive: "Archive", trash: "Trash", tools: "Study Tools", quiz: "Quiz Generator",
+      flashcards: "Flashcards", roadmap: "Study Roadmap", mindmap: "Mind Maps",
+      planner: "Revision Planner", summarizer: "Text Summarizer", homework: "Homework Helper",
+      search: "Search", assistant: "Notely Assistant", settings: "Settings"
+    };
+    document.title = labels[route] + " — Notely";
+  }, [route]);
 
   const setRoute = (next: Route) => {
     window.history.pushState({}, "", pathFor(next));
@@ -1541,6 +1615,12 @@ export default function Page() {
       const typing = !!target && (target.isContentEditable || /INPUT|TEXTAREA|SELECT/.test(target.tagName));
       if (event.key === "Escape") {
         setMobileOpen(false);
+        setShortcutsOpen(false);
+        return;
+      }
+      if (event.key === "?" && !typing) {
+        event.preventDefault();
+        setShortcutsOpen(true);
         return;
       }
       if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
@@ -1598,6 +1678,18 @@ export default function Page() {
         {content}
       </main>
 
+      <button type="button" className="shortcuts-launcher" aria-label="Open keyboard shortcuts" title="Keyboard shortcuts (?)" onClick={() => setShortcutsOpen(true)}><CircleHelp size={18} /><span>Shortcuts</span><kbd>?</kbd></button>
+      {shortcutsOpen && (
+        <div className="shortcuts-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setShortcutsOpen(false); }}>
+          <section className="shortcuts-dialog" role="dialog" aria-modal="true" aria-labelledby="shortcuts-title">
+            <div className="shortcuts-dialog-head"><div><span className="eyebrow">WORKSPACE HELP</span><h2 id="shortcuts-title">Keyboard shortcuts</h2></div><button type="button" className="shortcuts-close" onClick={() => setShortcutsOpen(false)} aria-label="Close keyboard shortcuts">×</button></div>
+            <div className="shortcut-row"><span>Search workspace</span><kbd>Ctrl / ⌘ K</kbd></div>
+            <div className="shortcut-row"><span>Create a note</span><kbd>Ctrl / ⌘ N</kbd></div>
+            <div className="shortcut-row"><span>Show this guide</span><kbd>?</kbd></div>
+            <p>Shortcuts pause while you type in an input or editor.</p>
+          </section>
+        </div>
+      )}
       <FloatingAssistant context={route === "documents" ? "Documents" : route === "notes" ? "Notes" : route === "tools" ? "Study tools" : "Overview"} />
     </div>
   );
