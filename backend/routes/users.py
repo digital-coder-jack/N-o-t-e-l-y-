@@ -76,6 +76,7 @@ def _public_user(row) -> dict:
     "email": row["email"],
     "created_at": row["created_at"],
     "last_login": row["last_login"] if "last_login" in row.keys() else None,
+    **auth.trial_status(row),
 }
 
 
@@ -92,14 +93,17 @@ async def signup(body: SignupIn):
 
     if not name:
         raise HTTPException(status_code=400, detail="Please enter your name.")
-    if not username:
-        raise HTTPException(status_code=400, detail="Please enter a username.")
     if not EMAIL_RE.match(email):
         raise HTTPException(status_code=400, detail="Please enter a valid email address.")
-    if len(password) < 6:
-        raise HTTPException(status_code=400, detail="Password must be at least 6 characters.")
-    if password != confirm_password:
+    if len(password) < 8:
+        raise HTTPException(status_code=400, detail="Use at least 8 characters for your password.")
+    if confirm_password and password != confirm_password:
         raise HTTPException(status_code=400, detail="Passwords do not match.")
+    if not username:
+        base = re.sub(r"[^a-z0-9_]", "", email.split("@", 1)[0])[:24] or "student"
+        username = base
+        if db.get_user_by_username(username):
+            username = f"{base}_{secrets.token_hex(2)}"
     
     if db.get_user_by_email(email):
         raise HTTPException(status_code=409, detail="An account with this email already exists.")
@@ -136,35 +140,6 @@ async def login(body: LoginIn):
     return {"token": token, "user": _public_user(user)}
 
 
-@router.post("/guest")
-async def guest():
-    """
-    Create a disposable guest account and return a JWT, so visitors can try
-    the app without signing up. The account is real (persisted) but uses a
-    random email/password the guest never needs to know.
-    """
-    suffix = secrets.token_hex(5)
-    email = f"guest_{suffix}@guest.ainotebook"
-    # A long random password the guest never needs to know.
-    password = secrets.token_urlsafe(24)
-    pw_hash = auth.hash_password(password)
-
-    user_id = db.create_user(f"Guest {suffix[:4].upper()}", email, pw_hash)
-    # Extremely unlikely collision; retry once with a fresh suffix.
-    if user_id is None:
-        suffix = secrets.token_hex(6)
-        email = f"guest_{suffix}@guest.ainotebook"
-        user_id = db.create_user(f"Guest {suffix[:4].upper()}", email, pw_hash)
-        if user_id is None:
-            raise HTTPException(status_code=500, detail="Could not start a guest session. Please try again.")
-
-    db.touch_last_login(user_id)
-    token = auth.create_access_token(user_id, email)
-    result = _public_user(db.get_user_by_id(user_id))
-    result["is_guest"] = True
-    return {"token": token, "user": result, "guest": True}
-
-
 @router.post("/forgot-password")
 async def forgot_password(body: ForgotIn):
     """
@@ -184,8 +159,8 @@ async def forgot_password(body: ForgotIn):
 
 @router.post("/reset-password")
 async def reset_password(body: ResetIn):
-    if len(body.password or "") < 6:
-        raise HTTPException(status_code=400, detail="Password must be at least 6 characters.")
+    if len(body.password or "") < 8:
+        raise HTTPException(status_code=400, detail="Use at least 8 characters for your password.")
     user = db.get_user_by_reset_token(body.token)
     if user is None:
         raise HTTPException(status_code=400, detail="Invalid or expired reset token.")
@@ -219,8 +194,8 @@ async def update_profile(body: ProfileIn, user=Depends(auth.current_user)):
 
 @router.put("/change-password")
 async def change_password(body: ChangePwIn, user=Depends(auth.current_user)):
-    if len(body.new_password or "") < 6:
-        raise HTTPException(status_code=400, detail="New password must be at least 6 characters.")
+    if len(body.new_password or "") < 8:
+        raise HTTPException(status_code=400, detail="Use at least 8 characters for your new password.")
     row = db.get_user_by_id(user["id"])
     if not auth.verify_password(body.current_password, row["password_hash"]):
         raise HTTPException(status_code=401, detail="Current password is incorrect.")

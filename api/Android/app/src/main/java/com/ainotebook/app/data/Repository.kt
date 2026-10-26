@@ -34,15 +34,6 @@ class Repository(private val session: SessionStore) {
         return res.user
     }
 
-    suspend fun guest(): User {
-        val res = ApiClient.api.guest()
-        // Persist the guest flag locally in case the backend omits it,
-        // but keep every other field exactly as the server returned it.
-        val guestUser = res.user.copy(is_guest = true)
-        session.save(res.token, guestUser)
-        return guestUser
-    }
-
     suspend fun me(): User {
         val res = ApiClient.api.me()
         session.saveUser(res.user)
