@@ -219,6 +219,7 @@ const SS = (() => {
     return 'light';
   }
   function initTheme() {
+    if (document.querySelector('.auth-cinema')) return; // cinematic auth uses the shared animated Notely theme controller
     applyTheme(getTheme()); // ensure attribute is set even without inline script
     document.querySelectorAll('#themeToggle, .theme-toggle').forEach((btn) => {
       if (btn.dataset.bound) return;

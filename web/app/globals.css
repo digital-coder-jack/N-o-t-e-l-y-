@@ -219,3 +219,20 @@ button,.action-button,.new-note,.nav-button,.note-card { transition-duration:var
 
 :where(.stat-number,.stat-value,.focus-time,.timer,.score-value,.progress-label){font-variant-numeric:tabular-nums}
 :where(.page-title>p,.settings-card p,.empty-state p,.note-card p,.ai-message>p){max-width:65ch;line-height:1.6}
+
+/* Server-derived trial status, reminders and read-only mode. */
+.trial-status-anchor{position:fixed;z-index:1100;top:16px;right:96px}
+.trial-status-pill{min-height:36px;padding:0 13px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);font-size:11px;font-weight:700}
+.trial-status-popover{position:absolute;right:0;top:calc(100% + 10px);width:min(290px,calc(100vw - 28px));padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--surface);box-shadow:0 16px 44px #0002;color:var(--ink)}
+.trial-status-popover p,.trial-upgrade-note{font-size:12px;line-height:1.55;color:var(--muted)}.trial-status-popover button{min-height:36px;padding:0 12px;border:0;border-radius:999px;background:var(--blue);color:#fff;font-weight:700}.trial-status-popover small{display:block;color:var(--muted);margin-top:10px;font-size:10px}
+.trial-reminder-card{position:fixed;z-index:1090;top:62px;right:18px;width:min(370px,calc(100vw - 36px));display:flex;gap:12px;padding:15px;border:1px solid var(--line);border-radius:16px;background:var(--surface);box-shadow:0 16px 44px #0002;color:var(--ink)}
+.trial-reminder-card p{font-size:12px;color:var(--muted);line-height:1.5;margin:7px 0 0}.trial-reminder-card button{border:0;background:transparent;color:var(--muted);font-size:22px;align-self:flex-start}
+.trial-ended-backdrop{position:fixed;z-index:20000;inset:0;display:grid;place-items:center;padding:24px;background:color-mix(in srgb,var(--paper) 90%,transparent);backdrop-filter:blur(20px)}
+.trial-ended-card{width:min(530px,100%);padding:clamp(26px,5vw,44px);border:1px solid var(--line);border-radius:26px;background:var(--surface);text-align:center;color:var(--ink)}
+.trial-ended-mark{display:grid;place-items:center;width:52px;height:52px;margin:0 auto 20px;border-radius:16px;background:var(--cyan);color:var(--navy);font-weight:800}
+.trial-ended-card h1{font:800 clamp(30px,5vw,44px)/1.05 'Bricolage Grotesque',sans-serif;letter-spacing:-.045em;margin:12px 0}
+.trial-ended-card p{max-width:55ch;margin:0 auto 22px;color:var(--muted);font-size:14px;line-height:1.7}
+.trial-ended-secondary{display:block;margin:12px auto 0;padding:10px 16px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--ink)}
+.trial-readonly .na-launcher{display:none!important}.trial-readonly [data-create-note],.trial-readonly .new-note-button{pointer-events:none;opacity:.45}
+@media(max-width:760px){.trial-status-anchor{top:10px;right:68px}.trial-status-pill{min-height:32px;padding:0 9px;font-size:10px}.trial-reminder-card{top:54px;right:12px}}
+@media(prefers-reduced-motion:reduce){.trial-ended-backdrop,.trial-reminder-card{animation:none!important}}

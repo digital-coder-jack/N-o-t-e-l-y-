@@ -25,7 +25,6 @@ type Route =
   | "summarizer"
   | "homework"
   | "search"
-  | "assistant"
   | "settings";
 
 type Note = {
@@ -50,12 +49,8 @@ async function workspaceToken(): Promise<string> {
   if (typeof window === "undefined") throw new Error("Workspace requests require a browser.");
   const saved = window.localStorage.getItem("ss_token");
   if (saved) return saved;
-  const response = await fetch(API_BASE + "/api/auth/guest", { method: "POST" });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok || !payload.token) throw new Error(payload.detail || "Could not start a workspace session.");
-  window.localStorage.setItem("ss_token", payload.token);
-  if (payload.user) window.localStorage.setItem("ss_user", JSON.stringify(payload.user));
-  return payload.token as string;
+  window.location.assign("/login");
+  throw new Error("Sign in to continue.");
 }
 
 async function apiRequest<T = any>(path: string, init: RequestInit = {}): Promise<T> {
@@ -116,7 +111,6 @@ function routeFromPath(path: string): Route {
   if (key === "summarizer") return "summarizer";
   if (key === "homework") return "homework";
   if (key === "search") return "search";
-  if (key === "assistant") return "assistant";
   if (key === "settings") return "settings";
   return "overview";
 }
@@ -125,6 +119,66 @@ function pathFor(route: Route) {
   if (route === "overview") return "/";
   if (route === "settings") return "/settings";
   return "/#/" + route;
+}
+
+
+function TrialStatusBanner() {
+  const [user, setUser] = useState<any>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [endedDismissed, setEndedDismissed] = useState(false);
+  const [reminderDismissed, setReminderDismissed] = useState(false);
+
+  useEffect(() => {
+    let live = true;
+    apiRequest<{ user: any }>("/api/auth/me").then((result) => {
+      if (!live) return;
+      setUser(result.user || null);
+      if (result.user?.trial_expired) document.body.classList.add("trial-readonly");
+      if (result.user?.is_trial && (result.user.trial_days_left === 2 || result.user.trial_days_left === 1)) {
+        const key = "notely-trial-reminder-" + result.user.id + "-" + result.user.trial_days_left;
+        setReminderDismissed(Boolean(localStorage.getItem(key)));
+      }
+    }).catch(() => undefined);
+    return () => { live = false; };
+  }, []);
+
+  if (!user?.is_trial) return null;
+  const days = Number(user.trial_days_left || 0);
+  const reminderKey = "notely-trial-reminder-" + user.id + "-" + days;
+  const dismissReminder = () => { try { localStorage.setItem(reminderKey, "1"); } catch {} setReminderDismissed(true); };
+  return (
+    <>
+      <div className="trial-status-anchor">
+        <button type="button" className="trial-status-pill" aria-expanded={detailsOpen} onClick={() => setDetailsOpen((v) => !v)}>
+          {user.trial_expired ? "Trial ended" : "Trial: " + days + (days === 1 ? " day left" : " days left")}
+        </button>
+        {detailsOpen && <section className="trial-status-popover" role="dialog" aria-label="Trial details">
+          <strong>{user.trial_expired ? "Your trial has ended" : "Your seven-day trial"}</strong>
+          <p>{user.trial_expired ? "Your notes and materials stay safe in read-only mode." : "Everything is unlocked while your trial is active."}</p>
+          <button type="button" onClick={() => setDetailsOpen(false)}>Close</button>
+          <small>Upgrade payments are not connected yet.</small>
+        </section>}
+      </div>
+      {!user.trial_expired && (days === 2 || days === 1) && !reminderDismissed && (
+        <aside className="trial-reminder-card" role="status">
+          <div><strong>{days === 2 ? "Your trial ends in two days" : "Your trial ends today"}</strong><p>Your saved work stays yours. Review upgrade options before the trial ends.</p></div>
+          <button type="button" aria-label="Dismiss trial reminder" onClick={dismissReminder}>×</button>
+        </aside>
+      )}
+      {user.trial_expired && !endedDismissed && (
+        <div className="trial-ended-backdrop" role="dialog" aria-modal="true" aria-labelledby="trial-ended-title">
+          <section className="trial-ended-card">
+            <span className="trial-ended-mark">N</span><span className="eyebrow">YOUR NEXT CHAPTER</span>
+            <h1 id="trial-ended-title">Your trial has ended.</h1>
+            <p>Your notes and materials are safe. You can still read your work; creating, editing and AI features are paused until you upgrade.</p>
+            <button type="button" className="action-button" onClick={() => setEndedDismissed(true)}>Continue to read-only workspace</button>
+            <button type="button" className="trial-ended-secondary" onClick={() => setDetailsOpen(true)}>View upgrade options</button>
+            {detailsOpen && <p className="trial-upgrade-note">Payments are not connected yet. Your saved work remains available.</p>}
+          </section>
+        </div>
+      )}
+    </>
+  );
 }
 
 function AppLogo({ compact = false }: { compact?: boolean }) {
@@ -154,7 +208,6 @@ function Sidebar({
   const primary = [
     ["overview", "Overview", Home],
     ["notes", "My Notes", FileText],
-    ["assistant", "AI Assistant", Sparkles],
     ["documents", "Documents", FolderOpen],
   ] as const;
 
@@ -1665,6 +1718,7 @@ export default function Page() {
 
   return (
     <div className="workspace">
+      <TrialStatusBanner />
       <Sidebar
         route={route}
         setRoute={setRoute}
