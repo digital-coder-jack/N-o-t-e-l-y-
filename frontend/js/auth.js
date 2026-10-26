@@ -1,192 +1,44 @@
-/* =====================================================================
-   Notely  -  auth.js  (login / signup / forgot)
-   ===================================================================== */
-
-document.addEventListener('DOMContentLoaded', () => {
-  // Already logged in? skip auth pages.
-  if (SS.isAuthed() && (location.pathname.includes('login') || location.pathname.includes('signup'))) {
-    if (window.NotelyShutter) window.NotelyShutter.navigate('/dashboard'); else { try { sessionStorage.setItem('notely-shutter-next', '1'); } catch (_) {} window.location.href = '/dashboard'; }
-    return;
+/* Notely cinematic auth: real email auth + server-owned seven-day trial. */
+document.addEventListener('DOMContentLoaded', function () {
+  if (window.SS && SS.isAuthed() && (location.pathname.includes('login') || location.pathname.includes('signup'))) {
+    if (window.NotelyShutter) window.NotelyShutter.navigate('/dashboard'); else window.location.replace('/dashboard'); return;
   }
-
-  setupPasswordToggles();
-  setupStrengthMeter();
-
-  const loginForm = document.getElementById('loginForm');
-  const signupForm = document.getElementById('signupForm');
-  const forgotForm = document.getElementById('forgotForm');
-  const resetForm = document.getElementById('resetForm');
-
-  if (loginForm) loginForm.addEventListener('submit', handleLogin);
-  if (signupForm) signupForm.addEventListener('submit', handleSignup);
-  if (forgotForm) forgotForm.addEventListener('submit', handleForgot);
-  if (resetForm) resetForm.addEventListener('submit', handleReset);
-
-  document.querySelectorAll('[data-guest]').forEach((btn) => btn.addEventListener('click', handleGuest));
+  setupPasswordToggles(); setupStrengthMeter(); setupAuthTabs(); setupCinematicIntro(); setupSpotlight();
+  document.querySelectorAll('[data-google-signin]').forEach(function (button) { button.addEventListener('click', function () { msg("Google sign-in isn't connected yet. Use email for now."); }); });
+  var loginForm=document.getElementById('loginForm'), signupForm=document.getElementById('signupForm'), forgotForm=document.getElementById('forgotForm'), resetForm=document.getElementById('resetForm');
+  if(loginForm)loginForm.addEventListener('submit',handleLogin); if(signupForm)signupForm.addEventListener('submit',handleSignup);
+  if(forgotForm)forgotForm.addEventListener('submit',handleForgot); if(resetForm)resetForm.addEventListener('submit',handleReset);
 });
-
-async function handleGuest(e) {
-  if (e) e.preventDefault();
-  clearMsg();
-  const btn = e ? e.currentTarget : document.querySelector('[data-guest]');
-  busy(btn, true, 'Starting…');
-  try {
-    const data = await SS.api('/api/auth/guest', { method: 'POST', auth: false });
-    SS.setSession(data.token, data.user);
-    sessionStorage.setItem('ss_show_welcome', 'true');
-    localStorage.removeItem('ainb_onboarded');
-    SS.toast('Exploring as guest. Sign up anytime to save your work!');
-    setTimeout(() => { if (window.NotelyShutter) window.NotelyShutter.navigate('/dashboard'); else { try { sessionStorage.setItem('notely-shutter-next', '1'); } catch (_) {} window.location.href = '/dashboard'; } }, 100);
-  } catch (err) {
-    msg(err.message);
-    busy(btn, false);
-  }
+function setAuthMode(mode,updateUrl){
+  var root=document.querySelector('.auth-segment');if(!root)return;root.dataset.active=mode;
+  document.querySelectorAll('[data-auth-tab]').forEach(function(tab){if(tab.getAttribute('role')==='tab')tab.setAttribute('aria-selected',tab.dataset.authTab===mode?'true':'false');});
+  document.querySelectorAll('[data-auth-panel]').forEach(function(panel){panel.hidden=panel.dataset.authPanel!==mode;});
+  var copy=document.querySelector('[data-auth-switch-copy]'),link=document.querySelector('[data-auth-switch-link]');
+  if(copy)copy.textContent=mode==='signup'?'Already have an account?':'New to Notely?';
+  if(link){link.dataset.authTab=mode==='signup'?'login':'signup';link.textContent=mode==='signup'?'Log in':'Start your trial';}
+  clearMsg();if(updateUrl&&history.replaceState)history.replaceState(null,'',mode==='signup'?'/signup':'/login');
 }
-
-function msg(text, type = 'error') {
-  const box = document.getElementById('formMsg');
-  if (!box) return;
-  box.textContent = text;
-  box.className = `form-msg show ${type}`;
+function setupAuthTabs(){var mode=document.body.dataset.authInitial||(location.pathname.indexOf('signup')>=0?'signup':'login');document.querySelectorAll('[data-auth-tab]').forEach(function(tab){tab.addEventListener('click',function(){setAuthMode(tab.dataset.authTab,true);});});setAuthMode(mode,false);}
+function setupCinematicIntro(){
+  var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  try{if(!reduce&&!sessionStorage.getItem('notely-auth-intro-seen')){document.body.classList.add('auth-intro');sessionStorage.setItem('notely-auth-intro-seen','1');
+  var skip=function(){document.body.classList.add('auth-intro-skipped');document.body.classList.remove('auth-intro');window.removeEventListener('pointerdown',skip,true);window.removeEventListener('keydown',skip,true);};
+  window.addEventListener('pointerdown',skip,true);window.addEventListener('keydown',skip,true);}}catch(_){}
 }
-function clearMsg() {
-  const box = document.getElementById('formMsg');
-  if (box) box.className = 'form-msg';
-}
-
-function busy(btn, on, label) {
-  if (!btn) return;
-  if (on) {
-    btn.dataset.html = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = `<span class="spinner"></span> ${label || 'Please wait…'}`;
-  } else {
-    btn.disabled = false;
-    btn.innerHTML = btn.dataset.html || btn.innerHTML;
-  }
-}
-
-function setupPasswordToggles() {
-  document.querySelectorAll('.toggle-pw').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const input = document.getElementById(btn.dataset.target);
-      if (!input) return;
-      const isPw = input.type === 'password';
-      input.type = isPw ? 'text' : 'password';
-      btn.innerHTML = `<i class="fas fa-eye${isPw ? '-slash' : ''}"></i>`;
-    });
-  });
-}
-
-function setupStrengthMeter() {
-  const pw = document.getElementById('password');
-  const bar = document.getElementById('pwBar');
-  if (!pw || !bar) return;
-  pw.addEventListener('input', () => {
-    const v = pw.value;
-    let score = 0;
-    if (v.length >= 6) score++;
-    if (v.length >= 10) score++;
-    if (/[A-Z]/.test(v) && /[a-z]/.test(v)) score++;
-    if (/\d/.test(v)) score++;
-    if (/[^A-Za-z0-9]/.test(v)) score++;
-    const pct = (score / 5) * 100;
-    const colors = ['#fb7185', '#fb923c', '#fbbf24', '#34d399', '#22d3ee'];
-    bar.style.width = pct + '%';
-    bar.style.background = colors[Math.max(0, Math.min(score - 1, 4))] || '#fb7185';
-  });
-}
-
-async function handleLogin(e) {
-  e.preventDefault();
-  clearMsg();
-  const btn = document.getElementById('submitBtn');
-  const identifier = document.getElementById('identifier').value.trim();
-  const password = document.getElementById('password').value;
-  if (!identifier || !password) return msg('Please enter your email/username and password.');
-
-  busy(btn, true, 'Logging in…');
-  try {
-    const data = await SS.api('/api/auth/login', { method: 'POST', auth: false, body: { identifier, password } });
-    SS.setSession(data.token, data.user);
-    sessionStorage.setItem('ss_show_welcome', 'true');
-    localStorage.removeItem('ainb_onboarded');
-    SS.toast('Welcome back, ' + ((data.user && data.user.name) || 'friend') + '!');
-    setTimeout(() => (window.location.href = '/dashboard'), 500);
-  } catch (err) {
-    msg(err.message);
-    busy(btn, false);
-  }
-}
-
-async function handleSignup(e) {
-  e.preventDefault();
-  clearMsg();
-  const btn = document.getElementById('submitBtn');
-  const name = document.getElementById('name').value.trim();
-  const username = document.getElementById('username').value.trim();
-  const email = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value;
-  const confirm_password = document.getElementById('confirm_password').value;
-
-  if (!name || !username || !email || !password || !confirm_password) return msg('Please fill in all fields.');
-  if (password.length < 6) return msg('Password must be at least 6 characters.');
-  if (password !== confirm_password) return msg('Passwords do not match.');
-
-  busy(btn, true, 'Creating account…');
-  try {
-    const data = await SS.api('/api/auth/signup', { method: 'POST', auth: false, body: { name, username, email, password, confirm_password } });
-    SS.setSession(data.token, data.user);
-    sessionStorage.setItem('ss_show_welcome', 'true');
-    localStorage.removeItem('ainb_onboarded');
-    SS.toast('Account created! Welcome, ' + ((data.user && data.user.name) || 'friend') + '.');
-    setTimeout(() => { if (window.NotelyShutter) window.NotelyShutter.navigate('/dashboard'); else { try { sessionStorage.setItem('notely-shutter-next', '1'); } catch (_) {} window.location.href = '/dashboard'; } }, 100);
-  } catch (err) {
-    msg(err.message);
-    busy(btn, false);
-  }
-}
-
-async function handleForgot(e) {
-  e.preventDefault();
-  clearMsg();
-  const btn = document.getElementById('requestBtn');
-  const email = document.getElementById('email').value.trim();
-  if (!email) return msg('Please enter your email.');
-
-  busy(btn, true, 'Requesting…');
-  try {
-    const data = await SS.api('/api/auth/forgot-password', { method: 'POST', auth: false, body: { email } });
-    msg(data.message, 'success');
-    // Reveal step 2 and prefill token if the demo backend returned one.
-    document.getElementById('resetForm').style.display = 'block';
-    if (data.reset_token) {
-      document.getElementById('token').value = data.reset_token;
-      SS.toast('Reset token generated and filled in for you.');
-    }
-  } catch (err) {
-    msg(err.message);
-  } finally {
-    busy(btn, false);
-  }
-}
-
-async function handleReset(e) {
-  e.preventDefault();
-  clearMsg();
-  const btn = document.getElementById('resetBtn');
-  const token = document.getElementById('token').value.trim();
-  const password = document.getElementById('newPassword').value;
-  if (!token || !password) return msg('Please enter the token and your new password.');
-  if (password.length < 6) return msg('Password must be at least 6 characters.');
-
-  busy(btn, true, 'Updating…');
-  try {
-    const data = await SS.api('/api/auth/reset-password', { method: 'POST', auth: false, body: { token, password } });
-    msg(data.message + ' Redirecting to login…', 'success');
-    setTimeout(() => (window.location.href = '/login'), 1500);
-  } catch (err) {
-    msg(err.message);
-    busy(btn, false);
-  }
-}
+function setupSpotlight(){if(!window.matchMedia||!window.matchMedia('(hover: hover) and (pointer: fine)').matches)return;var pending=false,x=0,y=0;
+ window.addEventListener('pointermove',function(e){x=e.clientX;y=e.clientY;if(pending)return;pending=true;requestAnimationFrame(function(){pending=false;document.documentElement.style.setProperty('--spot-x',x+'px');document.documentElement.style.setProperty('--spot-y',y+'px');var c=document.querySelector('.study-cards');if(c){var r=c.getBoundingClientRect(),dx=(x-(r.left+r.width/2))/Math.max(1,r.width),dy=(y-(r.top+r.height/2))/Math.max(1,r.height);c.style.setProperty('--parallax-x',(dx*9).toFixed(1)+'px');c.style.setProperty('--parallax-y',(dy*7).toFixed(1)+'px');}});},{passive:true});}
+function msg(text,type){var box=document.getElementById('formMsg');if(!box)return;box.textContent=text;box.className='form-msg show '+(type||'error');}
+function clearMsg(){var box=document.getElementById('formMsg');if(box)box.className='form-msg';}
+function busy(button,on,label){if(!button)return;if(on){button.dataset.html=button.innerHTML;button.disabled=true;button.innerHTML='<span class="spinner" aria-hidden="true"></span> '+label;}else{button.disabled=false;button.innerHTML=button.dataset.html||button.innerHTML;}}
+function setupPasswordToggles(){document.querySelectorAll('.auth-show-password,.toggle-pw').forEach(function(button){button.addEventListener('click',function(){var input=document.getElementById(button.dataset.target);if(!input)return;var show=input.type==='password';input.type=show?'text':'password';button.textContent=show?'Hide':'Show';button.setAttribute('aria-label',show?'Hide password':'Show password');});});}
+function setupStrengthMeter(){var input=document.getElementById('signupPassword')||document.getElementById('password'),bar=document.getElementById('pwBar'),hint=document.getElementById('pwHint');if(!input||!bar)return;
+ input.addEventListener('input',function(){var v=input.value,s=0;if(v.length>=8)s++;if(v.length>=12)s++;if(/[a-z]/.test(v)&&/[A-Z]/.test(v))s++;if(/\d/.test(v))s++;if(/[^A-Za-z0-9]/.test(v))s++;bar.style.width=(s*20)+'%';bar.style.background=['#e45b79','#f0a34a','#e3c45a','#4aa8d8','#43bd99'][Math.max(0,s-1)]||'#e45b79';if(hint)hint.textContent=v.length<8?'Use at least 8 characters.':s<3?'Good start. Add a number or symbol to strengthen it.':s<5?'Strong password.':'Excellent password strength.';});}
+function markInvalid(id){var f=document.getElementById(id);if(!f)return;f.setAttribute('aria-invalid','true');f.focus();f.addEventListener('input',function clear(){f.removeAttribute('aria-invalid');f.removeEventListener('input',clear);},{once:true});}
+function goToWorkspace(data,message){SS.setSession(data.token,data.user);try{sessionStorage.setItem('ss_show_welcome','true');}catch(_){}document.body.classList.add('auth-success');msg(message,'success');setTimeout(function(){if(window.NotelyShutter)window.NotelyShutter.navigate('/dashboard');else{try{sessionStorage.setItem('notely-shutter-next','1');}catch(_){}window.location.href='/dashboard';}},450);}
+async function handleLogin(e){e.preventDefault();clearMsg();var identifier=document.getElementById('identifier').value.trim(),password=document.getElementById('password').value;if(!identifier){msg('Enter your email or username.');markInvalid('identifier');return;}if(!password){msg('Enter your password.');markInvalid('password');return;}
+ var btn=document.getElementById('submitBtn');busy(btn,true,'Signing in…');try{var data=await SS.api('/api/auth/login',{method:'POST',auth:false,body:{identifier:identifier,password:password}});goToWorkspace(data,'Welcome back. Opening your workspace…');}catch(err){msg(err.message||'Could not sign in. Check your details.');busy(btn,false);}}
+async function handleSignup(e){e.preventDefault();clearMsg();var name=document.getElementById('name').value.trim(),email=document.getElementById('email').value.trim(),password=document.getElementById('signupPassword').value;
+ if(!name){msg('Add your name to get started.');markInvalid('name');return;}if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){msg('Enter a valid email address.');markInvalid('email');return;}if(password.length<8){msg('Use at least 8 characters for your password.');markInvalid('signupPassword');return;}
+ var btn=document.getElementById('signupSubmit');busy(btn,true,'Creating your account…');try{var data=await SS.api('/api/auth/signup',{method:'POST',auth:false,body:{name:name,username:'',email:email,password:password,confirm_password:password}});goToWorkspace(data,'Your 7-day trial is ready. Opening your workspace…');}catch(err){msg(err.message||'Could not create your account. Try again.');busy(btn,false);}}
+async function handleForgot(e){e.preventDefault();clearMsg();var btn=document.getElementById('requestBtn'),email=document.getElementById('email').value.trim();if(!email)return msg('Enter your email.');busy(btn,true,'Requesting…');try{var data=await SS.api('/api/auth/forgot-password',{method:'POST',auth:false,body:{email:email}});msg(data.message,'success');var form=document.getElementById('resetForm');if(form)form.style.display='block';if(data.reset_token){document.getElementById('token').value=data.reset_token;SS.toast('Reset token generated and filled in for you.');}}catch(err){msg(err.message||'Could not request a reset.');}finally{busy(btn,false);}}
+async function handleReset(e){e.preventDefault();clearMsg();var btn=document.getElementById('resetBtn'),token=document.getElementById('token').value.trim(),password=document.getElementById('newPassword').value;if(!token||!password)return msg('Enter the reset token and a new password.');if(password.length<8)return msg('Use at least 8 characters for your password.');busy(btn,true,'Updating…');try{var data=await SS.api('/api/auth/reset-password',{method:'POST',auth:false,body:{token:token,password:password}});msg(data.message+' Redirecting to login…','success');setTimeout(function(){window.location.href='/login';},1500);}catch(err){msg(err.message||'Could not reset your password.');busy(btn,false);}}
