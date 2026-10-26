@@ -10,12 +10,15 @@
   <title>Notely — Workspace</title>
   <link rel="icon" type="image/svg+xml" href="/assets/logo.png" />
   <link rel="stylesheet" href="/css/notely-workspace.css" />
+  <link rel="stylesheet" href="/css/notely-shutter.css" />
+  <script>(function(){try{if(sessionStorage.getItem('notely-shutter-next')==='1')document.documentElement.classList.add('notely-shutter-pending');}catch(e){}})();</script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Sans:wght@400;500;600;700&display=swap" />
   <link rel="stylesheet" href="/css/notely-theme-shared.css" />
 </head>
 <body>
+  <div id="notely-shutter" class="notely-shutter-overlay" aria-hidden="true"><div class="notely-shutter-inner"><img src="/assets/logo.png" alt="Notely"></div></div>
   <div class="nw-shell">
     <aside class="nw-sidebar" id="nwSidebar">
       <div class="nw-brand"><img src="/assets/logo.png" alt="Notely logo" /><span class="nw-brand-name">Notely</span><button class="nw-icon nw-collapse" id="nwCollapse" aria-label="Toggle sidebar">‹</button></div>
@@ -66,5 +69,6 @@
   <script src="/js/app.js"></script>
   <script src="/js/notely-workspace.js"></script>
   <script src="/js/notely-theme.js" defer></script>
+  <script src="/js/notely-shutter.js"></script>
 </body>
 </html>

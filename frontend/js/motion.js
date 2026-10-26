@@ -214,6 +214,10 @@
   }
 
   function boot() {
+    if (document.documentElement.classList.contains('notely-shutter-pending')) {
+      window.addEventListener('notely-shutter:lifted', boot, { once: true });
+      return;
+    }
     initReveal();
     initRipple();
     initTilt();

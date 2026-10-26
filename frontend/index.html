@@ -114,11 +114,13 @@ footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;paddin
 @media(prefers-reduced-motion:reduce){.notely-theme-toggle,.notely-theme-toggle svg{transition:none!important}}
 </style>
 <link rel="stylesheet" href="/css/notely-theme-shared.css">
+<link rel="stylesheet" href="/css/notely-shutter.css">
+<script>(function(){try{if(sessionStorage.getItem('notely-shutter-next')==='1')document.documentElement.classList.add('notely-shutter-pending');}catch(e){}})();</script>
 </head>
 <body>
-<div id="pre"><div style="text-align:center"><img src="/assets/logo.png"><div id="cnt">0</div></div></div>
+<div id="pre" class="notely-shutter"><div style="text-align:center"><img src="/assets/logo.png" alt="Notely"><div id="cnt">0</div></div></div>
 <div id="bar"></div><div id="cur"></div><canvas id="fx" aria-hidden="true"></canvas>
-<header><a class="logo" href="#"><img src="/assets/logo.png">Notely</a><div class="landing-nav-actions"><button class="notely-theme-toggle" type="button" data-notely-theme-toggle aria-label="Switch theme" title="Switch theme (Shift+T)" aria-pressed="false"><svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"></path></svg><svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.7 8.7 0 1 0 20.2 15.4Z"></path></svg></button><a class="btn mag" href="/signup">Get started</a></div></header>
+<header><a class="logo" href="#"><img src="/assets/logo.png">Notely</a><div class="landing-nav-actions"><button class="notely-theme-toggle" type="button" data-notely-theme-toggle aria-label="Switch theme" title="Switch theme (Shift+T)" aria-pressed="false"><svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"></path></svg><svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.7 8.7 0 1 0 20.2 15.4Z"></path></svg></button><a class="btn o mag" href="/login">Log in</a><a class="btn mag" href="/signup">Get started</a></div></header>
 <main>
 <section class="hero">
 <div class="t">
@@ -262,17 +264,24 @@ lenis.on('scroll',function(e){var k=Math.max(-18,Math.min(18,e.velocity*1.2));sk
 /* CTA reveal */
 gsap.to('.cta .c',{yPercent:0,stagger:.04,duration:1.1,ease:'expo.out',scrollTrigger:{trigger:'.cta',start:'top 65%'}});
 
-/* preloader intro */
-var pc={n:0},cn=$('#cnt');
-gsap.to(pc,{n:100,duration:1.7,ease:'power2.inOut',onUpdate:function(){cn.textContent=Math.round(pc.n)},onComplete:function(){
-  gsap.timeline().to(pre,{yPercent:-100,duration:1.1,ease:'expo.inOut'})
-   .to('.hero .c',{yPercent:0,stagger:.035,duration:1.1,ease:'expo.out'},'-=.5')
-   .from('.hero .in',{y:30,opacity:0,stagger:.12,duration:.9},'-=.8')
-   .from('.ph0',{y:160,opacity:0,rotationX:40,duration:1.6,ease:'expo.out'},'-=1.2')
-   .set(pre,{display:'none'});
-}});
+/* Initial visit keeps the existing counter intro. A shutter hand-off skips it. */
+var pc={n:0},cn=$('#cnt'),comingThroughShutter=false;
+try{comingThroughShutter=sessionStorage.getItem('notely-shutter-next')==='1';}catch(e){}
+if(comingThroughShutter){
+  gsap.set(pre,{yPercent:0,display:'grid'});
+  if(cn)cn.style.display='none';
+}else{
+  gsap.to(pc,{n:100,duration:1.7,ease:'power2.inOut',onUpdate:function(){cn.textContent=Math.round(pc.n)},onComplete:function(){
+    gsap.timeline().to(pre,{yPercent:-100,duration:1.1,ease:'expo.inOut'})
+     .to('.hero .c',{yPercent:0,stagger:.035,duration:1.1,ease:'expo.out'},'-=.5')
+     .from('.hero .in',{y:30,opacity:0,stagger:.12,duration:.9},'-=.8')
+     .from('.ph0',{y:160,opacity:0,rotationX:40,duration:1.6,ease:'expo.out'},'-=1.2')
+     .set(pre,{display:'none'});
+  }});
+}
 })();
 </script>
 <script src="/js/notely-theme.js" defer></script>
+<script src="/js/notely-shutter.js" defer></script>
 </body>
 </html>
