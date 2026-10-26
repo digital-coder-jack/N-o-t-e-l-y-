@@ -87,6 +87,10 @@ class ProviderFailure(Exception):
         self.error_class = error_class
         self.http_status = http_status
 
+    @property
+    def friendly_message(self) -> str:
+        return _FRIENDLY_ERRORS.get(self.error_class, _FRIENDLY_ERRORS["unavailable"])
+
 
 def _normalize_selection(selection: str | None) -> str:
     choice = (selection or "auto").strip().lower()
@@ -438,7 +442,7 @@ async def chat(messages: list[dict], *, selection: str | None = "auto", temperat
             last_error = "parse_error"
             _record_failure(tier, last_error)
     logger.warning("AI request exhausted fallback chain error_class=%s", last_error)
-    return order[-1], _FRIENDLY_ERRORS.get(last_error, _FRIENDLY_ERRORS["unavailable"])
+    raise ProviderFailure(last_error)
 
 
 async def _stream_tier(tier: str, messages: list[dict], temperature: float, max_tokens: int,
