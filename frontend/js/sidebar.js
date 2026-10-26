@@ -140,7 +140,7 @@
       '<div class="side-user-card" id="sideUserCard">' +
         '<button class="side-user-trigger" id="sideUserTrigger" aria-haspopup="true" aria-expanded="false" aria-label="Account menu" title="Account">' +
           '<span class="avatar" aria-hidden="true"><span class="avatar-inner">' + escapeHtml(init) + '</span>' +
-            '<span class="status-dot' + '' + '"></span>' +
+            '<span class="status-dot"></span>' +
           '</span>' +
           '<span class="meta">' +
             '<b>' + escapeHtml(name) + '</b>' +
