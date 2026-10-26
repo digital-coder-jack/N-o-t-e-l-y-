@@ -33,7 +33,7 @@ Built with **Next.js 14 · React 18 · TypeScript · Tailwind CSS · Framer Moti
 - Recent-search chips, full arrow-key navigation, `↵` to open
 
 ### Header & Profile
-- Logo + current workspace + sync status (🟢 Synced / 🟡 Guest Mode / etc.)
+- Logo + current workspace + sync status (synced / syncing / offline / error)
 - Search button + gradient New Note button
 - User profile card: avatar, name, email, plan chip, sync dot, **animated storage bar**, expandable menu (Profile / Account / Subscription / Settings / Logout)
 

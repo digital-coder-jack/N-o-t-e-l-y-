@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -54,23 +55,22 @@ fun SignupScreen(vm: AuthViewModel, onSignedUp: () -> Unit, onGoLogin: () -> Uni
     LaunchedEffect(state.success) { if (state.success) onSignedUp() }
 
     Column(
-        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp, vertical = 24.dp),
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface).imePadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp, vertical = 24.dp),
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
-        Text("Notely", style = MaterialTheme.typography.headlineMedium)
-        Spacer(Modifier.height(42.dp))
-        Text("WELCOME TO NOTELY", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text("Your study space starts here", style = MaterialTheme.typography.displaySmall, modifier = Modifier.padding(top = 16.dp))
-        Text("7 days free. Everything unlocked.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
-        OutlinedButton(onClick = { googleNotice = true }, shape = RoundedCornerShape(999.dp), border = androidx.compose.foundation.BorderStroke(1.dp, NotelyLine), modifier = Modifier.fillMaxWidth().padding(top = 26.dp)) { Text("Continue with Google", color = MaterialTheme.colorScheme.onSurface) }
-        Text("START YOUR 7-DAY TRIAL WITH EMAIL", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 28.dp, bottom = 18.dp))
+        Text("Start your free trial", style = MaterialTheme.typography.headlineMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+        Text("Seven days. Everything unlocked. Your work stays yours.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        OutlinedButton(onClick = { googleNotice = true }, shape = RoundedCornerShape(999.dp), border = androidx.compose.foundation.BorderStroke(1.dp, NotelyLine), modifier = Modifier.fillMaxWidth().height(46.dp)) { Text("Continue with Google", color = MaterialTheme.colorScheme.onSurface) }
+        Text("OR USE EMAIL", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
         AuthField("Full name", name, { name = it; vm.clearError() })
         AuthField("Student email", email, { email = it; vm.clearError() }, KeyboardType.Email)
         AuthField("Create password", password, { password = it; vm.clearError() }, KeyboardType.Password, true)
-        Text("Use at least 8 characters, including a number.", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(if (password.length < 8) "Use at least 8 characters, including a number." else "Password strength: " + if (password.length >= 12 && password.any { it.isDigit() }) "Strong" else "Good start", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        AuthField("Confirm password", confirm, { confirm = it; vm.clearError() }, KeyboardType.Password, true)
+        state.error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
         Text("7-day trial starts when your account is created", style = MaterialTheme.typography.bodyMedium, color = NotelyGreen, modifier = Modifier.padding(top = 18.dp))
         Text("☑  I agree to the Terms of Service and Privacy Policy.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 22.dp))
-        Button(onClick = { vm.signup(name, "", email, password, confirm) }, enabled = !state.loading, colors = ButtonDefaults.buttonColors(containerColor = NotelyIndigo), shape = RoundedCornerShape(8.dp), modifier = Modifier.padding(top = 22.dp)) {
+        Button(onClick = { vm.signup(name, "", email, password, confirm) }, enabled = !state.loading, colors = ButtonDefaults.buttonColors(containerColor = NotelyIndigo), shape = RoundedCornerShape(999.dp), modifier = Modifier.fillMaxWidth().height(50.dp).padding(top = 4.dp)) {
             if (state.loading) NotelyIcon(name = "loading", trigger = NotelyIconTrigger.Loop, size = 18.dp, color = Color.White) else Text("Start free trial")
         }
         TextButton(onClick = onGoLogin, modifier = Modifier.padding(top = 12.dp)) { Text("Already have an account?  Sign in →", color = MaterialTheme.colorScheme.onSurface) }

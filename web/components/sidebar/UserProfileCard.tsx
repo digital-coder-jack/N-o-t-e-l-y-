@@ -58,7 +58,6 @@ export function UserProfileCard({
         className={cn(
           "absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-surface-raised",
           user.syncStatus === "synced" && "bg-emerald-400",
-          user.syncStatus === "guest" && "bg-amber-400",
           user.syncStatus === "syncing" && "bg-accent-cyan",
           user.syncStatus === "error" && "bg-red-500",
           user.syncStatus === "offline" && "bg-ink-faint"

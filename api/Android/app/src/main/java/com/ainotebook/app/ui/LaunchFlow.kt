@@ -17,6 +17,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.weight
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -180,38 +183,27 @@ private fun IntroScene(reducedMotion: Boolean, onSkip: () -> Unit) {
 @Composable
 private fun NativeLanding(onSignUp: () -> Unit, onSignIn: () -> Unit) {
     var showGoogleNotice by remember { mutableStateOf(false) }
-    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(horizontal = 28.dp, vertical = 30.dp)) {
-        Column(
-            modifier = Modifier.align(Alignment.Center).fillMaxWidth(),
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            Image(painterResource(R.drawable.official_logo), contentDescription = "Notely logo", modifier = Modifier.size(54.dp))
-            Text("WELCOME TO NOTELY", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-            Text("Your study space starts here.", color = MaterialTheme.colorScheme.onBackground, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
-            Text("7 days free. Everything unlocked.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge)
-            Surface(shape = RoundedCornerShape(999.dp), color = MaterialTheme.colorScheme.primary.copy(alpha = .10f), border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .28f))) {
-                Text("  ✦  7-day free trial  ", modifier = Modifier.padding(horizontal = 7.dp, vertical = 8.dp), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(horizontal = 24.dp, vertical = 20.dp)) {
+        Column(Modifier.fillMaxSize()) {
+            Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.Start, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Image(painterResource(R.drawable.official_logo), contentDescription = "Notely logo", modifier = Modifier.size(50.dp))
+                Text("WELCOME TO NOTELY", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                Text("Your study space starts here.", color = MaterialTheme.colorScheme.onBackground, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
+                Text("7 days free. Everything unlocked.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge)
+                Surface(shape = RoundedCornerShape(999.dp), color = MaterialTheme.colorScheme.primary.copy(alpha = .10f), border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .28f))) {
+                    Text("✦  7-day free trial", modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                }
+                StudyNoteStack()
             }
-            StudyNoteStack()
-            Spacer(Modifier.height(2.dp))
-            Button(onClick = onSignUp, modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(999.dp), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary)) {
-                Text("Start free trial", fontWeight = FontWeight.SemiBold)
-            }
-            OutlinedButton(onClick = { showGoogleNotice = true }, modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(999.dp)) {
-                Text("Continue with Google", color = MaterialTheme.colorScheme.onSurface)
-            }
-            TextButton(onClick = onSignIn, modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                Text("Already have an account? Log in", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(12.dp))
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = onSignUp, modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(999.dp), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary)) { Text("Start free trial", fontWeight = FontWeight.SemiBold) }
+                OutlinedButton(onClick = { showGoogleNotice = true }, modifier = Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(999.dp)) { Text("Continue with Google", color = MaterialTheme.colorScheme.onSurface) }
+                TextButton(onClick = onSignIn, modifier = Modifier.fillMaxWidth().height(44.dp)) { Text("Already have an account? Log in", color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
         }
     }
-    if (showGoogleNotice) AlertDialog(
-        onDismissRequest = { showGoogleNotice = false },
-        title = { Text("Google sign-in isn't connected yet") },
-        text = { Text("Use email for now. Google OAuth needs to be configured before this button can sign you in.") },
-        confirmButton = { TextButton(onClick = { showGoogleNotice = false }) { Text("Got it") } }
-    )
+    if (showGoogleNotice) AlertDialog(onDismissRequest = { showGoogleNotice = false }, title = { Text("Google sign-in isn't connected yet") }, text = { Text("Use email for now. Google OAuth needs to be configured before this button can sign you in.") }, confirmButton = { TextButton(onClick = { showGoogleNotice = false }) { Text("Got it") } })
 }
 
 @Composable

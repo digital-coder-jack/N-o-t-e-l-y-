@@ -63,6 +63,7 @@ export default function AuthPage({ initialMode = "login" }: { initialMode?: "log
       <section className="auth-card">
         <div className="auth-card-top"><span className="auth-card-eyebrow">YOUR NEXT CHAPTER</span><span className="auth-mobile-trial">7 days free</span></div>
         <div className={"auth-segment "+(mode==="login"?"is-login":"")} role="tablist" aria-label="Account access"><button type="button" role="tab" aria-selected={mode==="signup"} onClick={()=>switchMode("signup")}>Sign up</button><button type="button" role="tab" aria-selected={mode==="login"} onClick={()=>switchMode("login")}>Log in</button><span className="auth-segment-highlight" /></div>
+        <div key={mode} className="auth-panel auth-panel-in">
         <h2>{mode==="signup"?"Start your free trial":"Welcome back."}</h2><p className="auth-panel-copy">{mode==="signup"?"Seven days. Everything unlocked. Your work stays yours.":"Pick up where your ideas left off."}</p>
         <button type="button" className="auth-google" onClick={()=>setError("Google sign-in isn't connected yet. Use email for now.")}><span className="google-mark">G</span>Continue with Google</button><div className="auth-divider"><span>or use email</span></div>
         {error && <p className="form-msg show error" role="alert">{error}</p>}
@@ -73,6 +74,7 @@ export default function AuthPage({ initialMode = "login" }: { initialMode?: "log
         </form>
         <p className="auth-terms">{mode==="signup"?"Your trial starts when your account is created. No payment is taken.":"Your notes and materials stay connected to your account."}</p>
         <p className="auth-switch-copy">{mode==="signup"?"Already have an account?":"New to Notely?"} <button type="button" onClick={()=>switchMode(mode==="signup"?"login":"signup")}>{mode==="signup"?"Log in":"Start your trial"}</button></p>
+        </div>
       </section>
       <div className="auth-cinematic-wipe" aria-hidden="true" />
     </main>

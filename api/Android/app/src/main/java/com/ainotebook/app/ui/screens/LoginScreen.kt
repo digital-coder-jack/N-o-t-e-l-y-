@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -51,20 +52,17 @@ fun LoginScreen(vm: AuthViewModel, onLoggedIn: () -> Unit, onGoSignup: () -> Uni
     LaunchedEffect(state.success) { if (state.success) onLoggedIn() }
 
     Column(
-        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp, vertical = 24.dp),
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface).imePadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp, vertical = 24.dp),
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
-        Text("Notely", style = MaterialTheme.typography.headlineMedium)
-        Spacer(Modifier.height(48.dp))
-        Text("WELCOME TO NOTELY", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text("Your study space starts here", style = MaterialTheme.typography.displaySmall, modifier = Modifier.padding(top = 16.dp))
-        Text("7 days free. Everything unlocked.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
-        OutlinedButton(onClick = { googleNotice = true }, shape = RoundedCornerShape(999.dp), border = androidx.compose.foundation.BorderStroke(1.dp, NotelyLine), modifier = Modifier.fillMaxWidth().padding(top = 26.dp)) { Text("Continue with Google", color = MaterialTheme.colorScheme.onSurface) }
-        Text("or with email", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 28.dp, bottom = 18.dp))
+        Text("Welcome back", style = MaterialTheme.typography.headlineMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+        Text("Log in to return to your notes, practice and plans.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        OutlinedButton(onClick = { googleNotice = true }, shape = RoundedCornerShape(999.dp), border = androidx.compose.foundation.BorderStroke(1.dp, NotelyLine), modifier = Modifier.fillMaxWidth().height(48.dp)) { Text("Continue with Google", color = MaterialTheme.colorScheme.onSurface) }
+        Text("OR CONTINUE WITH EMAIL", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
         AuthField("Student email", identifier, { identifier = it; vm.clearError() }, KeyboardType.Email)
         AuthField("Password", password, { password = it; vm.clearError() }, KeyboardType.Password, true)
-        Text("☑  Keep me signed in", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 14.dp))
-        Button(onClick = { vm.login(identifier, password) }, enabled = !state.loading, colors = ButtonDefaults.buttonColors(containerColor = NotelyIndigo), shape = RoundedCornerShape(8.dp), modifier = Modifier.padding(top = 24.dp)) {
+        state.error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+        Button(onClick = { vm.login(identifier, password) }, enabled = !state.loading, colors = ButtonDefaults.buttonColors(containerColor = NotelyIndigo), shape = RoundedCornerShape(999.dp), modifier = Modifier.fillMaxWidth().height(50.dp).padding(top = 4.dp)) {
             if (state.loading) NotelyIcon(name = "loading", trigger = NotelyIconTrigger.Loop, size = 18.dp, color = Color.White) else Text("Log in")
         }
         TextButton(onClick = onGoSignup, modifier = Modifier.padding(top = 14.dp)) { Text("New to Notely? Start your 7-day trial →", color = MaterialTheme.colorScheme.onSurface) }
