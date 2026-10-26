@@ -37,9 +37,12 @@ async def read_stream(client, chat_id, headers, content, model="auto"):
             if any(e.get("event") in ("done","error","cancelled") for e in new): break
     return events
 async def local_provider_unit_tests():
+    started=time.perf_counter()
     try:
         from backend import providers
         old_available,old_stream=providers.provider_available,providers._stream_tier
+        old_cooldowns=providers._COOLDOWNS.copy()
+        providers._COOLDOWNS.clear()
         started=time.perf_counter()
         async def fake_stream(tier,messages,temperature,max_tokens,cancel_event):
             if tier=="default": raise providers.ProviderFailure("timeout")
@@ -50,7 +53,9 @@ async def local_provider_unit_tests():
             events=[e async for e in providers.chat_stream([{"role":"user","content":"test"}],selection="auto")]
             ok=events[0]==("meta","AI Notebook Pro") and ("token","simulated answer") in events
             record("Failover simulation: default timeout to Pro","PASS" if ok else "FAIL",started,"In-process forced timeout; no real key changed.","-" if ok else "fallback_failed")
-        finally: providers.provider_available,providers._stream_tier=old_available,old_stream
+        finally:
+            providers.provider_available,providers._stream_tier=old_available,old_stream
+            providers._COOLDOWNS.clear(); providers._COOLDOWNS.update(old_cooldowns)
         old_available,old_stream=providers.provider_available,providers._stream_tier
         started=time.perf_counter()
         async def all_fail(tier,messages,temperature,max_tokens,cancel_event):
@@ -62,8 +67,10 @@ async def local_provider_unit_tests():
             err=next((v for k,v in events if k=="error"),{})
             ok=bool(err.get("message")) and "raw" not in str(err).lower()
             record("Sanitized provider error event","PASS" if ok else "FAIL",started,"Friendly error; no raw upstream body.","-" if ok else "error_not_sanitized")
-        finally: providers.provider_available,providers._stream_tier=old_available,old_stream
-    except Exception as exc: record("Local provider unit tests","FAIL",time.perf_counter(),type(exc).__name__,"unit_test_error")
+        finally:
+            providers.provider_available,providers._stream_tier=old_available,old_stream
+            providers._COOLDOWNS.clear(); providers._COOLDOWNS.update(old_cooldowns)
+    except Exception as exc: record("Local provider unit tests","FAIL",started,type(exc).__name__,"unit_test_error")
 
 async def run(base_url, diag_token):
     timeout=httpx.Timeout(260,connect=10)
@@ -194,6 +201,35 @@ async def run(base_url, diag_token):
                     ok=sr.status_code==200 and start_seen and cancelled
                     record("Explicit stream cancellation","PASS" if ok else "FAIL",t,f"start={start_seen}; cancelled={cancelled}","-" if ok else "cancel_race_or_instance")
             except Exception as exc: record("Explicit stream cancellation","FAIL",t,type(exc).__name__,"cancel_failed")
+            # A second stream on the same chat must supersede the first stream.
+            t=time.perf_counter()
+            try:
+                async with client.stream("POST",f"/api/chats/{chat_id}/stream",headers=headers,
+                    json={"content":"Write a detailed 1000-word explanation of photosynthesis.","model":"auto"}) as first:
+                    first_started=False; first_cancelled=False
+                    async for line in first.aiter_lines():
+                        if not line.startswith("data:"): continue
+                        try: event=json.loads(line[5:].strip())
+                        except json.JSONDecodeError: continue
+                        if event.get("event")=="start":
+                            first_started=True
+                            second_task=asyncio.create_task(read_stream(client,chat_id,headers,"Reply only: second stream succeeded.","auto"))
+                            break
+                    if first_started:
+                        async for line in first.aiter_lines():
+                            if not line.startswith("data:"): continue
+                            try: event=json.loads(line[5:].strip())
+                            except json.JSONDecodeError: continue
+                            if event.get("event")=="cancelled": first_cancelled=True; break
+                            if event.get("event") in ("done","error"): break
+                        second_events=await second_task
+                        second_ok="done" in [e.get("event") for e in second_events] and "error" not in [e.get("event") for e in second_events]
+                        ok=first_started and first_cancelled and second_ok
+                    else:
+                        ok=False
+                record("New stream cancels previous stream","PASS" if ok else "FAIL",t,
+                       f"first_cancelled={first_cancelled}","-" if ok else "cancel_race_or_instance")
+            except Exception as exc: record("New stream cancels previous stream","FAIL",t,type(exc).__name__,"supersede_failed")
         finally:
             if account_created and token:
                 t=time.perf_counter()
