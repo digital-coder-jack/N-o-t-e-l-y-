@@ -1,6 +1,9 @@
 package com.ainotebook.app.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -13,6 +16,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FloatingActionButton
@@ -33,6 +38,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -69,6 +81,7 @@ fun FloatingAssistantWidget(
     onOpen: () -> Unit
 ) {
     var contextEnabled by rememberSaveable { mutableStateOf(true) }
+    var focusMode by rememberSaveable { mutableStateOf(false) }
     val appContext = LocalContext.current.applicationContext
     val widgetPrefs = remember(appContext) { appContext.getSharedPreferences("notely_assistant_widget", Context.MODE_PRIVATE) }
     val chatState by vm.state.collectAsState()
@@ -115,13 +128,7 @@ fun FloatingAssistantWidget(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.primaryContainer) {
-                            Text(
-                                "✦",
-                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
+                        AuroraOrb(size = 36.dp, generating = chatState.streaming)
                         Column {
                             Text("Notely Assistant", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                             Text("Stay in your study flow", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -131,12 +138,17 @@ fun FloatingAssistantWidget(
                         IconButton(onClick = { contextEnabled = !contextEnabled }, modifier = Modifier.semantics { contentDescription = if (contextEnabled) "Remove context" else "Add context" }) {
                             Text(if (contextEnabled) "×" else "+", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleMedium)
                         }
+                        if (mode == 2 && !isPhone) {
+                            IconButton(onClick = { focusMode = !focusMode }, modifier = Modifier.semantics { contentDescription = if (focusMode) "Show assistant side panels" else "Focus mode" }) {
+                                Text(if (focusMode) "☷" else "◎", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleMedium)
+                            }
+                        }
                         if (mode == 1) {
-                            IconButton(onClick = { onModeChange(2) }) {
+                            IconButton(onClick = { onModeChange(2) }, modifier = Modifier.semantics { contentDescription = "Maximize assistant" }) {
                                 Text("□", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleMedium)
                             }
                         } else if (mode == 2) {
-                            IconButton(onClick = { onModeChange(1) }) {
+                            IconButton(onClick = { onModeChange(1) }, modifier = Modifier.semantics { contentDescription = "Minimize assistant" }) {
                                 Text("↙", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleMedium)
                             }
                         }
@@ -148,10 +160,42 @@ fun FloatingAssistantWidget(
                 if (contextEnabled) {
                     Text("Context: $context", modifier = Modifier.padding(horizontal = 14.dp, vertical = 5.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                 }
-                Box(Modifier.weight(1f)) {
-                    // Keep ChatScreen composed while the widget is minimized so the selected chat and
-                    // drafts survive navigation between destinations.
-                    ChatScreen(vm = vm, initialChatId = restoredChatId, embedded = true, context = if (contextEnabled) context else null)
+                if (mode == 2 && !isPhone) {
+                    Row(Modifier.weight(1f).fillMaxWidth()) {
+                        if (!focusMode) {
+                            Column(Modifier.width(220.dp).fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)).padding(12.dp)) {
+                                Text("Chat history", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                                androidx.compose.material3.TextButton(onClick = { vm.startNewChat() }, modifier = Modifier.fillMaxWidth()) { Text("＋ New chat") }
+                                LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    items(chatState.chats, key = { it.id }) { chat ->
+                                        Surface(modifier = Modifier.fillMaxWidth().clickable { vm.openChat(chat.id) }, shape = RoundedCornerShape(10.dp), color = if (chat.id == chatState.currentChatId) MaterialTheme.colorScheme.primaryContainer else Color.Transparent) {
+                                            Text(chat.title, modifier = Modifier.padding(horizontal = 9.dp, vertical = 10.dp), maxLines = 2, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Box(Modifier.weight(1f).fillMaxSize()) {
+                            ChatScreen(vm = vm, initialChatId = restoredChatId, embedded = true, context = if (contextEnabled) context else null)
+                        }
+                        if (!focusMode) {
+                            Column(Modifier.width(205.dp).fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.28f)).padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Text("Sources used", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                                Text(if (contextEnabled) "Context label: $context" else "Context is turned off.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("The current chat API does not automatically retrieve source documents.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                androidx.compose.material3.HorizontalDivider()
+                                Text("Quick actions", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                                androidx.compose.material3.TextButton(onClick = { onModeChange(1) }, modifier = Modifier.fillMaxWidth()) { Text("＋ Add to notebook") }
+                                androidx.compose.material3.TextButton(onClick = { contextEnabled = !contextEnabled }, modifier = Modifier.fillMaxWidth()) { Text(if (contextEnabled) "☆ Turn context off" else "☆ Turn context on") }
+                                Spacer(Modifier.weight(1f))
+                                androidx.compose.material3.TextButton(onClick = { focusMode = true }, modifier = Modifier.fillMaxWidth()) { Text("◎ Focus mode") }
+                            }
+                        }
+                    }
+                } else {
+                    Box(Modifier.weight(1f)) {
+                        ChatScreen(vm = vm, initialChatId = restoredChatId, embedded = true, context = if (contextEnabled) context else null)
+                    }
                 }
             }
         }
@@ -166,11 +210,34 @@ fun FloatingAssistantWidget(
                     .graphicsLayer { scaleX = pulseScale; scaleY = pulseScale }
                     .semantics { contentDescription = "Open Notely Assistant" },
                 shape = CircleShape,
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                containerColor = Color.Transparent,
+                contentColor = Color.White
             ) {
-                Text("✦", style = MaterialTheme.typography.headlineSmall)
+                AuroraOrb(size = 62.dp, generating = chatState.streaming)
             }
         }
+    }
+}
+
+/** Inline Compose aurora planet, rendered without external image assets. */
+@Composable
+private fun AuroraOrb(size: androidx.compose.ui.unit.Dp, generating: Boolean) {
+    val transition = rememberInfiniteTransition(label = "aurora-orb")
+    val ringAngle by transition.animateFloat(-18f, 342f, infiniteRepeatable(tween(if (generating) 1900 else 10000, easing = androidx.compose.animation.core.LinearEasing)), label = "aurora-ring")
+    val pulse by transition.animateFloat(0.97f, if (generating) 1.055f else 1.025f, infiniteRepeatable(tween(if (generating) 900 else 2200, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "aurora-pulse")
+    Box(Modifier.size(size).graphicsLayer { scaleX = pulse; scaleY = pulse }.clip(CircleShape).background(Brush.radialGradient(listOf(Color(0xFF26385F), Color(0xFF10162F), Color(0xFF030611))))) {
+        Box(Modifier.fillMaxSize().clip(CircleShape)) {
+            Box(Modifier.size(size * 0.62f).offset(x = size * 0.02f, y = size * 0.12f).blur(size * 0.12f).background(Color(0xCC22D3EE), CircleShape).align(Alignment.TopStart))
+            Box(Modifier.size(size * 0.56f).offset(x = size * 0.32f, y = size * 0.10f).blur(size * 0.13f).background(Color(0xC2A855F7), CircleShape).align(Alignment.TopStart))
+            Box(Modifier.size(size * 0.62f).offset(x = size * 0.25f, y = size * 0.50f).blur(size * 0.13f).background(Color(0xB8EC4899), CircleShape).align(Alignment.TopStart))
+            Box(Modifier.size(size * 0.30f).offset(x = size * 0.12f, y = size * 0.08f).background(Brush.linearGradient(listOf(Color.White.copy(alpha = 0.40f), Color.Transparent)), CircleShape).align(Alignment.TopStart))
+        }
+        androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
+            rotate(ringAngle) {
+                drawOval(brush = Brush.linearGradient(listOf(Color(0xFFB9FBFF), Color(0xFF22D3EE), Color(0xFFA855F7))), topLeft = Offset(this.size.width * 0.02f, this.size.height * 0.32f), size = Size(this.size.width * 0.96f, this.size.height * 0.36f), style = Stroke(width = this.size.minDimension * 0.035f))
+            }
+            drawCircle(Color(0x5522D3EE), radius = this.size.minDimension * 0.49f, style = Stroke(width = this.size.minDimension * 0.012f))
+        }
+        Text("✦", modifier = Modifier.align(Alignment.Center), color = Color.White, style = MaterialTheme.typography.titleLarge)
     }
 }
