@@ -249,7 +249,7 @@ def _gemini_payload(
     generation_config = {"maxOutputTokens": max_tokens}
     # Gemini 3.6+ ignores custom temperature and documents that it may reject
     # those parameters; omit it for current Gemini 3.8/4+ models.
-    current_model = (model or GEMINI_MODEL).lower()
+    current_model = (model or TIER_CONFIG["default"]["model"]).lower()
     match = __import__("re").match(r"^gemini-(\d+)\.(\d+)", current_model)
     if not match or not (int(match.group(1)) >= 4 or
                          (int(match.group(1)) == 3 and int(match.group(2)) >= 6)):
