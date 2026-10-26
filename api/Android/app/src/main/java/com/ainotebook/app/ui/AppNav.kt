@@ -7,8 +7,12 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.zIndex
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
@@ -16,6 +20,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -89,15 +99,16 @@ fun AppRoot(repo: Repository) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun AuthFlow(factory: VMFactory, startRoute: String, onBackToLanding: () -> Unit) {
     val nav = rememberNavController()
     val authVm: AuthViewModel = viewModel(factory = factory)
-    androidx.activity.compose.BackHandler {
-        onBackToLanding()
-    }
+    androidx.activity.compose.BackHandler(enabled = nav.previousBackStackEntry == null) { onBackToLanding() }
 
+    ModalBottomSheet(onDismissRequest = onBackToLanding, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = MaterialTheme.colorScheme.surface) {
     NavHost(
+        modifier = Modifier.fillMaxHeight(0.9f),
         navController = nav,
         startDestination = startRoute,
         enterTransition = { slideInHorizontally(tween(300)) { it / 2 } + fadeIn(tween(300)) },
@@ -119,6 +130,7 @@ internal fun AuthFlow(factory: VMFactory, startRoute: String, onBackToLanding: (
                 onGoLogin = { nav.popBackStack() }
             )
         }
+    }
     }
 }
 
