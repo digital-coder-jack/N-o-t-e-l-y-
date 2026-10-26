@@ -247,6 +247,6 @@ async def update_settings(body: SettingsUpdateIn, user=Depends(auth.current_user
 
 @router.delete("/account")
 async def delete_account(user=Depends(auth.current_user)):
-    # Guest accounts are already disposable, but we allow deleting real ones too
+    # Deleting an account removes its server-side account data.
     db.delete_user_account(user["id"])
     return {"message": "Account deleted successfully."}

@@ -1673,7 +1673,7 @@ export default function Page() {
       archive: "Archive", trash: "Trash", tools: "Study Tools", quiz: "Quiz Generator",
       flashcards: "Flashcards", roadmap: "Study Roadmap", mindmap: "Mind Maps",
       planner: "Revision Planner", summarizer: "Text Summarizer", homework: "Homework Helper",
-      search: "Search", assistant: "Notely Assistant", settings: "Settings"
+      search: "Search", settings: "Settings"
     };
     document.title = labels[route] + " — Notely";
   }, [route]);

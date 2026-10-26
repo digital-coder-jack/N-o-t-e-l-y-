@@ -196,7 +196,7 @@ async def current_user(
     request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
 ):
-    """Require a real authenticated account; never silently create guest users."""
+    """Require a real authenticated account."""
     if credentials is None or not credentials.credentials:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sign in to continue.")
     try:
