@@ -210,3 +210,32 @@ html { background: var(--notely-bg); }
   .landing-nav-actions .btn { padding-inline: 8px; font-size: 11px; }
 }
 @media (hover: none) { .mag { transform: none !important; } }
+
+
+/* Phase 2 component states — sourced from the semantic design tokens. */
+:root {
+  --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:24px;--space-6:32px;--space-7:48px;--space-8:64px;
+  --radius-1:8px;--radius-2:12px;--radius-3:16px;--radius-4:24px;--radius-pill:999px;
+  --motion-fast:120ms;--motion-base:200ms;--motion-enter:320ms;--motion-feature:600ms;
+  --ease-enter:cubic-bezier(.16,1,.3,1);--ease-move:cubic-bezier(.4,0,.2,1);
+  --focus-ring:0 0 0 2px var(--surface-0,#060c1c),0 0 0 4px var(--accent,#8fe8f8);
+}
+:where(button,a,input,textarea,select,[role="button"],[tabindex]):focus-visible {
+  outline:2px solid var(--accent,#8fe8f8)!important;outline-offset:3px;
+}
+:where(button,.button,.btn,.nav-item,.tool-card,.ws-card,.panel,.glass,.recent-card,.note-card) {
+  transition:transform var(--motion-base) var(--ease-move),border-color var(--motion-base) var(--ease-move),box-shadow var(--motion-base) var(--ease-move),background-color var(--motion-base) var(--ease-move),color var(--motion-base) var(--ease-move);
+}
+:where(button,.button,.btn):active:not(:disabled) { transform:scale(.97); }
+:where(button,.button,.btn):disabled,[aria-disabled="true"] {
+  cursor:not-allowed!important;opacity:.56;box-shadow:none!important;transform:none!important;
+}
+:where(input,textarea,select) { min-width:0;max-width:100%;border-radius:var(--radius-2,12px); }
+:where(.tool-card,.ws-card,.panel,.glass,.recent-card,.note-card,.set-card,.quiz-card,.flashcard) { min-width:0;overflow-wrap:anywhere; }
+:where(.tool-card,.ws-card,.panel,.glass,.recent-card,.note-card):hover { border-color:var(--border-strong,rgba(143,232,248,.38)); }
+:where(.primary,.btn.primary,.button.primary):hover { filter:brightness(1.035); }
+:where(.primary,.btn.primary,.button.primary):focus-visible { box-shadow:var(--focus-ring); }
+::selection { background:#8fe8f8;color:#060c1c; }
+@media(prefers-reduced-motion:reduce) {
+  *,*::before,*::after { scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important; }
+}

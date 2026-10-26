@@ -18,8 +18,30 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import com.ainotebook.app.data.AccentTone
+
+/** Platform counterpart to the web spacing/radius/motion tokens. */
+object NotelyTokens {
+    val space1 = 4.dp
+    val space2 = 8.dp
+    val space3 = 12.dp
+    val space4 = 16.dp
+    val space5 = 24.dp
+    val space6 = 32.dp
+    val space7 = 48.dp
+    val space8 = 64.dp
+    val radiusSmall = 8.dp
+    val radiusMedium = 12.dp
+    val radiusCard = 16.dp
+    val radiusLarge = 24.dp
+    val radiusPill = 999.dp
+    const val motionFast = 120
+    const val motionBase = 200
+    const val motionEnter = 320
+    const val motionFeature = 600
+}
 
 // Semantic palette mirrored from frontend/css/notely-theme.css.
 val NotelyIndigo = Color(0xFF1F6FB5)
