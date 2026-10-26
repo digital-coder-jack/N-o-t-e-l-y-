@@ -53,43 +53,17 @@ const SS = (() => {
   function isAuthed() { return !!getToken(); }
   function logout() { clearSession(); window.location.href = '/'; }
 
-  // Prevent repeated guest-login attempts (and reload loops) within a page.
-  let _guestLoginInFlight = null;
-  function ensureGuestSession() {
-    if (isAuthed()) return Promise.resolve(getUser());
-    if (_guestLoginInFlight) return _guestLoginInFlight;
-    _guestLoginInFlight = api('/api/auth/guest', { method: 'POST', auth: false })
-      .then((data) => {
-        if (data && data.token) {
-          setSession(data.token, data.user);
-          return data.user;
-        }
-        throw new Error('Guest login returned no token');
-      })
-      .finally(() => { _guestLoginInFlight = null; });
-    return _guestLoginInFlight;
-  }
-
   function requireAuth() {
     if (isAuthed()) return true;
-    // Kick off a guest session once; reload only after it succeeds so we
-    // never spin in an endless reload loop when the endpoint is down.
-    ensureGuestSession()
-      .then(() => location.reload())
-      .catch((err) => console.error('Guest login failed:', err));
+    window.location.assign('/login');
     return false;
   }
 
   /* ---------- API ----------
-     A single, robust fetch wrapper.
-       - Attaches `Authorization: Bearer <token>` when `auth` is true.
-       - On a 401, transparently obtains a fresh guest session and retries
-         the request ONCE. The `_retry` guard prevents the infinite 401
-         loop that the old code could fall into.
-       - `raw: true` returns the raw Response (used by streaming callers).
-       - Always surfaces a clean Error message on non-2xx responses. */
+     Attaches the authenticated session when required and surfaces clean errors.
+     Trial limits are enforced by the server; expired sessions are never replaced by guests. */
   async function api(path, opts = {}) {
-    const { method = 'GET', body, auth = true, raw = false, signal, _retry = false } = opts;
+    const { method = 'GET', body, auth = true, raw = false, signal } = opts;
 
     const headers = {};
     if (body && !(body instanceof FormData)) headers['Content-Type'] = 'application/json';
@@ -111,21 +85,10 @@ const SS = (() => {
       throw new Error('Network error. Please check your connection and try again.');
     }
 
-    // 401 handling: obtain a fresh guest session and retry exactly ONCE.
-    // `_retry` guarantees we never recurse into an infinite loop, even if
-    // the guest endpoint itself keeps returning 401.
-    if (res.status === 401 && auth && !_retry) {
-      try {
-        const data = await api('/api/auth/guest', { method: 'POST', auth: false });
-        if (data && data.token) setSession(data.token, data.user);
-        else throw new Error('No token returned');
-      } catch (err) {
-        console.error('Failed to refresh session:', err);
-        clearSession();
-        throw new Error('Your session expired. Please refresh the page.');
-      }
-      // Single retry with the refreshed token.
-      return api(path, { method, body, auth, raw, signal, _retry: true });
+    if (res.status === 401 && auth) {
+      clearSession();
+      if (!/\/(login|signup|forgot)(\.html)?$/.test(window.location.pathname)) window.location.assign('/login');
+      throw new Error('Your session expired. Sign in again.');
     }
 
     // Streaming / binary callers want the raw Response object.
@@ -366,6 +329,6 @@ const SS = (() => {
   }
 
   return { api, getToken, setSession, getUser, clearSession, isAuthed, logout,
-           requireAuth, ensureGuestSession, toast, attachRipples, initParticles,
+           requireAuth, toast, attachRipples, initParticles,
            toggleTheme, getTheme, applyTheme };
 })();

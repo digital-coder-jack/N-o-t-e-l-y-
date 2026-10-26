@@ -16,7 +16,6 @@ data class User(
     val email: String = "",
     val created_at: String? = null,
     val last_login: String? = null,
-    val is_guest: Boolean = false,
     val trial_started_at: String? = null,
     val trial_ends_at: String? = null,
     val trial_days_left: Int? = null,

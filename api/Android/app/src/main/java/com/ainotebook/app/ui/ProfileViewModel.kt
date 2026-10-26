@@ -51,8 +51,8 @@ class ProfileViewModel(private val repo: Repository) : ViewModel() {
     }
 
     fun changePassword(current: String, new: String) {
-        if (new.length < 6) {
-            _state.value = _state.value.copy(error = "New password must be at least 6 characters.")
+        if (new.length < 8) {
+            _state.value = _state.value.copy(error = "Use at least 8 characters for your new password.")
             return
         }
         viewModelScope.launch {

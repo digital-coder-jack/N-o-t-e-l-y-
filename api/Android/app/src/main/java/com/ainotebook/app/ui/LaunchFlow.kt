@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -19,6 +20,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -108,11 +113,17 @@ internal fun NativeLaunchFlow(
                 onSignUp = { scope.launch { authStartTab = Routes.SIGNUP; transitionTo(LaunchStage.AUTH) } },
                 onSignIn = { scope.launch { authStartTab = Routes.LOGIN; transitionTo(LaunchStage.AUTH) } }
             )
-            LaunchStage.AUTH -> AuthFlow(
-                factory = factory,
-                startRoute = authStartTab,
-                onBackToLanding = { scope.launch { transitionTo(LaunchStage.LANDING) } }
-            )
+            LaunchStage.AUTH -> {
+                NativeLanding(
+                    onSignUp = { authStartTab = Routes.SIGNUP },
+                    onSignIn = { authStartTab = Routes.LOGIN }
+                )
+                AuthFlow(
+                    factory = factory,
+                    startRoute = authStartTab,
+                    onBackToLanding = { scope.launch { transitionTo(LaunchStage.LANDING) } }
+                )
+            }
             LaunchStage.WORKSPACE -> onWorkspace()
         }
         if (stage != LaunchStage.INTRO && shutterY.value > -1f) {
@@ -165,22 +176,60 @@ private fun IntroScene(reducedMotion: Boolean, onSkip: () -> Unit) {
 
 @Composable
 private fun NativeLanding(onSignUp: () -> Unit, onSignIn: () -> Unit) {
-    Box(Modifier.fillMaxSize().background(ShutterInk).padding(horizontal = 28.dp, vertical = 32.dp)) {
+    var showGoogleNotice by remember { mutableStateOf(false) }
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(horizontal = 28.dp, vertical = 30.dp)) {
         Column(
-            modifier = Modifier.align(Alignment.Center),
+            modifier = Modifier.align(Alignment.Center).fillMaxWidth(),
             horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.spacedBy(18.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Image(painterResource(R.drawable.official_logo), contentDescription = "Notely logo", modifier = Modifier.size(72.dp))
-            Text("Notely", color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            Text("Write. Practice. Ask.", color = ShutterCyan, style = MaterialTheme.typography.titleMedium)
-            Text("A calmer workspace for everything you’re learning.", color = Color(0xFFBAC5D8), style = MaterialTheme.typography.bodyLarge)
-            Spacer(Modifier.height(10.dp))
-            Button(onClick = onSignUp, modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = ShutterCyan, contentColor = ShutterInk)) {
-                Text("Create account", fontWeight = FontWeight.SemiBold)
+            Image(painterResource(R.drawable.official_logo), contentDescription = "Notely logo", modifier = Modifier.size(54.dp))
+            Text("WELCOME TO NOTELY", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+            Text("Your study space starts here.", color = MaterialTheme.colorScheme.onBackground, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
+            Text("7 days free. Everything unlocked.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge)
+            Surface(shape = RoundedCornerShape(999.dp), color = MaterialTheme.colorScheme.primary.copy(alpha = .10f), border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .28f))) {
+                Text("  ✦  7-day free trial  ", modifier = Modifier.padding(horizontal = 7.dp, vertical = 8.dp), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
             }
-            OutlinedButton(onClick = onSignIn, modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(14.dp)) {
-                Text("Sign in", color = Color.White)
+            StudyNoteStack()
+            Spacer(Modifier.height(2.dp))
+            Button(onClick = onSignUp, modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(999.dp), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary)) {
+                Text("Start free trial", fontWeight = FontWeight.SemiBold)
+            }
+            OutlinedButton(onClick = { showGoogleNotice = true }, modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(999.dp)) {
+                Text("Continue with Google", color = MaterialTheme.colorScheme.onSurface)
+            }
+            TextButton(onClick = onSignIn, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                Text("Already have an account? Log in", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+    if (showGoogleNotice) AlertDialog(
+        onDismissRequest = { showGoogleNotice = false },
+        title = { Text("Google sign-in isn't connected yet") },
+        text = { Text("Use email for now. Google OAuth needs to be configured before this button can sign you in.") },
+        confirmButton = { TextButton(onClick = { showGoogleNotice = false }) { Text("Got it") } }
+    )
+}
+
+@Composable
+private fun StudyNoteStack() {
+    Box(Modifier.fillMaxWidth().height(128.dp), contentAlignment = Alignment.Center) {
+        listOf(-9f, 7f, -2f).forEachIndexed { index, angle ->
+            Surface(
+                modifier = Modifier.width(208.dp).height(112.dp).graphicsLayer { rotationZ = angle; translationX = (index - 1) * 18f; translationY = (1 - index) * 3f },
+                shape = RoundedCornerShape(15.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+            ) {
+                Column(Modifier.padding(13.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                        Text("NOTELY", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
+                        Text("STUDY NOTE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Box(Modifier.size(17.dp).clip(RoundedCornerShape(5.dp)).background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) { Text("✦", color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.labelSmall) }
+                    Box(Modifier.fillMaxWidth(.82f).height(4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurface.copy(alpha = .12f)))
+                    Box(Modifier.fillMaxWidth(.62f).height(4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurface.copy(alpha = .09f)))
+                }
             }
         }
     }
