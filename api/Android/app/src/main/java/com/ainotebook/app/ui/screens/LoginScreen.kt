@@ -38,10 +38,8 @@ import androidx.compose.ui.unit.dp
 import com.ainotebook.app.ui.AuthViewModel
 import com.ainotebook.app.ui.components.NotelyIcon
 import com.ainotebook.app.ui.components.NotelyIconTrigger
-import com.ainotebook.app.ui.theme.NotelyBackground
 import com.ainotebook.app.ui.theme.NotelyIndigo
 import com.ainotebook.app.ui.theme.NotelyLine
-import com.ainotebook.app.ui.theme.NotelyMuted
 
 @Composable
 fun LoginScreen(vm: AuthViewModel, onLoggedIn: () -> Unit, onGoSignup: () -> Unit) {
@@ -51,16 +49,16 @@ fun LoginScreen(vm: AuthViewModel, onLoggedIn: () -> Unit, onGoSignup: () -> Uni
     LaunchedEffect(state.success) { if (state.success) onLoggedIn() }
 
     Column(
-        modifier = Modifier.fillMaxSize().background(NotelyBackground).statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp, vertical = 24.dp),
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp, vertical = 24.dp),
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         Text("Notely", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(48.dp))
-        Text("YOUR STUDENT WORKSPACE", style = MaterialTheme.typography.labelSmall, color = NotelyMuted)
+        Text("YOUR STUDENT WORKSPACE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text("Welcome back", style = MaterialTheme.typography.displaySmall, modifier = Modifier.padding(top = 16.dp))
-        Text("A calmer place to pick up where you left off.", style = MaterialTheme.typography.bodyLarge, color = NotelyMuted, modifier = Modifier.padding(top = 8.dp))
+        Text("A calmer place to pick up where you left off.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
         OutlinedButton(onClick = onLoggedIn, shape = RoundedCornerShape(9.dp), border = androidx.compose.foundation.BorderStroke(1.dp, NotelyLine), modifier = Modifier.padding(top = 26.dp)) { Text("Continue with Google", color = MaterialTheme.colorScheme.onSurface) }
-        Text("or with email", style = MaterialTheme.typography.labelMedium, color = NotelyMuted, modifier = Modifier.padding(top = 28.dp, bottom = 18.dp))
+        Text("or with email", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 28.dp, bottom = 18.dp))
         AuthField("Student email", identifier, { identifier = it; vm.clearError() }, KeyboardType.Email)
         AuthField("Password", password, { password = it; vm.clearError() }, KeyboardType.Password, true)
         Text("☑  Keep me signed in", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 14.dp))
@@ -68,8 +66,8 @@ fun LoginScreen(vm: AuthViewModel, onLoggedIn: () -> Unit, onGoSignup: () -> Uni
             if (state.loading) NotelyIcon(name = "loading", trigger = NotelyIconTrigger.Loop, size = 18.dp, color = Color.White) else Text("Sign in to Notely")
         }
         TextButton(onClick = onGoSignup, modifier = Modifier.padding(top = 14.dp)) { Text("New here?  Create an account →", color = MaterialTheme.colorScheme.onSurface) }
-        Text("Your notes stay private. We never use your coursework to train AI models.", style = MaterialTheme.typography.labelMedium, color = NotelyMuted, modifier = Modifier.padding(top = 36.dp))
-        Text("Notely · Privacy · Terms · A study partner, not a shortcut.", style = MaterialTheme.typography.labelSmall, color = NotelyMuted, modifier = Modifier.padding(top = 34.dp))
+        Text("Your notes stay private. We never use your coursework to train AI models.", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 36.dp))
+        Text("Notely · Privacy · Terms · A study partner, not a shortcut.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 34.dp))
     }
 }
 
