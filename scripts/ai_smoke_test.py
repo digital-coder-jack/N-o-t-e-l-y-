@@ -252,6 +252,14 @@ def main():
     parser=argparse.ArgumentParser(description="Notely AI API smoke test")
     parser.add_argument("--base-url",default=os.environ.get("AI_SMOKE_BASE_URL","http://127.0.0.1:3000"))
     parser.add_argument("--diag-token",default=os.environ.get("DIAG_TOKEN"))
+    parser.add_argument("--unit-only",action="store_true",help="Run deterministic provider fallback/error tests without a server")
     args=parser.parse_args()
+    if args.unit_only:
+        asyncio.run(local_provider_unit_tests())
+        print("| Test | Result | Latency | Error class | Detail |")
+        print("|---|---:|---:|---|---|")
+        for row in RESULTS:
+            print(f"| {row['test']} | {row['status']} | {row['latency_ms']} ms | {row['error_class']} | {row['detail']} |")
+        return 1 if any(row["status"] == "FAIL" for row in RESULTS) else 0
     return asyncio.run(run(args.base_url,args.diag_token))
 if __name__=="__main__": raise SystemExit(main())
