@@ -82,7 +82,7 @@ internal fun NativeLaunchFlow(
         stage = if (isAuthed) LaunchStage.WORKSPACE else LaunchStage.LANDING
     }
 
-    LaunchedEffect(isAuthed, stage) {
+    LaunchedEffect(isAuthed) {
         if ((stage == LaunchStage.LANDING || stage == LaunchStage.AUTH) && isAuthed) {
             transitionTo(LaunchStage.WORKSPACE)
         } else if (stage == LaunchStage.WORKSPACE && !isAuthed) {
