@@ -23,6 +23,10 @@ jobs:
         run: |
           python -m compileall -q backend
           python -m py_compile scripts/ai_smoke_test.py
+      - name: Run deterministic AI provider fallback tests
+        run: |
+          python -m pip install httpx
+          python scripts/ai_smoke_test.py --unit-only
       - name: Check static workspace JavaScript syntax
         run: node --check frontend/js/notely-workspace.js
       - name: Check shared theme JavaScript syntax
