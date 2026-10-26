@@ -1462,6 +1462,66 @@ function SearchScreen({ setRoute }: { setRoute: (r: Route) => void }) {
   );
 }
 
+
+function SettingsScreen() {
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
+
+  useEffect(() => {
+    const saved = document.documentElement.dataset.theme || localStorage.getItem("notely-theme");
+    if (saved === "light" || saved === "dark") setTheme(saved);
+  }, []);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.theme = theme;
+    root.classList.toggle("dark", theme === "dark");
+    try { localStorage.setItem("notely-theme", theme); } catch { /* Theme still works for this session. */ }
+  }, [theme]);
+
+  return (
+    <div className="screen">
+      <PageTitle eyebrow="MAKE IT YOURS" title="Settings" description="Tune your workspace without leaving your study flow." />
+      <div className="settings-page-grid">
+        <section className="settings-card" aria-labelledby="settings-appearance">
+          <div className="settings-card-heading">
+            <span className="settings-card-icon"><Settings size={18} /></span>
+            <div><h2 id="settings-appearance">Appearance</h2><p>Choose the workspace theme that feels right for you.</p></div>
+          </div>
+          <div className="settings-theme-options" role="group" aria-label="Theme">
+            <button type="button" className={`settings-theme-option ${theme === "light" ? "selected" : ""}`} aria-pressed={theme === "light"} onClick={() => setTheme("light")}>
+              <span className="theme-preview theme-preview-light" aria-hidden="true"><i /><i /><i /></span>
+              <span><strong>Light</strong><small>Bright, clear surfaces</small></span>
+              {theme === "light" && <CheckCircle2 size={18} aria-hidden="true" />}
+            </button>
+            <button type="button" className={`settings-theme-option ${theme === "dark" ? "selected" : ""}`} aria-pressed={theme === "dark"} onClick={() => setTheme("dark")}>
+              <span className="theme-preview theme-preview-dark" aria-hidden="true"><i /><i /><i /></span>
+              <span><strong>Dark</strong><small>Deep navy, soft contrast</small></span>
+              {theme === "dark" && <CheckCircle2 size={18} aria-hidden="true" />}
+            </button>
+          </div>
+          <p className="settings-helper"><CheckCircle2 size={15} /> Theme changes apply instantly and are saved on this device.</p>
+        </section>
+        <section className="settings-card" aria-labelledby="settings-access">
+          <div className="settings-card-heading">
+            <span className="settings-card-icon"><ShieldCheck size={18} /></span>
+            <div><h2 id="settings-access">Privacy & security</h2><p>Keep your workspace and account access in mind.</p></div>
+          </div>
+          <div className="settings-info-row"><span><strong>Session</strong><small>Your workspace uses its existing session.</small></span><span className="settings-status">Active workspace</span></div>
+          <div className="settings-info-row"><span><strong>Saved preferences</strong><small>Theme and sidebar preferences stay on this device.</small></span><CheckCircle2 size={17} /></div>
+        </section>
+        <section className="settings-card" aria-labelledby="settings-about">
+          <div className="settings-card-heading">
+            <span className="settings-card-icon"><BookOpen size={18} /></span>
+            <div><h2 id="settings-about">About Notely</h2><p>A focused workspace for notes, recall and study planning.</p></div>
+          </div>
+          <div className="settings-info-row"><span><strong>Product</strong><small>Notely Study Workspace</small></span><span className="settings-version">Web</span></div>
+          <div className="settings-info-row"><span><strong>Open-source notices</strong><small>License information is available in the repository's LICENSE file.</small></span><a href="https://github.com/digital-coder-jack/N-o-t-e-l-y-/blob/main/LICENSE" target="_blank" rel="noreferrer">View license <ArrowRight size={14} /></a></div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
 function PageTitle({ eyebrow, title, description, action }: { eyebrow?: string; title: string; description?: string; action?: ReactNode }) {
   return (
     <div className="page-title">
