@@ -34,6 +34,7 @@ from backend.routes import chat as chat_routes
 from backend.routes import files as files_routes
 from backend.routes import topics as topics_routes
 from backend.routes import tasks as tasks_routes
+from backend.routes import diagnostics as diagnostics_routes
 from backend.routes import users as users_routes
 from backend.analytics_web import web_analytics_db
 from backend.auth import current_user
@@ -136,22 +137,33 @@ app = FastAPI(title="Notely", docs_url=None, redoc_url=None)
 # regex so Vercel preview deployments work without reconfiguring.
 # ---------------------------------------------------------------------------
 _raw_origins = os.environ.get("ALLOWED_ORIGINS", "").strip()
-if _raw_origins:
-    ALLOWED_ORIGINS = [o.strip() for o in _raw_origins.split(",") if o.strip()]
-    _allow_credentials = True
-else:
-    ALLOWED_ORIGINS = ["*"]
-    _allow_credentials = False  # "*" + credentials is invalid per the CORS spec
+_DEFAULT_ORIGINS = [
+    "https://notely-mwlq.vercel.app",
+    "https://notely-frontend.vercel.app",
+    "https://localhost",
+    "capacitor://localhost",
+    "http://localhost",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+ALLOWED_ORIGINS = (
+    [origin.strip() for origin in _raw_origins.split(",") if origin.strip()]
+    if _raw_origins else _DEFAULT_ORIGINS
+)
+# Vercel preview URLs and local development origins are allowed without "*" .
+_ALLOW_ORIGIN_REGEX = (
+    r"^(https://([a-z0-9-]+\.)*vercel\.app|https?://localhost(:\d+)?|"
+    r"http://127\.0\.0\.1(:\d+)?|https://localhost|capacitor://localhost)$"
+)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
-    # Always permit Vercel preview/prod deployments + localhost dev.
-    allow_origin_regex=r"https://([a-z0-9-]+\.)*vercel\.app|http://localhost(:\d+)?",
-    allow_credentials=_allow_credentials,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["*"],
+    allow_origin_regex=_ALLOW_ORIGIN_REGEX,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Diag-Token", "X-Requested-With"],
+    expose_headers=["X-Notely-Trial-Expired", "Retry-After"],
 )
 
 logger.info("CORS allowed origins: %s", ALLOWED_ORIGINS)
@@ -170,6 +182,7 @@ app.include_router(chat_routes.router)
 app.include_router(files_routes.router)
 app.include_router(topics_routes.router)
 app.include_router(tasks_routes.router)
+app.include_router(diagnostics_routes.router)
 
 # ---------------------------------------------------------------------------
 # Web Analytics API Routes
@@ -279,6 +292,8 @@ async def health() -> dict:
         "db_path": db.DB_PATH,
         "ai_configured": snapshot["any_configured"],
         "ai_providers": snapshot["providers"],
+        "ai_health": snapshot["health"],
+        "ai_health_scope": snapshot["health_scope"],
         "ai_fallback_order": [tier["label"] for tier in snapshot["tiers"]],
         "bot_configured": bool(os.environ.get("TELEGRAM_BOT_TOKEN")),
         "analytics_persistence": "process-local",
