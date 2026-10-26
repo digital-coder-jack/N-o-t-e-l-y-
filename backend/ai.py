@@ -267,6 +267,23 @@ def _valid_json_shape(data, expected: str | None) -> bool:
             and str(item.get("type", "mcq")).lower() in ("mcq", "tf", "fill")
             for item in data
         )
+    if expected == "roadmap":
+        return isinstance(data, list) and len(data) == 4 and all(
+            isinstance(item, dict) and str(item.get("level", "")).strip()
+            and str(item.get("duration", "")).strip()
+            and isinstance(item.get("topics"), list) and item["topics"]
+            and isinstance(item.get("projects"), list) and item["projects"]
+            and isinstance(item.get("practice"), list) and item["practice"]
+            and isinstance(item.get("resources"), list) and item["resources"]
+            for item in data
+        )
+    if expected == "timeline":
+        return isinstance(data, list) and len(data) >= 5 and all(
+            isinstance(item, dict) and str(item.get("year", "")).strip()
+            and str(item.get("title", "")).strip()
+            and str(item.get("description", "")).strip()
+            for item in data
+        )
     if expected == "array":
         return isinstance(data, list) and bool(data)
     return isinstance(data, (dict, list))
@@ -322,7 +339,7 @@ async def generate_roadmap(topic: str, selection: str | None = "auto") -> list |
         '"practice" (array of 2 strings), "resources" (array of 2 strings). '
         "Output ONLY the JSON array.",
         selection=selection,
-        expected="array",
+        expected="roadmap",
     )
     return data if isinstance(data, list) and data else None
 
@@ -336,6 +353,7 @@ async def generate_timeline(topic: str, selection: str | None = "auto") -> list 
         '"description" (1-2 sentence string). Order oldest to newest. '
         "Output ONLY the JSON array.",
         selection=selection,
+        expected="timeline",
     )
     return data if isinstance(data, list) and data else None
 
