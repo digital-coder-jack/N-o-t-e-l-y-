@@ -47,7 +47,6 @@ import com.ainotebook.app.ui.theme.NotelyLine
 fun SignupScreen(vm: AuthViewModel, onSignedUp: () -> Unit, onGoLogin: () -> Unit) {
     val state by vm.state.collectAsState()
     var name by remember { mutableStateOf("") }
-    var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirm by remember { mutableStateOf("") }
@@ -71,7 +70,7 @@ fun SignupScreen(vm: AuthViewModel, onSignedUp: () -> Unit, onGoLogin: () -> Uni
         Text("Use at least 8 characters, including a number.", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text("7-day trial starts when your account is created", style = MaterialTheme.typography.bodyMedium, color = NotelyGreen, modifier = Modifier.padding(top = 18.dp))
         Text("☑  I agree to the Terms of Service and Privacy Policy.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 22.dp))
-        Button(onClick = { vm.signup(name, username, email, password, confirm) }, enabled = !state.loading, colors = ButtonDefaults.buttonColors(containerColor = NotelyIndigo), shape = RoundedCornerShape(8.dp), modifier = Modifier.padding(top = 22.dp)) {
+        Button(onClick = { vm.signup(name, "", email, password, confirm) }, enabled = !state.loading, colors = ButtonDefaults.buttonColors(containerColor = NotelyIndigo), shape = RoundedCornerShape(8.dp), modifier = Modifier.padding(top = 22.dp)) {
             if (state.loading) NotelyIcon(name = "loading", trigger = NotelyIconTrigger.Loop, size = 18.dp, color = Color.White) else Text("Start free trial")
         }
         TextButton(onClick = onGoLogin, modifier = Modifier.padding(top = 12.dp)) { Text("Already have an account?  Sign in →", color = MaterialTheme.colorScheme.onSurface) }

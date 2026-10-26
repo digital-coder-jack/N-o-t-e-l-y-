@@ -149,6 +149,7 @@ private fun MainShell(factory: VMFactory) {
     val widgetPrefs = remember(appContext) { appContext.getSharedPreferences("notely_assistant_widget", Context.MODE_PRIVATE) }
     var assistantMode by rememberSaveable { mutableStateOf(widgetPrefs.getInt("mode", 0).coerceIn(0, 2)) }
     var trialDetailsOpen by rememberSaveable { mutableStateOf(false) }
+    var trialUpgradeOpen by rememberSaveable { mutableStateOf(false) }
     var trialReminderDismissed by rememberSaveable { mutableStateOf(false) }
     var trialEndedDismissed by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(assistantMode) { widgetPrefs.edit().putInt("mode", assistantMode).apply() }
@@ -249,7 +250,7 @@ private fun MainShell(factory: VMFactory) {
                 }
             }
         }
-        FloatingAssistantWidget(
+        if (userState.user?.trial_expired != true) FloatingAssistantWidget(
             mode = assistantMode,
             onModeChange = { assistantMode = it },
             vm = chatVm,
@@ -317,7 +318,7 @@ private fun MainShell(factory: VMFactory) {
                             Text("Your trial has ended.", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                             Text("Your notes and materials are safe. You can still read your work; creating, editing and AI features are paused until you upgrade.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
                             Button(onClick = { trialEndedDismissed = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(999.dp)) { Text("Continue to read-only workspace") }
-                            OutlinedButton(onClick = { trialDetailsOpen = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(999.dp)) { Text("View upgrade options") }
+                            OutlinedButton(onClick = { trialUpgradeOpen = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(999.dp)) { Text("View upgrade options") }
                             if (trialDetailsOpen) Text("Payments are not connected yet. Your saved work remains available.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                         }
                     }
@@ -325,6 +326,13 @@ private fun MainShell(factory: VMFactory) {
             }
         }
 
+
+        if (trialUpgradeOpen) androidx.compose.material3.AlertDialog(
+            onDismissRequest = { trialUpgradeOpen = false },
+            title = { Text("Upgrade options") },
+            text = { Text("Payments are not connected yet. This is a placeholder; no charge will be made.") },
+            confirmButton = { TextButton(onClick = { trialUpgradeOpen = false }) { Text("Got it") } }
+        )
       }
     }
 }

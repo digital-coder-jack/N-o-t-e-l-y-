@@ -51,7 +51,7 @@ class AuthViewModel(private val repo: Repository) : ViewModel() {
     password: String, confirm: String
 ) {
     when {
-        name.isBlank() || username.isBlank() || email.isBlank() ->
+        name.isBlank() || email.isBlank() ->
             _state.value = AuthUiState(error = "Please fill in all fields.")
         !email.contains("@") || !email.contains(".") ->  // ← ADD THIS
             _state.value = AuthUiState(error = "Please enter a valid email address.")
