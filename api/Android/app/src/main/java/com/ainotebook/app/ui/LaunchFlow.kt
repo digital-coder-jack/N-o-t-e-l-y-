@@ -56,6 +56,7 @@ internal fun NativeLaunchFlow(
     onWorkspace: @Composable () -> Unit
 ) {
     var stage by remember { mutableStateOf(LaunchStage.INTRO) }
+    var introFinished by remember { mutableStateOf(false) }
     var authStartTab by remember { mutableStateOf(Routes.LOGIN) }
     val shutterY = remember { Animatable(-1f) }
     val scope = rememberCoroutineScope()
@@ -78,10 +79,15 @@ internal fun NativeLaunchFlow(
         shutterY.animateTo(-1f, tween(if (reducedMotion) 100 else 700))
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(reducedMotion) {
         delay(if (reducedMotion) 250 else 1900)
-        while (sessionLoading) delay(60)
-        stage = if (isAuthed) LaunchStage.WORKSPACE else LaunchStage.LANDING
+        introFinished = true
+    }
+
+    LaunchedEffect(introFinished, sessionLoading, isAuthed, stage) {
+        if (introFinished && !sessionLoading && stage == LaunchStage.INTRO) {
+            stage = if (isAuthed) LaunchStage.WORKSPACE else LaunchStage.LANDING
+        }
     }
 
     LaunchedEffect(isAuthed) {
@@ -96,10 +102,7 @@ internal fun NativeLaunchFlow(
         when (stage) {
             LaunchStage.INTRO -> IntroScene(
                 reducedMotion = reducedMotion,
-                onSkip = { scope.launch {
-                    while (sessionLoading) delay(60)
-                    stage = if (isAuthed) LaunchStage.WORKSPACE else LaunchStage.LANDING
-                } }
+                onSkip = { introFinished = true }
             )
             LaunchStage.LANDING -> NativeLanding(
                 onSignUp = { scope.launch { authStartTab = Routes.SIGNUP; transitionTo(LaunchStage.AUTH) } },
