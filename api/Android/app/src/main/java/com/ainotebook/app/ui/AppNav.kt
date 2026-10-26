@@ -13,6 +13,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
@@ -143,6 +144,10 @@ private fun MainShell(factory: VMFactory) {
     val appContext = LocalContext.current.applicationContext
     val widgetPrefs = remember(appContext) { appContext.getSharedPreferences("notely_assistant_widget", Context.MODE_PRIVATE) }
     var assistantMode by rememberSaveable { mutableStateOf(widgetPrefs.getInt("mode", 0).coerceIn(0, 2)) }
+    var trialDetailsOpen by rememberSaveable { mutableStateOf(false) }
+    var trialReminderDismissed by rememberSaveable { mutableStateOf(false) }
+    var trialEndedDismissed by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(userState.user?.trial_expired) { if (userState.user?.trial_expired == true) { assistantMode = 0; trialEndedDismissed = false } }
     LaunchedEffect(assistantMode) { widgetPrefs.edit().putInt("mode", assistantMode).apply() }
     androidx.activity.compose.BackHandler(enabled = assistantMode > 0) {
         assistantMode = if (assistantMode == 2) 1 else 0
@@ -252,6 +257,70 @@ private fun MainShell(factory: VMFactory) {
             },
             onOpen = { haptic(); assistantMode = 1 }
         )
+
+        val trialUser = userState.user
+        if (trialUser != null && trialUser.is_trial) {
+            Box(Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 8.dp, end = 12.dp).zIndex(1100f)) {
+                Column(horizontalAlignment = Alignment.End) {
+                    Surface(
+                        modifier = Modifier.clickable { trialDetailsOpen = !trialDetailsOpen },
+                        shape = RoundedCornerShape(999.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    ) {
+                        val daysLeft = trialUser.trial_days_left ?: 0
+                        Text(
+                            if (trialUser.trial_expired) "Trial ended" else "Trial: " + daysLeft + if (daysLeft == 1) " day left" else " days left",
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                    if (trialDetailsOpen) Surface(
+                        modifier = Modifier.padding(top = 8.dp).widthIn(max = 290.dp),
+                        shape = RoundedCornerShape(18.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                        shadowElevation = 8.dp
+                    ) {
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(if (trialUser.trial_expired) "Your trial has ended" else "Your seven-day trial", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                            Text(if (trialUser.trial_expired) "Your notes and materials remain safe in read-only mode." else "Everything is unlocked while your trial is active.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                            Text("Upgrade payments are not connected yet.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+                            TextButton(onClick = { trialDetailsOpen = false }) { Text("Close") }
+                        }
+                    }
+                }
+            }
+            val daysLeft = trialUser.trial_days_left ?: 0
+            if (!trialUser.trial_expired && (daysLeft == 2 || daysLeft == 1) && !trialReminderDismissed) {
+                Surface(Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 54.dp, start = 12.dp, end = 12.dp), shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), shadowElevation = 4.dp) {
+                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Column(Modifier.weight(1f)) {
+                            Text(if (daysLeft == 2) "Your trial ends in two days" else "Your trial ends today", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                            Text("Your saved work stays yours.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                        }
+                        TextButton(onClick = { trialReminderDismissed = true }) { Text("Dismiss") }
+                    }
+                }
+            }
+            if (trialUser.trial_expired && !trialEndedDismissed) {
+                Box(Modifier.fillMaxSize().zIndex(20000f).background(MaterialTheme.colorScheme.background.copy(alpha = .97f)), contentAlignment = Alignment.Center) {
+                    Surface(Modifier.padding(24.dp), shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surface, border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), shadowElevation = 8.dp) {
+                        Column(Modifier.padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                            Text("YOUR NEXT CHAPTER", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                            Text("Your trial has ended.", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                            Text("Your notes and materials are safe. You can still read your work; creating, editing and AI features are paused until you upgrade.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+                            Button(onClick = { trialEndedDismissed = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(999.dp)) { Text("Continue to read-only workspace") }
+                            OutlinedButton(onClick = { trialDetailsOpen = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(999.dp)) { Text("View upgrade options") }
+                            if (trialDetailsOpen) Text("Payments are not connected yet. Your saved work remains available.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            }
+        }
+
       }
     }
 }
