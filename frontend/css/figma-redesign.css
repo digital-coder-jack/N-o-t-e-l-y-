@@ -231,12 +231,6 @@ a.recent-item:hover { transform: translateX(3px) !important; border-color: color
 .skeleton { background: linear-gradient(90deg, #eceade 25%, #f6f5ef 50%, #eceade 75%) !important; background-size: 200% 100% !important; animation: rd-shimmer 1.6s infinite linear !important; border-radius: 6px !important; }
 @keyframes rd-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-/* ============ GUEST BANNER ============ */
-.guest-banner { border-radius: 12px !important; border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--rd-border)) !important; background: var(--accent-soft) !important; padding: 1rem 1.4rem !important; }
-.guest-banner-text i { color: var(--accent-strong) !important; }
-.guest-banner-text strong { color: #e0e3eb !important; font-size: 13px !important; }
-.guest-banner-text p { color: var(--rd-text-muted) !important; font-size: 11px !important; }
-
 /* ============ NOTE ITEMS ============ */
 .note-item { border-radius: 10px !important; border: 1px solid var(--rd-border) !important; background: var(--rd-panel) !important; transition: border-color .18s ease, transform .18s ease !important; }
 .note-item:hover { border-color: var(--rd-border-hover) !important; }

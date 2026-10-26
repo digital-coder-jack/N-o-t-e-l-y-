@@ -129,17 +129,6 @@ fun ProfileScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                if (state.user?.is_guest == true) {
-                    Spacer(Modifier.height(4.dp))
-                    Box(
-                        Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Violet.copy(alpha = 0.18f))
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
-                    ) {
-                        Text("Guest account", color = Violet, style = MaterialTheme.typography.labelMedium)
-                    }
-                }
             }
         }
 

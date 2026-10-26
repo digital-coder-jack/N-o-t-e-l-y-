@@ -88,6 +88,15 @@ fun FloatingAssistantWidget(
     val restoredChatId = remember { widgetPrefs.getInt("last_chat_id", -1).takeIf { it > 0 } }
     LaunchedEffect(chatState.currentChatId) { chatState.currentChatId?.let { widgetPrefs.edit().putInt("last_chat_id", it).apply() } }
     val motionAllowed = remember(appContext) { try { Settings.Global.getFloat(appContext.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f } catch (_: Exception) { true } }
+    var unread by rememberSaveable { mutableStateOf(false) }
+    var wasStreaming by remember { mutableStateOf(chatState.streaming) }
+    LaunchedEffect(chatState.streaming, mode, chatState.messages.lastOrNull()?.content) {
+        val latest = chatState.messages.lastOrNull()
+        if (wasStreaming && !chatState.streaming && mode == 0 && latest?.role == "assistant" && latest.content.isNotBlank()) unread = true
+        if (mode > 0) unread = false
+        wasStreaming = chatState.streaming
+    }
+    val badgeScale by animateFloatAsState(if (unread) 1f else 0f, animationSpec = tween(180), label = "assistant-unread-badge")
     val pulseTransition = rememberInfiniteTransition()
     val pulseScale by pulseTransition.animateFloat(1f, if (motionAllowed) 1.035f else 1f, infiniteRepeatable(tween(2100, easing = FastOutSlowInEasing), RepeatMode.Reverse))
     val panelScale by animateFloatAsState(if (mode == 0) 0.84f else if (mode == 1) 0.97f else 1f, animationSpec = spring(dampingRatio = 0.78f, stiffness = 480f))
@@ -213,7 +222,10 @@ fun FloatingAssistantWidget(
                 containerColor = Color.Transparent,
                 contentColor = Color.White
             ) {
-                AuroraOrb(size = 62.dp, generating = chatState.streaming)
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    AuroraOrb(size = 62.dp, generating = chatState.streaming)
+                    Box(Modifier.align(Alignment.TopEnd).padding(3.dp).size(12.dp).graphicsLayer { scaleX = badgeScale; scaleY = badgeScale }.clip(CircleShape).background(MaterialTheme.colorScheme.primary))
+                }
             }
         }
     }

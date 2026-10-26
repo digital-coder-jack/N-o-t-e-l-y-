@@ -23,7 +23,7 @@ export interface NavSection {
   items: NavItem[];
 }
 
-export type SyncStatus = "synced" | "guest" | "syncing" | "error" | "offline";
+export type SyncStatus = "synced" | "syncing" | "error" | "offline";
 
 export interface UserProfile {
   name: string;

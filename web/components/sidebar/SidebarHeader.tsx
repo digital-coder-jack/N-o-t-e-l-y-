@@ -9,7 +9,6 @@ import type { SyncStatus } from "@/lib/types";
 
 const SYNC_META: Record<SyncStatus, { dot: string; label: string }> = {
   synced: { dot: "bg-emerald-400", label: "Synced" },
-  guest: { dot: "bg-amber-400", label: "Guest Mode" },
   syncing: { dot: "bg-accent-cyan", label: "Syncing…" },
   error: { dot: "bg-red-500", label: "Sync Error" },
   offline: { dot: "bg-ink-faint", label: "Offline" },

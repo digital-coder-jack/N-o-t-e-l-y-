@@ -548,7 +548,7 @@ function withAlpha(color, alpha) {
 }
 
 /* =====================================================================
-   Guest banner + utils
+   Utilities
    ===================================================================== */
 function escapeHtml(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
