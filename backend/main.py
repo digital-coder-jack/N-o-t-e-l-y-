@@ -141,10 +141,8 @@ async def ai_provider_error_handler(request: Request, exc: providers.ProviderFai
 # Configure with the ALLOWED_ORIGINS env var, e.g.:
 #   ALLOWED_ORIGINS=https://your-app.vercel.app,https://www.yourdomain.com
 #
-# Comma-separated. If unset, we fall back to "*" (open) so the app keeps
-# working out-of-the-box, but you should pin it to your real frontend
-# origin(s) in production. We also allow all *.vercel.app preview URLs via a
-# regex so Vercel preview deployments work without reconfiguring.
+# Comma-separated. If unset, use a narrow Notely production + local-wrapper
+# default. Configure preview origins explicitly in ALLOWED_ORIGINS when needed.
 # ---------------------------------------------------------------------------
 _raw_origins = os.environ.get("ALLOWED_ORIGINS", "").strip()
 _DEFAULT_ORIGINS = [
@@ -160,10 +158,11 @@ ALLOWED_ORIGINS = (
     [origin.strip() for origin in _raw_origins.split(",") if origin.strip()]
     if _raw_origins else _DEFAULT_ORIGINS
 )
-# Vercel preview URLs and local development origins are allowed without "*" .
+# Only local development and Capacitor origins are pattern-matched; production
+# web origins must be explicitly listed in ALLOWED_ORIGINS.
 _ALLOW_ORIGIN_REGEX = (
-    r"^(https://([a-z0-9-]+\.)*vercel\.app|https?://localhost(:\d+)?|"
-    r"http://127\.0\.0\.1(:\d+)?|https://localhost|capacitor://localhost)$"
+    r"^(https?://localhost(:\d+)?|http://127\.0\.0\.1(:\d+)?|"
+    r"https://localhost|capacitor://localhost)$"
 )
 
 app.add_middleware(
