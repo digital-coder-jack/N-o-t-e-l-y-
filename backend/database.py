@@ -109,6 +109,11 @@ def init_db() -> None:
         ) from None
 
 
+def _utcnow() -> str:
+    """Return a timezone-aware UTC timestamp in the legacy text format."""
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+
 # ===========================================================================
 # QUESTIONS  (bot library — identical behaviour to the original bot)
 # ===========================================================================
