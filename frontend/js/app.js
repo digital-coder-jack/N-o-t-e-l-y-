@@ -39,6 +39,17 @@ const SS = (() => {
   function setSession(token, user) {
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(USER_KEY, JSON.stringify(user || {}));
+    localStorage.removeItem('notely-trial-active');
+    localStorage.removeItem('notely-trial-expires');
+  }
+  function setTrialSession(trial) {
+    if (trial && trial.device_token) localStorage.setItem('notely-trial-device', trial.device_token);
+    if (trial && trial.expires_at) localStorage.setItem('notely-trial-expires', trial.expires_at);
+    localStorage.setItem('notely-trial-active', '1');
+  }
+  function clearTrialSession() {
+    localStorage.removeItem('notely-trial-active');
+    localStorage.removeItem('notely-trial-expires');
   }
   function getUser() {
     try { return JSON.parse(localStorage.getItem(USER_KEY) || '{}'); }
@@ -49,8 +60,9 @@ const SS = (() => {
     localStorage.removeItem(USER_KEY);
     // Next account gets its own onboarding check (server-side state decides).
     localStorage.removeItem('ainb_onboarded');
+    clearTrialSession();
   }
-  function isAuthed() { return !!getToken(); }
+  function isAuthed() { return !!getToken() || localStorage.getItem('notely-trial-active') === '1'; }
   function logout() { clearSession(); window.location.href = '/'; }
 
   function requireAuth() {
@@ -68,12 +80,15 @@ const SS = (() => {
     const headers = {};
     if (body && !(body instanceof FormData)) headers['Content-Type'] = 'application/json';
     if (auth && getToken()) headers['Authorization'] = 'Bearer ' + getToken();
+    const trialDevice = localStorage.getItem('notely-trial-device');
+    if (trialDevice) headers['X-Notely-Device'] = trialDevice;
 
     let res;
     try {
       res = await fetch(apiUrl(path), {
         method,
         headers,
+        credentials: 'include',
         body: body instanceof FormData ? body : (body ? JSON.stringify(body) : undefined),
         // Pass through an AbortController signal so callers (e.g. chat streaming)
         // can cancel in-flight requests safely.
@@ -83,6 +98,11 @@ const SS = (() => {
       // Re-throw genuine aborts untouched so callers can detect them.
       if (err && err.name === 'AbortError') throw err;
       throw new Error('Network error. Please check your connection and try again.');
+    }
+
+    if (res.status === 402 && res.headers.get('X-Notely-Trial-Expired') === 'true') {
+      clearSession();
+      if (!/\\/(login|signup|forgot)(\\.html)?$/.test(window.location.pathname)) window.location.assign('/signup?trial=expired');
     }
 
     if (res.status === 401 && auth) {
@@ -329,6 +349,6 @@ const SS = (() => {
   }
 
   return { api, getToken, setSession, getUser, clearSession, isAuthed, logout,
-           requireAuth, toast, attachRipples, initParticles,
+           setTrialSession, clearTrialSession, requireAuth, toast, attachRipples, initParticles,
            toggleTheme, getTheme, applyTheme };
 })();
