@@ -61,17 +61,32 @@
       ctx.fillStyle = '#8fe8f8'; ctx.fillRect(2, 4, 37, 19);
       ctx.fillStyle = '#1f6fb5'; ctx.fillText('Notely trial · 7 days ✦', 4, 21);
       ctx.strokeStyle = 'rgba(31,111,181,.61)'; ctx.beginPath(); ctx.arc(120, 28, 17, .1, Math.PI * 1.83); ctx.stroke();
-      return Array.prototype.join.call(ctx.getImageData(0, 0, canvas.width, canvas.height).data.filter(function (_, i) { return i % 13 === 0; }), ',');
+      var pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data, sample = [];
+      for (var i = 0; i < pixels.length; i += 503) sample.push(pixels[i]);
+      return sample.join(',');
     } catch (_) { return 'canvas:blocked'; }
   }
 
   function audioSignal() {
-    try {
-      var Ctx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
-      if (!Ctx) return 'audio:none';
-      var ctx = new Ctx(1, 256, 44100);
-      return [ctx.sampleRate, ctx.destination.maxChannelCount, (ctx.baseLatency || 0).toFixed(4)].join(':');
-    } catch (_) { return 'audio:blocked'; }
+    return new Promise(function (resolve) {
+      var finished = false;
+      function done(value) { if (finished) return; finished = true; resolve(value); }
+      try {
+        var Ctx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+        if (!Ctx) return done('audio:none');
+        var ctx = new Ctx(1, 2048, 44100);
+        var oscillator = ctx.createOscillator(), gain = ctx.createGain();
+        oscillator.type = 'triangle'; oscillator.frequency.value = 10000;
+        gain.gain.value = 0.15; oscillator.connect(gain); gain.connect(ctx.destination);
+        oscillator.start(0);
+        ctx.startRendering().then(function (buffer) {
+          var samples = buffer.getChannelData(0), sum = 0;
+          for (var i = 0; i < samples.length; i += 17) sum += Math.abs(samples[i]);
+          done([ctx.sampleRate, ctx.destination.maxChannelCount, sum.toFixed(5)].join(':'));
+        }).catch(function () { done('audio:blocked'); });
+        window.setTimeout(function () { done('audio:timeout:' + (ctx.sampleRate || 0)); }, 450);
+      } catch (_) { done('audio:blocked'); }
+    });
   }
 
   function fontSignal() {
@@ -82,13 +97,19 @@
     } catch (_) { return 'fonts:blocked'; }
   }
 
-  function makeFingerprint() {
+  async function makeFingerprint() {
+    try {
+      if (document.fonts && document.fonts.ready) {
+        await Promise.race([document.fonts.ready, wait(450)]);
+      }
+    } catch (_) {}
     var screenInfo = window.screen || {};
     var zone = '';
     try { zone = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (_) {}
     var language = (navigator.languages || [navigator.language || '']).join(',');
+    var audio = await audioSignal();
     var data = [
-      'v2', canvasSignal(), audioSignal(), fontSignal(),
+      'v3', canvasSignal(), audio, fontSignal(),
       screenInfo.width || 0, screenInfo.height || 0, screenInfo.availWidth || 0, screenInfo.availHeight || 0,
       screenInfo.colorDepth || 0, window.devicePixelRatio || 1,
       zone, new Date().getTimezoneOffset(), language, navigator.platform || '',
@@ -128,7 +149,7 @@
   }
 
   async function refreshStatus() {
-    fingerprint = fingerprint || makeFingerprint();
+    fingerprint = await makeFingerprint();
     try {
       status = await api('/api/trial/status', {});
     } catch (error) {
@@ -373,8 +394,7 @@
   function init() {
     var start = $('#getStarted');
     if (start) start.addEventListener('click', showChoicesWithShutter);
-    fingerprint = makeFingerprint();
-    // Rehydrate server cookie after a storage clear where fingerprint matching
+    // Rehydrate the server cookie after a storage clear where fingerprint matching
     // identifies the same trial. Viewing the landing page does not start a trial.
     refreshStatus();
   }
