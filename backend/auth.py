@@ -194,21 +194,34 @@ async def current_user(
     request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
 ):
-    """Resolve a verified account or an active server-owned anonymous trial."""
-    path = request.url.path
-    user = None
+    """Resolve an account session or a valid anonymous trial session.
 
-    if credentials is not None and credentials.credentials:
+    A stale account JWT can remain in localStorage after a visitor starts a
+    no-account trial. If the signed trial device credential is also present,
+    the obsolete bearer token must not force that visitor back to /login.
+    Trial fallback is restricted to workspace endpoints and safe GET profile/
+    settings reads; account-mutating auth routes still require a real JWT.
+    """
+    path = request.url.path
+    method = request.method.upper()
+    user = None
+    account_token_present = credentials is not None and bool(credentials.credentials)
+
+    if account_token_present:
         try:
             payload = decode_access_token(credentials.credentials)
             user_id = int(payload["sub"])
+            user = db.get_user_by_id(user_id)
         except (ValueError, KeyError, TypeError):
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Your session has expired. Sign in again.")
-        user = db.get_user_by_id(user_id)
-        if user is None:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Account not found. Sign in again.")
-    else:
-        # Import lazily to avoid a router/auth import cycle.
+            user = None
+
+    allow_trial_fallback = (
+        not path.startswith("/api/auth/")
+        or (method == "GET" and path in {"/api/auth/me", "/api/auth/settings"})
+    )
+    if user is None and allow_trial_fallback:
+        # Import lazily to avoid a router/auth import cycle. An active signed
+        # cookie or opaque signed device token is required by this resolver.
         try:
             from backend.routes.trials import resolve_trial_user
             user = resolve_trial_user(request)
@@ -216,12 +229,22 @@ async def current_user(
             raise
         except Exception:
             user = None
-        if user is None:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sign in or start your 7-day trial to continue.")
 
-    # A legacy account trial or anonymous trial is blocked on ALL workspace API
-    # requests after expiry. Authentication endpoints remain available so the
-    # visitor can sign up or sign in and retain access to migrated work.
+    if user is None:
+        if account_token_present:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Your session has expired. Sign in again.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Sign in or start your 7-day trial to continue.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Enforce expiry on every non-auth workspace API call. The trial resolver
+    # already rejects expired anonymous trials before it returns a user.
     if not path.startswith("/api/auth/") and not path.startswith("/api/trial/"):
         status_info = trial_status(user)
         is_anonymous_trial = bool(user.get("is_trial")) if isinstance(user, dict) else False

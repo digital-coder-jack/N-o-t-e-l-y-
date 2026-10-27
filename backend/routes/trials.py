@@ -16,6 +16,7 @@ import re
 import secrets
 import sqlite3
 import uuid
+from contextlib import closing
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -140,11 +141,23 @@ def _find_trial(conn: sqlite3.Connection, device_hash: str | None, fingerprint_h
         values.append(fingerprint_hash)
     if not clauses:
         return None
+    if device_hash:
+        clauses.append("id IN (SELECT trial_id FROM trial_device_aliases WHERE device_hash = ?)")
+        values.append(device_hash)
     return conn.execute(
         "SELECT * FROM trial_sessions WHERE " + " OR ".join(clauses) +
         " ORDER BY started_at ASC LIMIT 1",
         tuple(values),
     ).fetchone()
+
+
+def _remember_device_alias(conn: sqlite3.Connection, trial, device_hash: str) -> None:
+    if not device_hash or trial["device_hash"] == device_hash:
+        return
+    conn.execute(
+        "INSERT OR IGNORE INTO trial_device_aliases(device_hash, trial_id, created_at) VALUES (?, ?, ?)",
+        (device_hash, trial["id"], _iso(_now())),
+    )
 
 
 def _days_left(expires_at: str) -> int:
@@ -176,14 +189,14 @@ def _prepare_identity(request: Request, response: Response, token: str | None, f
 async def trial_status_endpoint(body: TrialRequest, request: Request, response: Response):
     token = _token_from_request(request, body.device_token)
     token, device_hash, fingerprint_hash, ip_hash = _prepare_identity(request, response, token, body.fingerprint)
-    with db.get_connection() as conn:
+    with closing(db.get_connection()) as conn:
         trial = _find_trial(conn, device_hash, fingerprint_hash)
         if trial is None:
             return {"status": "available", "available": True, "device_token": token, "days_left": None}
         # A fingerprint match lets a clean browser profile rehydrate the long-lived
         # cookie on this device without starting a second trial.
         if trial["device_hash"] != device_hash:
-            conn.execute("UPDATE trial_sessions SET device_hash = ? WHERE id = ?", (device_hash, trial["id"]))
+            _remember_device_alias(conn, trial, device_hash)
             conn.commit()
         if trial["converted_user_id"]:
             return {"status": "converted", "available": False, "converted": True, "device_token": token}
@@ -196,17 +209,19 @@ async def trial_status_endpoint(body: TrialRequest, request: Request, response: 
 @router.post("/start")
 async def start_trial(body: TrialRequest, request: Request, response: Response):
     token = _token_from_request(request, body.device_token)
+    if len((body.fingerprint or "").strip()) < 32:
+        raise HTTPException(status_code=400, detail="Not enough browser information to start a trial. Enable JavaScript and try again.")
     _automation_check(request, body.fingerprint)
     token, device_hash, fingerprint_hash, ip_hash = _prepare_identity(request, response, token, body.fingerprint)
     if body.automation:
         raise HTTPException(status_code=403, detail="Trial start is unavailable in automated browsers.")
 
     now = _now()
-    with db.get_connection() as conn:
+    with closing(db.get_connection()) as conn:
         existing = _find_trial(conn, device_hash, fingerprint_hash)
         if existing is not None:
             if existing["device_hash"] != device_hash:
-                conn.execute("UPDATE trial_sessions SET device_hash = ? WHERE id = ?", (device_hash, existing["id"]))
+                _remember_device_alias(conn, existing, device_hash)
                 conn.commit()
             if existing["converted_user_id"]:
                 raise HTTPException(status_code=409, detail="This trial is linked to an account. Please sign in.")
@@ -260,7 +275,7 @@ async def start_trial(body: TrialRequest, request: Request, response: Response):
 async def rehydrate_trial_identity(body: TrialRequest, request: Request, response: Response):
     token = _token_from_request(request, body.device_token)
     token, device_hash, fingerprint_hash, _ = _prepare_identity(request, response, token, body.fingerprint)
-    with db.get_connection() as conn:
+    with closing(db.get_connection()) as conn:
         trial = _find_trial(conn, device_hash, fingerprint_hash)
         if trial is not None and trial["device_hash"] != device_hash:
             conn.execute("UPDATE trial_sessions SET device_hash = ? WHERE id = ?", (device_hash, trial["id"]))
@@ -273,10 +288,10 @@ def resolve_trial_user(request: Request) -> dict[str, Any] | None:
     device_hash, _ = _identity_hash(token)
     if not device_hash:
         return None
-    with db.get_connection() as conn:
+    with closing(db.get_connection()) as conn:
         trial = conn.execute(
-            "SELECT * FROM trial_sessions WHERE device_hash = ? ORDER BY started_at ASC LIMIT 1",
-            (device_hash,),
+            "SELECT * FROM trial_sessions WHERE device_hash = ? OR id IN (SELECT trial_id FROM trial_device_aliases WHERE device_hash = ?) ORDER BY started_at ASC LIMIT 1",
+            (device_hash, device_hash),
         ).fetchone()
         if trial is None or trial["converted_user_id"]:
             return None
@@ -310,10 +325,10 @@ def convert_trial_to_account(request: Request, new_user_id: int) -> bool:
     device_hash, _ = _identity_hash(token)
     if not device_hash:
         return False
-    with db.get_connection() as conn:
+    with closing(db.get_connection()) as conn:
         trial = conn.execute(
-            "SELECT * FROM trial_sessions WHERE device_hash = ? AND converted_user_id IS NULL LIMIT 1",
-            (device_hash,),
+            "SELECT * FROM trial_sessions WHERE (device_hash = ? OR id IN (SELECT trial_id FROM trial_device_aliases WHERE device_hash = ?)) AND converted_user_id IS NULL LIMIT 1",
+            (device_hash, device_hash),
         ).fetchone()
         if trial is None:
             return False

@@ -36,6 +36,50 @@ const SS = (() => {
 
   /* ---------- session ---------- */
   function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
+  let refreshPromise = null;
+  function tokenExpiry(token) {
+    try {
+      const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      const decoded = atob(payload + '='.repeat((4 - payload.length % 4) % 4));
+      const data = JSON.parse(decoded);
+      return Number(data.exp) || 0;
+    } catch { return 0; }
+  }
+  async function refreshSessionToken() {
+    const token = getToken();
+    if (!token) return false;
+    const response = await fetch(apiUrl('/api/auth/refresh'), {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      credentials: 'include',
+      cache: 'no-store',
+      body: '{}',
+    });
+    let data = {};
+    try { data = await response.json(); } catch {}
+    if (!response.ok || !data.token) {
+      if (response.status === 401) {
+        clearSession();
+        if (!/\/(login|signup|forgot)(\.html)?$/.test(window.location.pathname)) window.location.assign('/login');
+        throw new Error('Your session expired. Sign in again.');
+      }
+      throw new Error((data && (data.detail || data.message)) || 'Could not refresh your session.');
+    }
+    setSession(data.token, data.user);
+    return true;
+  }
+  async function refreshBeforeExpiry() {
+    const token = getToken();
+    if (!token) return false;
+    const exp = tokenExpiry(token);
+    // Refresh while the JWT is still valid; expired bearer tokens cannot be
+    // refreshed by the server and must return to sign-in.
+    if (!exp || exp * 1000 > Date.now() + 120000) return false;
+    if (!refreshPromise) {
+      refreshPromise = refreshSessionToken().finally(() => { refreshPromise = null; });
+    }
+    return refreshPromise;
+  }
   function setSession(token, user) {
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(USER_KEY, JSON.stringify(user || {}));
@@ -76,6 +120,15 @@ const SS = (() => {
      Trial limits are enforced by the server; expired sessions require sign-in. */
   async function api(path, opts = {}) {
     const { method = 'GET', body, auth = true, raw = false, signal } = opts;
+    const isRefreshCall = String(path).endsWith('/api/auth/refresh') || String(path) === '/api/auth/refresh';
+    if (auth && !isRefreshCall && getToken()) {
+      try { await refreshBeforeExpiry(); }
+      catch (err) {
+        if (err && err.message === 'Your session expired. Sign in again.') throw err;
+        // A transient refresh-server error should not throw away a still-valid
+        // token; the original request will decide whether it remains usable.
+      }
+    }
 
     const headers = {};
     if (body && !(body instanceof FormData)) headers['Content-Type'] = 'application/json';
@@ -102,7 +155,7 @@ const SS = (() => {
 
     if (res.status === 402 && res.headers.get('X-Notely-Trial-Expired') === 'true') {
       clearSession();
-      if (!/\\/(login|signup|forgot)(\\.html)?$/.test(window.location.pathname)) window.location.assign('/signup?trial=expired');
+      if (!/\/(login|signup|forgot)(\.html)?$/.test(window.location.pathname)) window.location.assign('/signup?trial=expired');
     }
 
     if (res.status === 401 && auth) {
@@ -348,7 +401,7 @@ const SS = (() => {
     boot();
   }
 
-  return { api, getToken, setSession, getUser, clearSession, isAuthed, logout,
+  return { api, getToken, setSession, getUser, clearSession, isAuthed, logout, refreshSession: refreshSessionToken,
            setTrialSession, clearTrialSession, requireAuth, toast, attachRipples, initParticles,
            toggleTheme, getTheme, applyTheme };
 })();
