@@ -209,6 +209,8 @@ async def trial_status_endpoint(body: TrialRequest, request: Request, response: 
 @router.post("/start")
 async def start_trial(body: TrialRequest, request: Request, response: Response):
     token = _token_from_request(request, body.device_token)
+    if len((body.fingerprint or "").strip()) < 32:
+        raise HTTPException(status_code=400, detail="Not enough browser information to start a trial. Enable JavaScript and try again.")
     _automation_check(request, body.fingerprint)
     token, device_hash, fingerprint_hash, ip_hash = _prepare_identity(request, response, token, body.fingerprint)
     if body.automation:
