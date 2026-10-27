@@ -123,7 +123,7 @@
     var headers = { 'Content-Type': 'application/json' };
     var token = await savedDeviceToken();
     if (token) headers['X-Notely-Device'] = token;
-    var response = await fetch(path, {
+    var response = await fetch(apiUrl(path), {
       method: 'POST', headers: headers, credentials: 'include',
       cache: 'no-store', body: JSON.stringify(Object.assign({}, body || {}, {
         device_token: token || undefined,
@@ -139,6 +139,18 @@
     }
     if (data.device_token) await saveDeviceToken(data.device_token);
     return data;
+  }
+
+  function apiUrl(path) {
+    var base = '';
+    try { base = String(window.SS_API_BASE || '').trim().replace(/\\/+$/, ''); } catch (_) {}
+    if (!base) {
+      try {
+        var meta = document.querySelector('meta[name="api-base"]');
+        if (meta && meta.content) base = meta.content.trim().replace(/\\/+$/, '');
+      } catch (_) {}
+    }
+    return /^https?:\\/\\//i.test(path) ? path : base + path;
   }
 
   function setStatus(message, type) {
