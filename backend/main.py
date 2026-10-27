@@ -8,7 +8,7 @@ The single FastAPI application that powers BOTH:
   2. The web application  (auth, chat, study tools, file uploads)
   3. The static frontend  (served from /frontend)
 
-Everything shares backend.database (one SQLite file) and backend.ai
+Everything shares backend.database (Neon PostgreSQL) and backend.ai
 (one Notely model router), so the bot and the website operate on the same data.
 
 Run locally:
@@ -80,7 +80,6 @@ def _validate_environment() -> None:
         "GROQ_MODEL": "Pro Max tier model override",
         "TELEGRAM_BOT_TOKEN": "Telegram bot integration",
         "WEBHOOK_SECRET": "verify Telegram webhook calls",
-        "DB_PATH": "database path (a /tmp path is ephemeral on Vercel)",
         "TELEGRAM_ADMIN_ID": "admin id allowed to read analytics dashboard stats",
         "DIAG_TOKEN": "protect live AI provider diagnostics",
         "OPENROUTER_SITE_URL": "optional OpenRouter attribution URL",
@@ -309,7 +308,7 @@ async def health() -> JSONResponse:
                 "status": "ok",
                 "database": "ok",
                 "database_engine": "neon_postgres",
-                "application_storage": "sqlite_pending_migration",
+                "application_storage": "neon_postgres",
             },
             status_code=200,
         )
