@@ -36,6 +36,7 @@ from backend.routes import topics as topics_routes
 from backend.routes import tasks as tasks_routes
 from backend.routes import diagnostics as diagnostics_routes
 from backend.routes import users as users_routes
+from backend.routes import trials as trial_routes
 from backend.analytics_web import web_analytics_db
 from backend.auth import current_user
 
@@ -177,7 +178,7 @@ app.add_middleware(
     allow_origin_regex=_ALLOW_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "X-Diag-Token", "X-Requested-With"],
+    allow_headers=["Authorization", "Content-Type", "X-Diag-Token", "X-Requested-With", "X-Notely-Device"],
     expose_headers=["X-Notely-Trial-Expired", "Retry-After"],
 )
 
@@ -193,6 +194,7 @@ db.init_db()
 # API routers
 # ---------------------------------------------------------------------------
 app.include_router(users_routes.router)
+app.include_router(trial_routes.router)
 app.include_router(chat_routes.router)
 app.include_router(files_routes.router)
 app.include_router(topics_routes.router)
