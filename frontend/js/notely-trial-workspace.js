@@ -42,6 +42,15 @@
       });
     } catch (_) {}
   }
+  function apiUrl(path) {
+    var base = '';
+    try { base = String(window.SS_API_BASE || '').trim().replace(/\\/+$/, ''); } catch (_) {}
+    if (!base) {
+      try { var meta = document.querySelector('meta[name="api-base"]'); if (meta && meta.content) base = meta.content.trim().replace(/\\/+$/, ''); } catch (_) {}
+    }
+    return /^https?:\\/\\//i.test(path) ? path : base + path;
+  }
+
   async function run() {
     if (!window.SS || typeof SS.getToken !== 'function' || SS.getToken()) return;
     var token = getToken() || await idbToken();
@@ -49,7 +58,7 @@
     if (token) headers['X-Notely-Device'] = token;
     var response, data = {};
     try {
-      response = await fetch('/api/trial/status', {
+      response = await fetch(apiUrl('/api/trial/status'), {
         method: 'POST', headers: headers, credentials: 'include', cache: 'no-store',
         body: JSON.stringify({ device_token: token || undefined, fingerprint: '' })
       });
