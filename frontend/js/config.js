@@ -3,8 +3,8 @@
    ---------------------------------------------------------------------
    This is the SINGLE place to point the frontend at your backend API.
 
-   The frontend (Vercel) and backend (Render / Railway) are on different
-   origins, so every API call is prefixed with window.SS_API_BASE.
+   The frontend and FastAPI backend are separate Vercel projects. The frontend
+   project proxies /api/* to NOTELY_BACKEND_URL, so browser calls stay same-origin.
 
    HOW TO SET IT
    -------------
@@ -18,10 +18,9 @@
    the same origin (single-host deploy) — then same-origin requests are used.
    ===================================================================== */
 
-/* Default: same-origin. On Vercel the FastAPI backend and the static
-   frontend are served from the SAME deployment, so API calls should be
-   same-origin ('' prefix). Only set this to an absolute URL if you split
-   the backend onto a different host (e.g. Render/Railway). */
+/* Keep this empty: /api/* is proxied by the frontend Vercel project using
+   the server-side NOTELY_BACKEND_URL environment variable. This also lets
+   HttpOnly trial cookies stay first-party in the browser. */
 window.SS_API_BASE = "";
 
 /* Optional: allow overriding via a <meta name="api-base"> tag or a
