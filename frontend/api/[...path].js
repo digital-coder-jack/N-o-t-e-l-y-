@@ -9,8 +9,6 @@ const HOP_BY_HOP = new Set([
   "content-length", "accept-encoding"
 ]);
 
-module.exports.config = { api: { bodyParser: false } };
-
 module.exports = async function handler(req, res) {
   const configured = String(process.env.NOTELY_BACKEND_URL || "").trim().replace(/\/+$/, "");
   if (!configured) {
@@ -72,3 +70,5 @@ module.exports = async function handler(req, res) {
     return res.status(502).json({ detail: "backend_unavailable" });
   }
 };
+
+module.exports.config = { api: { bodyParser: false } };
