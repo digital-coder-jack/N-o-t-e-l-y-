@@ -14,7 +14,8 @@ import json
 import os
 import re
 import secrets
-import sqlite3
+import psycopg
+from typing import Any
 import uuid
 from contextlib import closing
 from datetime import datetime, timedelta, timezone
@@ -131,7 +132,7 @@ def _set_cookie(response: Response, token: str) -> None:
     )
 
 
-def _find_trial(conn: sqlite3.Connection, device_hash: str | None, fingerprint_hash: str):
+def _find_trial(conn: Any, device_hash: str | None, fingerprint_hash: str):
     clauses, values = [], []
     if device_hash:
         clauses.append("device_hash = ?")
@@ -151,7 +152,7 @@ def _find_trial(conn: sqlite3.Connection, device_hash: str | None, fingerprint_h
     ).fetchone()
 
 
-def _remember_device_alias(conn: sqlite3.Connection, trial, device_hash: str) -> None:
+def _remember_device_alias(conn: Any, trial, device_hash: str) -> None:
     if not device_hash or trial["device_hash"] == device_hash:
         return
     conn.execute(
@@ -341,17 +342,17 @@ def convert_trial_to_account(request: Request, new_user_id: int) -> bool:
         # Keep the workspace created for the account's normal defaults, but
         # replace it with the anonymous trial's preferences/data.
         conn.execute("DELETE FROM user_settings WHERE user_id = ?", (new_user_id,))
-        table_rows = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").fetchall()
+        table_rows = conn.execute("SELECT table_name AS name FROM information_schema.tables WHERE table_schema = current_schema() AND table_type = 'BASE TABLE'").fetchall()
         for table_row in table_rows:
             table = table_row["name"]
             if table in {"users", "questions", "trial_sessions", "email_verifications", "auth_signin_attempts", "trial_attempts"}:
                 continue
-            columns = [row["name"] for row in conn.execute('PRAGMA table_info("' + table.replace('"', '""') + '")').fetchall()]
+            columns = [row["name"] for row in conn.execute("SELECT column_name AS name FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = ?", (table,)).fetchall()]
             if "user_id" not in columns:
                 continue
             try:
                 conn.execute('UPDATE "' + table.replace('"', '""') + '" SET user_id = ? WHERE user_id = ?', (new_user_id, old_user_id))
-            except sqlite3.IntegrityError:
+            except psycopg.IntegrityError:
                 # A uniqueness constraint can exist in optional/user-specific
                 # tables; retaining the account's existing row is safer than
                 # rolling back all migrated notes and conversations.
