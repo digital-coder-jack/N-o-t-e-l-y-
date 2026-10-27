@@ -20,7 +20,7 @@ production-ready, standalone API.
 2. Point the Vercel frontend at the new backend URL (one line in
    `frontend/js/config.js`) and allow that origin via CORS.
 
-Nothing in the frontend logic or the database structure was rewritten.
+The backend data-access layer uses Neon PostgreSQL. Run the Neon schema migration before the backend starts; SQLite/DB_PATH is not used.
 
 ---
 
@@ -36,7 +36,7 @@ Nothing in the frontend logic or the database structure was rewritten.
 | `GROQ_MODEL` | Optional | Defaults to `openai/gpt-oss-20b`, the current Groq shared-inference model for AI Notebook Pro Max. |
 | `ALLOWED_ORIGINS` | **Yes (prod)** | Comma-separated frontend origins allowed by CORS, e.g. `https://your-app.vercel.app`. `*.vercel.app` preview URLs and `localhost` are always allowed automatically. |
 | `JWT_SECRET` | **Strongly recommended** | Stable secret for signing login tokens. Without it, logins break across restarts/instances. (Render `render.yaml` auto-generates one.) |
-| `DB_PATH` | Recommended (prod) | Absolute path to the SQLite file on a **persistent disk** (e.g. `/data/ai_notebook.db`). Without a persistent disk, data resets on each redeploy. |
+| `NOTELY_DATABASE_URL_POSTGRES_URL` | **Required for runtime** | Pooled Neon PostgreSQL URL supplied by the Vercel Neon integration. Keep it server-side only. |\n| `NOTELY_DATABASE_URL_POSTGRES_URL_NON_POOLING` | **Required for schema migration** | Direct/non-pooled Neon URL supplied by the integration. Used only by `python -m backend.migrate_neon`. |
 | `JWT_TTL_SECONDS` | Optional | Token lifetime (default `604800` = 7 days). |
 | `TELEGRAM_BOT_TOKEN` | Optional | Enables the Telegram bot. |
 | `WEBHOOK_SECRET` | Optional | Verifies Telegram webhook calls. |
@@ -67,7 +67,7 @@ Nothing in the frontend logic or the database structure was rewritten.
 
 ---
 
-## 3. Deploy the backend on **Render** (recommended — supports a persistent disk)
+## 3. Deploy the backend on **Render** (Neon PostgreSQL)
 
 ### Option A — Blueprint (uses `render.yaml`, zero clicks)
 1. Push this repo to GitHub.
@@ -173,4 +173,4 @@ Requires `TELEGRAM_BOT_TOKEN` (and optionally `WEBHOOK_SECRET`) to be set.
 - **Analytics** are process-local counters only. They are best-effort,
   privacy-preserving, and reset when the backend process restarts.
 - For fully durable, multi-instance SQL on serverless, consider migrating the
-  SQLite layer to **Turso** (libSQL) later — not required for this fix.
+  Keep database schema changes in `backend/migrate_neon.py` and run the migration before deployment.
