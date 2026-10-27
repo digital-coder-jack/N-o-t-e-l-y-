@@ -117,6 +117,7 @@ mailnew.com mailslite.com mailzilla.com spamgourmet.com spamfree24.org spamherel
 tempemail.co.za tempemail.com tempemail.net tempinbox.co.uk temporarymail.com
 temporarymailaddress.com throwam.com trashymail.com uswk.net wordtotext.com
 """.split())
+TEMP_EMAIL_DOMAINS.update(domain.strip().lower() for domain in os.environ.get("TEMP_EMAIL_DOMAINS", "").split(",") if domain.strip())
 
 COMMON_PASSWORDS = set("""
 123456 1234567 12345678 123456789 1234567890 111111 000000 password password1
