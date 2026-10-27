@@ -184,10 +184,18 @@ def init_db() -> None:
                 expires_at TEXT NOT NULL,
                 resend_after TEXT NOT NULL,
                 attempts INTEGER NOT NULL DEFAULT 0,
-                created_at TEXT NOT NULL
+                created_at TEXT NOT NULL,
+                existing_user_id INTEGER,
+                password_matches INTEGER NOT NULL DEFAULT 0
             )
             """
         )
+        # Migrate installations created before OTP-to-sign-in fallback existed.
+        verification_columns = {row["name"] for row in conn.execute("PRAGMA table_info(email_verifications)").fetchall()}
+        if "existing_user_id" not in verification_columns:
+            conn.execute("ALTER TABLE email_verifications ADD COLUMN existing_user_id INTEGER")
+        if "password_matches" not in verification_columns:
+            conn.execute("ALTER TABLE email_verifications ADD COLUMN password_matches INTEGER NOT NULL DEFAULT 0")
 
         conn.execute(
             """
