@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 const HOP_BY_HOP = [
   "connection", "keep-alive", "proxy-authenticate", "proxy-authorization",
   "te", "trailer", "transfer-encoding", "upgrade", "host",
-  "content-length", "accept-encoding"
+  "content-length", "accept-encoding", "content-encoding"
 ];
 
 async function proxy(request: NextRequest): Promise<Response> {
