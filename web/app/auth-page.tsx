@@ -81,11 +81,12 @@ export default function AuthPage({ initialMode = "login" }: { initialMode?: "log
 
   const submit = async (event: FormEvent) => {
     event.preventDefault(); setError(""); setNotice("");
+    const normalizedEmail = email.trim().toLowerCase();
     if (mode === "signup" && verificationPending && !/^\d{6}$/.test(otp.trim())) {
       setError("Enter the six-digit code sent to your email."); return;
     }
     if (mode === "signup" && !verificationPending && !name.trim()) { setInvalidFields(["name"]); setError("Add your name to get started."); return; }
-    if (mode === "signup" && !verificationPending && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { setInvalidFields(["email"]); setError("Enter a valid email address."); return; }
+    if (mode === "signup" && !verificationPending && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normalizedEmail)) { setInvalidFields(["email"]); setError("Enter a valid email address."); return; }
     if (mode === "signup" && !verificationPending && password.length < 8) { setInvalidFields(["password"]); setError("Use at least 8 characters for your password."); return; }
     if (mode === "login" && (!identifier.trim() || !password)) { setInvalidFields([...(identifier.trim() ? [] : ["identifier"]), ...(!password ? ["password"] : [])]); setError("Enter your email or username and password."); return; }
     setLoading(true);
@@ -94,7 +95,7 @@ export default function AuthPage({ initialMode = "login" }: { initialMode?: "log
         const response = await fetch(API_BASE + "/api/auth/verify-email", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            email: pendingEmail || email.trim(),
+            email: pendingEmail || normalizedEmail,
             otp: otp.trim(),
             device_token: localStorage.getItem("notely-trial-device") || ""
           })
@@ -110,13 +111,13 @@ export default function AuthPage({ initialMode = "login" }: { initialMode?: "log
 
       const response = await fetch(API_BASE + (mode === "signup" ? "/api/auth/signup" : "/api/auth/login"), {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(mode === "signup" ? { name: name.trim(), username: "", email: email.trim(), password, confirm_password: password } : { identifier: identifier.trim(), password })
+        body: JSON.stringify(mode === "signup" ? { name: name.trim(), username: "", email: normalizedEmail, password, confirm_password: password } : { identifier: identifier.trim(), password })
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.detail || "Could not authenticate. Check your details.");
       if (mode === "signup" && data.verification_required) {
         setVerificationPending(true);
-        setPendingEmail(data.email || email.trim());
+        setPendingEmail(data.email || normalizedEmail);
         setOtp("");
         setNotice(data.message || "Check your inbox for the six-digit verification code.");
         setLoading(false);
