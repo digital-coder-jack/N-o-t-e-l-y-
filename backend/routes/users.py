@@ -25,6 +25,8 @@ import re
 import secrets
 import smtplib
 from contextlib import closing
+
+import dns.resolver
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 from urllib.parse import quote
@@ -156,19 +158,56 @@ def _canonical_email(raw: str) -> str:
 
 
 def _validated_email(raw: str) -> tuple[str, str]:
-    delivery_email = (raw or "").strip()
-    if not EMAIL_RE.match(delivery_email):
-        raise HTTPException(status_code=400, detail="Please enter a valid email address.")
-    domain = delivery_email.rsplit("@", 1)[-1].lower().rstrip(".")
-    if any(domain == blocked or domain.endswith("." + blocked) for blocked in TEMP_EMAIL_DOMAINS):
-        raise HTTPException(status_code=400, detail="Please use a permanent email address.")
+    delivery_email = (raw or "").strip().lower()
+    if not EMAIL_RE.fullmatch(delivery_email):
+        raise HTTPException(status_code=400, detail="Invalid email format. Enter a valid email address.")
+
     try:
-        checked = validate_email(delivery_email, check_deliverability=True, allow_smtputf8=False)
-    except (EmailNotValidError, Exception):
-        raise HTTPException(status_code=400, detail="This email address cannot be verified. Check the address and try again.")
-    if not getattr(checked, "mx", None):
-        raise HTTPException(status_code=400, detail="This email domain must have working mail records.")
+        checked = validate_email(
+            delivery_email,
+            check_deliverability=False,
+            allow_smtputf8=False,
+        )
+    except EmailNotValidError:
+        raise HTTPException(status_code=400, detail="Invalid email format. Enter a valid email address.")
+
+    domain = (checked.domain or delivery_email.rsplit("@", 1)[-1]).lower().rstrip(".")
+    if any(domain == blocked or domain.endswith("." + blocked) for blocked in TEMP_EMAIL_DOMAINS):
+        raise HTTPException(status_code=400, detail="This email provider is not allowed. Please use a permanent email address.")
+
+    # Only a definite NXDOMAIN is treated as a missing domain. Temporary DNS
+    # failures (timeouts, SERVFAIL, unavailable resolvers) must not block a
+    # syntactically valid address; SMTP delivery will provide the final check.
+    try:
+        resolver = dns.resolver.Resolver()
+        resolver.timeout = 1.0
+        resolver.lifetime = 2.0
+        resolver.resolve(domain, "MX", lifetime=2.0, raise_on_no_answer=False)
+    except dns.resolver.NXDOMAIN:
+        raise HTTPException(status_code=400, detail="Email domain not found. Check the domain spelling and try again.")
+    except Exception as exc:
+        logging.getLogger("notely-auth").warning(
+            "Email domain lookup skipped after temporary DNS failure; error_type=%s",
+            type(exc).__name__,
+        )
+
     return _canonical_email(delivery_email), delivery_email
+
+
+def _smtp_error_code(exc: Exception) -> int | None:
+    code = getattr(exc, "smtp_code", None)
+    return code if isinstance(code, int) else None
+
+
+def _log_smtp_failure(action: str, exc: Exception) -> None:
+    # Do not log exception text or tracebacks: SMTP exceptions can include
+    # server details and potentially sensitive configuration information.
+    logging.getLogger("notely-auth").error(
+        "%s failed; error_type=%s smtp_code=%s",
+        action,
+        type(exc).__name__,
+        _smtp_error_code(exc),
+    )
 
 
 def _password_problem(password: str) -> str | None:
@@ -339,12 +378,12 @@ async def signup(body: SignupIn, request: Request):
             )
             conn.commit()
         _send_email(delivery_email, "Your Notely verification code", f"Your Notely verification code is {otp}. It expires in 10 minutes. If you did not request this, you can ignore this email.")
-    except Exception:
-        logging.getLogger("notely-auth").exception("Unable to deliver signup verification email")
+    except Exception as exc:
+        _log_smtp_failure("Signup OTP email delivery", exc)
         with closing(db.get_connection()) as conn:
             conn.execute("DELETE FROM email_verifications WHERE email=?", (email,))
             conn.commit()
-        raise HTTPException(status_code=503, detail="Email verification is temporarily unavailable. Please try again later.")
+        raise HTTPException(status_code=503, detail="We couldn't send your verification email. Please check your email settings or try again later.")
     return {"verification_required": True, "email": delivery_email, "message": "Check your email for a six-digit verification code. It expires in 10 minutes."}
 
 
@@ -370,9 +409,9 @@ async def resend_verification(body: ResendVerificationIn):
         conn.commit()
     try:
         _send_email(row["delivery_email"], "Your Notely verification code", f"Your Notely verification code is {otp}. It expires in 10 minutes.")
-    except Exception:
-        logging.getLogger("notely-auth").exception("Unable to resend signup verification email")
-        raise HTTPException(status_code=503, detail="Email verification is temporarily unavailable. Please try again later.")
+    except Exception as exc:
+        _log_smtp_failure("Resend OTP email delivery", exc)
+        raise HTTPException(status_code=503, detail="We couldn't send your verification email. Please check your email settings or try again later.")
     return {"message": "A new verification code has been sent."}
 
 
