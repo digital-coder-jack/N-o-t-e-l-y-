@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import sys
 
+from dotenv import load_dotenv
 import psycopg
 
 from backend.neon_database import connect_neon
@@ -211,6 +212,10 @@ SCHEMA = (
 
 
 def main() -> int:
+    # `vercel env pull .env.local` is a convenient local-only setup path.
+    # Never commit .env.local; the file is ignored by Git.
+    load_dotenv(".env.local", override=False)
+    load_dotenv(".env", override=False)
     try:
         with connect_neon(for_migration=True) as conn:
             for statement in SCHEMA:
