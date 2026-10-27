@@ -348,9 +348,10 @@ def add_message(chat_id: int, role: str, content: str) -> int:
             "INSERT INTO messages (chat_id, role, content) VALUES (?, ?, ?) RETURNING id",
             (chat_id, role, content),
         )
+        new_id = cur.fetchone()[0]
         conn.commit()
     touch_chat(chat_id)
-    return cur.fetchone()[0]
+    return new_id
 
 
 def list_messages(chat_id: int) -> list[Any]:
@@ -721,9 +722,10 @@ def upsert_artifact(topic_id: int, kind: str, content: str, variant: str = "") -
             """,
             (topic_id, kind, variant, content, _utcnow()),
         )
+        artifact_id = cur.fetchone()[0]
         conn.commit()
     touch_topic(topic_id)
-    return cur.fetchone()[0]
+    return artifact_id
 
 
 def list_artifacts(topic_id: int) -> list[Any]:
