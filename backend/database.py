@@ -19,9 +19,8 @@ uploads    : metadata about user-uploaded files.
 The bot links to web accounts through users.telegram_id (nullable), so a
 Telegram user and a web user can be the same person if they connect.
 
-On Vercel the filesystem is read-only except for /tmp, so the database
-path automatically falls back to /tmp there. Locally it lives beside the
-project for easy inspection.
+Production requests use the Neon pooled connection URL. Schema migrations use
+the direct/non-pooled URL and are run separately from application startup.
 =====================================================================
 """
 
