@@ -148,6 +148,17 @@ def init_db() -> None:
         conn.execute("CREATE INDEX IF NOT EXISTS idx_trial_device ON trial_sessions(device_hash)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_trial_fingerprint ON trial_sessions(fingerprint_hash)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_trial_ip ON trial_sessions(ip_hash)")
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS trial_device_aliases (
+                device_hash TEXT PRIMARY KEY,
+                trial_id TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (trial_id) REFERENCES trial_sessions(id) ON DELETE CASCADE
+            )
+            """
+        )
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_trial_alias_trial ON trial_device_aliases(trial_id)")
 
         conn.execute(
             """
