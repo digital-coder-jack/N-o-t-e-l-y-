@@ -8,7 +8,7 @@ The single FastAPI application that powers BOTH:
   2. The web application  (auth, chat, study tools, file uploads)
   3. The static frontend  (served from /frontend)
 
-Everything shares backend.database (Neon PostgreSQL) and backend.ai
+Everything shares backend.database (one SQLite file) and backend.ai
 (one Notely model router), so the bot and the website operate on the same data.
 
 Run locally:
