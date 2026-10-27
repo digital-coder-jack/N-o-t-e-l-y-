@@ -10,7 +10,7 @@ services:
   - type: web
     name: ai-notebook
     runtime: python
-    plan: starter            # "free" works too, but free has no persistent disk
+    plan: starter
     region: oregon           # change if you prefer another region
     branch: main
     buildCommand: "pip install -r requirements.txt"
@@ -18,17 +18,7 @@ services:
     healthCheckPath: /api/health
     autoDeploy: true
 
-    # Persistent disk so the SQLite database survives restarts/redeploys.
-    # (Free plan does NOT support disks — remove this block on the free plan;
-    #  data will then be ephemeral and reset on each deploy.)
-    disk:
-      name: ai-notebook-data
-      mountPath: /data
-      sizeGB: 1
-
     envVars:
-      - key: DB_PATH
-        value: /data/ai_notebook.db          # lives on the persistent disk
       - key: PYTHON_VERSION
         value: 3.12.7
       - key: WEB_CONCURRENCY
