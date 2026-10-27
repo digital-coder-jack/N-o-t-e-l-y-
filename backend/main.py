@@ -187,8 +187,8 @@ logger.info("CORS allowed origins: %s", ALLOWED_ORIGINS)
 # Rate limiting for API routes.
 app.add_middleware(RateLimitMiddleware)
 
-# Ensure the database schema exists as soon as the app boots.
-db.init_db()
+# Database checks run through /api/health so a missing DB does not prevent the
+# application from starting and reporting a safe readiness error.
 
 # ---------------------------------------------------------------------------
 # API routers
@@ -309,7 +309,7 @@ async def health() -> JSONResponse:
                 "status": "ok",
                 "database": "ok",
                 "database_engine": "neon_postgres",
-                "application_storage": "sqlite_pending_migration",
+                "application_storage": "neon_postgres",
             },
             status_code=200,
         )

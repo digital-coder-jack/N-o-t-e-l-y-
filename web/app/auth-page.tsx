@@ -3,7 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || "https://notely-mwlq.vercel.app").replace(/\/+$/, "");
+const API_BASE = ""; // Browser requests stay on the frontend origin and use the same-origin API proxy.
 
 export default function AuthPage({ initialMode = "login" }: { initialMode?: "login" | "signup" }) {
   const [mode, setMode] = useState<"login" | "signup">(initialMode);
@@ -17,6 +17,10 @@ export default function AuthPage({ initialMode = "login" }: { initialMode?: "log
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [strength, setStrength] = useState(0);
   const [invalidFields, setInvalidFields] = useState<string[]>([]);
+  const [verificationPending, setVerificationPending] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [notice, setNotice] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -48,28 +52,84 @@ export default function AuthPage({ initialMode = "login" }: { initialMode?: "log
     }
   };
 
-  const switchMode = (next: "login" | "signup") => { setMode(next); setError(""); setInvalidFields([]); setPassword(""); window.history.replaceState(null, "", next === "signup" ? "/signup" : "/login"); };
+  const switchMode = (next: "login" | "signup") => {
+    setMode(next); setError(""); setNotice(""); setInvalidFields([]); setPassword("");
+    setVerificationPending(false); setPendingEmail(""); setOtp("");
+    window.history.replaceState(null, "", next === "signup" ? "/signup" : "/login");
+  };
   const clearInvalid = (field: string) => setInvalidFields(current => current.filter(item => item !== field));
   const fieldClass = (field: string) => "auth-field" + (invalidFields.includes(field) ? " is-invalid" : "");
   const onPassword = (value: string) => { setPassword(value); clearInvalid("password"); let s=0;if(value.length>=8)s++;if(value.length>=12)s++;if(/[a-z]/.test(value)&&/[A-Z]/.test(value))s++;if(/\d/.test(value))s++;if(/[^A-Za-z0-9]/.test(value))s++;setStrength(s); };
+
+  const resendVerification = async () => {
+    if (!pendingEmail) return;
+    setLoading(true); setError(""); setNotice("");
+    try {
+      const response = await fetch(API_BASE + "/api/auth/resend-verification", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: pendingEmail })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.detail || "Could not resend the verification code.");
+      setNotice(data.message || "A new verification code has been sent.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not resend the verification code.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const submit = async (event: FormEvent) => {
-    event.preventDefault(); setError("");
-    if (mode === "signup" && !name.trim()) { setInvalidFields(["name"]); setError("Add your name to get started."); return; }
-    if (mode === "signup" && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { setInvalidFields(["email"]); setError("Enter a valid email address."); return; }
-    if (mode === "signup" && password.length < 8) { setInvalidFields(["password"]); setError("Use at least 8 characters for your password."); return; }
+    event.preventDefault(); setError(""); setNotice("");
+    if (mode === "signup" && verificationPending && !/^\d{6}$/.test(otp.trim())) {
+      setError("Enter the six-digit code sent to your email."); return;
+    }
+    if (mode === "signup" && !verificationPending && !name.trim()) { setInvalidFields(["name"]); setError("Add your name to get started."); return; }
+    if (mode === "signup" && !verificationPending && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { setInvalidFields(["email"]); setError("Enter a valid email address."); return; }
+    if (mode === "signup" && !verificationPending && password.length < 8) { setInvalidFields(["password"]); setError("Use at least 8 characters for your password."); return; }
     if (mode === "login" && (!identifier.trim() || !password)) { setInvalidFields([...(identifier.trim() ? [] : ["identifier"]), ...(!password ? ["password"] : [])]); setError("Enter your email or username and password."); return; }
     setLoading(true);
     try {
+      if (mode === "signup" && verificationPending) {
+        const response = await fetch(API_BASE + "/api/auth/verify-email", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: pendingEmail || email.trim(),
+            otp: otp.trim(),
+            device_token: localStorage.getItem("notely-trial-device") || ""
+          })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.token) throw new Error(data.detail || "Could not verify this email. Request a new code.");
+        localStorage.setItem("ss_token", data.token);
+        localStorage.setItem("ss_user", JSON.stringify(data.user || {}));
+        document.body.classList.add("auth-success");
+        setTimeout(() => router.replace("/"), 500);
+        return;
+      }
+
       const response = await fetch(API_BASE + (mode === "signup" ? "/api/auth/signup" : "/api/auth/login"), {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify(mode === "signup" ? { name: name.trim(), username: "", email: email.trim(), password, confirm_password: password } : { identifier: identifier.trim(), password })
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data.token) throw new Error(data.detail || "Could not authenticate. Check your details.");
+      if (!response.ok) throw new Error(data.detail || "Could not authenticate. Check your details.");
+      if (mode === "signup" && data.verification_required) {
+        setVerificationPending(true);
+        setPendingEmail(data.email || email.trim());
+        setOtp("");
+        setNotice(data.message || "Check your inbox for the six-digit verification code.");
+        setLoading(false);
+        return;
+      }
+      if (!data.token) throw new Error("The server did not return a session. Please try again.");
       localStorage.setItem("ss_token", data.token); localStorage.setItem("ss_user", JSON.stringify(data.user || {}));
       document.body.classList.add("auth-success");
       setTimeout(() => router.replace("/"), 500);
-    } catch (e) { setError(e instanceof Error ? e.message : "Something went wrong. Try again."); setLoading(false); }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong. Try again.");
+      setLoading(false);
+    }
   };
 
   return (
@@ -86,15 +146,17 @@ export default function AuthPage({ initialMode = "login" }: { initialMode?: "log
         <div className="auth-card-top"><span className="auth-card-eyebrow">YOUR NEXT CHAPTER</span><span className="auth-mobile-trial">7 days free</span></div>
         <div className={"auth-segment "+(mode==="login"?"is-login":"")} role="tablist" aria-label="Account access"><button type="button" role="tab" aria-selected={mode==="signup"} onClick={()=>switchMode("signup")}>Sign up</button><button type="button" role="tab" aria-selected={mode==="login"} onClick={()=>switchMode("login")}>Log in</button><span className="auth-segment-highlight" /></div>
         <div key={mode} className="auth-panel auth-panel-in">
-        <h2>{mode==="signup"?"Start your free trial":"Welcome back."}</h2><p className="auth-panel-copy">{mode==="signup"?"Seven days. Everything unlocked. Your work stays yours.":"Pick up where your ideas left off."}</p>
-        <button type="button" className="auth-google" onClick={()=>setError("Google sign-in isn't connected yet. Use email for now.")}><span className="google-mark">G</span>Continue with Google</button><div className="auth-divider"><span>or use email</span></div>
+        <h2>{verificationPending ? "Check your inbox." : mode==="signup" ? "Start your free trial" : "Welcome back."}</h2><p className="auth-panel-copy">{verificationPending ? "Enter the six-digit code sent to " + pendingEmail + ". It expires in 10 minutes." : mode==="signup" ? "Seven days. Everything unlocked. Your work stays yours." : "Pick up where your ideas left off."}</p>
+        {!verificationPending && <><button type="button" className="auth-google" onClick={()=>setError("Google sign-in isn't connected yet. Use email for now.")}><span className="google-mark">G</span>Continue with Google</button><div className="auth-divider"><span>or use email</span></div></>}
         {error && <p className="form-msg show error" role="alert">{error}</p>}
+        {notice && <p className="form-msg show" role="status">{notice}</p>}
         <form onSubmit={submit} noValidate>
-          {mode==="signup" ? <><div className={fieldClass("name")}><label htmlFor="auth-name">Your name</label><input id="auth-name" autoComplete="name" aria-invalid={invalidFields.includes("name")} value={name} onChange={e=>{setName(e.target.value);clearInvalid("name");}} placeholder="Alex Morgan" /></div><div className={fieldClass("email")}><label htmlFor="auth-email">Email address</label><input id="auth-email" type="email" autoComplete="email" aria-invalid={invalidFields.includes("email")} value={email} onChange={e=>{setEmail(e.target.value);clearInvalid("email");}} placeholder="you@example.com" /></div></> : <div className={fieldClass("identifier")}><label htmlFor="auth-identifier">Email or username</label><input id="auth-identifier" autoComplete="username" aria-invalid={invalidFields.includes("identifier")} value={identifier} onChange={e=>{setIdentifier(e.target.value);clearInvalid("identifier");}} placeholder="you@example.com" /></div>}
-          <div className={fieldClass("password")}><div className="auth-label-row"><label htmlFor="auth-password">Password</label>{mode==="login"&&<a href="/forgot">Forgot password?</a>}</div><div className="auth-password-wrap"><input id="auth-password" type={showPassword?"text":"password"} aria-invalid={invalidFields.includes("password")} autoComplete={mode==="signup"?"new-password":"current-password"} value={password} onChange={e=>onPassword(e.target.value)} placeholder={mode==="signup"?"At least 8 characters":"Your password"} /><button type="button" className="auth-show-password" onClick={()=>setShowPassword(v=>!v)}>{showPassword?"Hide":"Show"}</button></div>{mode==="signup"&&<><div className="auth-strength"><span style={{width:(strength*20)+"%",background:["#e45b79","#f0a34a","#e3c45a","#4aa8d8","#43bd99"][Math.max(0,strength-1)]||"#e45b79"}} /></div><small className="auth-hint">{password.length<8?"Use at least 8 characters.":strength<3?"Add a number or symbol for a stronger password.":"Strong password."}</small></>}</div>
-          <button type="submit" className="auth-submit" disabled={loading}>{loading?"Working…":mode==="signup"?"Start free trial":"Log in"} <span>↗</span></button>
+          {verificationPending && mode==="signup" ? <div className={fieldClass("otp")}><label htmlFor="auth-otp">Six-digit email code</label><input id="auth-otp" type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} aria-invalid={invalidFields.includes("otp")} value={otp} onChange={e=>{setOtp(e.target.value.replace(/\D/g,"").slice(0,6));clearInvalid("otp");}} placeholder="000000" /></div> : mode==="signup" ? <><div className={fieldClass("name")}><label htmlFor="auth-name">Your name</label><input id="auth-name" autoComplete="name" aria-invalid={invalidFields.includes("name")} value={name} onChange={e=>{setName(e.target.value);clearInvalid("name");}} placeholder="Alex Morgan" /></div><div className={fieldClass("email")}><label htmlFor="auth-email">Email address</label><input id="auth-email" type="email" autoComplete="email" aria-invalid={invalidFields.includes("email")} value={email} onChange={e=>{setEmail(e.target.value);clearInvalid("email");}} placeholder="you@example.com" /></div></> : <div className={fieldClass("identifier")}><label htmlFor="auth-identifier">Email or username</label><input id="auth-identifier" autoComplete="username" aria-invalid={invalidFields.includes("identifier")} value={identifier} onChange={e=>{setIdentifier(e.target.value);clearInvalid("identifier");}} placeholder="you@example.com" /></div>}
+          {!(verificationPending && mode==="signup") && <div className={fieldClass("password")}><div className="auth-label-row"><label htmlFor="auth-password">Password</label>{mode==="login"&&<a href="/forgot">Forgot password?</a>}</div><div className="auth-password-wrap"><input id="auth-password" type={showPassword?"text":"password"} aria-invalid={invalidFields.includes("password")} autoComplete={mode==="signup"?"new-password":"current-password"} value={password} onChange={e=>onPassword(e.target.value)} placeholder={mode==="signup"?"At least 8 characters":"Your password"} /><button type="button" className="auth-show-password" onClick={()=>setShowPassword(v=>!v)}>{showPassword?"Hide":"Show"}</button></div>{mode==="signup"&&!verificationPending&&<><div className="auth-strength"><span style={{width:(strength*20)+"%",background:["#e45b79","#f0a34a","#e3c45a","#4aa8d8","#43bd99"][Math.max(0,strength-1)]||"#e45b79"}} /></div><small className="auth-hint">{password.length<8?"Use at least 8 characters.":strength<3?"Add a number or symbol for a stronger password.":"Strong password."}</small></>}</div>}
+          <button type="submit" className="auth-submit" disabled={loading}>{loading?"Working…":verificationPending&&mode==="signup"?"Verify email":mode==="signup"?"Send verification code":"Log in"} <span>↗</span></button>
+          {verificationPending && mode==="signup" && <button type="button" className="auth-google" disabled={loading} onClick={resendVerification}>Resend code</button>}
         </form>
-        <p className="auth-terms">{mode==="signup"?"Your trial starts when your account is created. No payment is taken.":"Your notes and materials stay connected to your account."}</p>
+        <p className="auth-terms">{verificationPending ? "After verifying your email, your seven-day trial and workspace will be ready." : mode==="signup"?"Your trial starts when your account is created. No payment is taken.":"Your notes and materials stay connected to your account."}</p>
         <p className="auth-switch-copy">{mode==="signup"?"Already have an account?":"New to Notely?"} <button type="button" onClick={()=>switchMode(mode==="signup"?"login":"signup")}>{mode==="signup"?"Log in":"Start your trial"}</button></p>
         </div>
       </section>
