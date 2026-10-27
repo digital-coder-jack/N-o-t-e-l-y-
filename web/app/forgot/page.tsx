@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || "https://notely-mwlq.vercel.app").replace(/\/+$/, "");
+const API_BASE = ""; // Use the same-origin proxy; backend host stays server-side.
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
