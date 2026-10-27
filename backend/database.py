@@ -19,6 +19,8 @@ uploads    : metadata about user-uploaded files.
 The bot links to web accounts through users.telegram_id (nullable), so a
 Telegram user and a web user can be the same person if they connect.
 
+Production requests use the Neon pooled connection URL. Schema migrations use
+the direct/non-pooled URL and are run separately from application startup.
 All persistent application data is stored in Neon PostgreSQL. No local SQLite
 file is opened by this data-access layer.
 =====================================================================
@@ -27,7 +29,6 @@ file is opened by this data-access layer.
 from __future__ import annotations
 
 import json
-import os
 import re
 from typing import Any
 
@@ -35,8 +36,8 @@ import psycopg
 from contextlib import closing
 from datetime import datetime, timedelta, timezone
 
-# Persistent application data is stored in Neon PostgreSQL. The legacy DB_PATH
-# variable is intentionally not read by this module.
+# All persistent application data is stored in Neon PostgreSQL. The legacy
+# DB_PATH variable is intentionally not read by this module.
 
 class HybridRow:
     """Row object supporting both positional and named column access."""
@@ -112,8 +113,8 @@ def init_db() -> None:
 
 
 def _utcnow() -> str:
-    """Return an ISO-8601 UTC timestamp for text timestamp columns."""
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+    """Return a timezone-aware UTC timestamp in the legacy text format."""
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
 
 # ===========================================================================
@@ -318,9 +319,10 @@ def add_message(chat_id: int, role: str, content: str) -> int:
             "INSERT INTO messages (chat_id, role, content) VALUES (?, ?, ?) RETURNING id",
             (chat_id, role, content),
         )
+        new_id = cur.fetchone()[0]
         conn.commit()
     touch_chat(chat_id)
-    return cur.fetchone()[0]
+    return new_id
 
 
 def list_messages(chat_id: int) -> list[Any]:
@@ -691,9 +693,10 @@ def upsert_artifact(topic_id: int, kind: str, content: str, variant: str = "") -
             """,
             (topic_id, kind, variant, content, _utcnow()),
         )
+        artifact_id = cur.fetchone()[0]
         conn.commit()
     touch_topic(topic_id)
-    return cur.fetchone()[0]
+    return artifact_id
 
 
 def list_artifacts(topic_id: int) -> list[Any]:
