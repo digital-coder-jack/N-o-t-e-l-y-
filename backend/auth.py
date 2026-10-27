@@ -29,6 +29,7 @@ import time
 from datetime import datetime, timezone
 
 from fastapi import Depends, HTTPException, Request, status
+from argon2 import PasswordHasher, exceptions as argon2_exceptions
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from backend import database as db
@@ -65,25 +66,22 @@ JWT_ALG = "HS256"
 JWT_TTL_SECONDS = int(os.environ.get("JWT_TTL_SECONDS", str(60 * 60 * 24 * 7)))  # 7 days
 
 PBKDF2_ROUNDS = 200_000
+ARGON2 = PasswordHasher(time_cost=3, memory_cost=65536, parallelism=2)
 
 
 # ---------------------------------------------------------------------------
 # Password hashing (PBKDF2 — pure standard library)
 # ---------------------------------------------------------------------------
 def hash_password(password: str) -> str:
-    """Return a salted PBKDF2 hash string: pbkdf2_sha256$rounds$salt$hash."""
-    salt = secrets.token_bytes(16)
-    dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, PBKDF2_ROUNDS)
-    return "pbkdf2_sha256${}${}${}".format(
-        PBKDF2_ROUNDS,
-        base64.b64encode(salt).decode("ascii"),
-        base64.b64encode(dk).decode("ascii"),
-    )
+    """Hash new passwords using Argon2id."""
+    return ARGON2.hash(password)
 
 
 def verify_password(password: str, stored: str) -> bool:
-    """Constant-time verification of a password against a stored hash."""
+    """Verify Argon2id hashes and transparently accept legacy PBKDF2 hashes."""
     try:
+        if stored.startswith("$argon2"):
+            return bool(ARGON2.verify(stored, password))
         algorithm, rounds_s, salt_b64, hash_b64 = stored.split("$")
         if algorithm != "pbkdf2_sha256":
             return False
@@ -92,7 +90,7 @@ def verify_password(password: str, stored: str) -> bool:
         expected = base64.b64decode(hash_b64)
         dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, rounds)
         return hmac.compare_digest(dk, expected)
-    except (ValueError, TypeError):
+    except (ValueError, TypeError, argon2_exceptions.VerificationError, argon2_exceptions.InvalidHashError):
         return False
 
 
