@@ -26,6 +26,7 @@ import math
 import os
 import secrets
 import time
+from datetime import datetime, timezone
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -50,11 +51,10 @@ from backend import database as db
 # guess. Setting JWT_SECRET explicitly in production remains strongly advised.
 def _stable_fallback_secret() -> str:
     seed_parts = [
-        os.environ.get("VERCEL_URL", ""),
         os.environ.get("VERCEL_PROJECT_ID", ""),
         os.environ.get("VERCEL_GIT_REPO_ID", ""),
         # A fixed app-specific salt so the seed is never empty.
-        "study-sphere-ai::jwt::v1",
+        "notely::jwt::v2",
     ]
     seed = "|".join(seed_parts).encode("utf-8")
     return hashlib.sha256(seed).hexdigest()
@@ -196,29 +196,41 @@ async def current_user(
     request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
 ):
-    """Require a real authenticated account."""
-    if credentials is None or not credentials.credentials:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sign in to continue.")
-    try:
-        payload = decode_access_token(credentials.credentials)
-        user_id = int(payload["sub"])
-    except (ValueError, KeyError):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Your session has expired. Sign in again.")
-
-    user = db.get_user_by_id(user_id)
-    if user is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Account not found. Sign in again.")
-
+    """Resolve a verified account or an active server-owned anonymous trial."""
     path = request.url.path
-    method = request.method.upper()
-    is_write = method in {"POST", "PUT", "PATCH", "DELETE"}
-    auth_path = path.startswith("/api/auth/")
-    is_cancel = path.endswith("/cancel")
-    status_info = trial_status(user)
-    if is_write and not auth_path and not is_cancel and status_info["trial_expired"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Your 7-day trial has ended. Your saved work is still available in read-only mode.",
-            headers={"X-Notely-Trial-Expired": "true"},
-        )
-    return dict(user)
+    user = None
+
+    if credentials is not None and credentials.credentials:
+        try:
+            payload = decode_access_token(credentials.credentials)
+            user_id = int(payload["sub"])
+        except (ValueError, KeyError, TypeError):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Your session has expired. Sign in again.")
+        user = db.get_user_by_id(user_id)
+        if user is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Account not found. Sign in again.")
+    else:
+        # Import lazily to avoid a router/auth import cycle.
+        try:
+            from backend.routes.trials import resolve_trial_user
+            user = resolve_trial_user(request)
+        except HTTPException:
+            raise
+        except Exception:
+            user = None
+        if user is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sign in or start your 7-day trial to continue.")
+
+    # A legacy account trial or anonymous trial is blocked on ALL workspace API
+    # requests after expiry. Authentication endpoints remain available so the
+    # visitor can sign up or sign in and retain access to migrated work.
+    if not path.startswith("/api/auth/") and not path.startswith("/api/trial/"):
+        status_info = trial_status(user)
+        is_anonymous_trial = bool(user.get("is_trial")) if isinstance(user, dict) else False
+        if (is_anonymous_trial or status_info["is_trial"]) and status_info["trial_expired"]:
+            raise HTTPException(
+                status_code=402,
+                detail="Your 7-day trial has ended. Sign up or sign in to continue.",
+                headers={"X-Notely-Trial-Expired": "true", "Cache-Control": "no-store"},
+            )
+    return dict(user) if not isinstance(user, dict) else dict(user)
