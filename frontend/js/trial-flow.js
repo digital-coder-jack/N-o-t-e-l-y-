@@ -326,6 +326,25 @@
     busy = false;
   }
 
+  async function resolveExistingAccountSession() {
+    if (!window.SS || typeof SS.getToken !== 'function') return false;
+    var existingToken = SS.getToken();
+    if (!existingToken) return false;
+    try {
+      var response = await fetch(apiUrl('/api/auth/me'), {
+        method: 'GET',
+        headers: { 'Authorization': 'Bearer ' + existingToken },
+        credentials: 'include',
+        cache: 'no-store'
+      });
+      if (response.ok) return true;
+    } catch (_) {}
+    // Old/expired tokens left in localStorage must not override the newly
+    // started cookie-backed trial and force the visitor back to /login.
+    if (typeof SS.clearSession === 'function') SS.clearSession();
+    return false;
+  }
+
   async function startOrResumeTrial() {
     if (busy) return;
     busy = true;
@@ -333,11 +352,25 @@
     var buttons = document.querySelectorAll('[data-choice]');
     buttons.forEach(function (button) { button.disabled = true; });
     try {
+      // A valid account session always wins. A stale JWT is cleared before
+      // starting a no-account trial so workspace APIs use the signed device
+      // cookie/header instead of an obsolete Authorization bearer token.
+      var hasAccount = await resolveExistingAccountSession();
+      if (hasAccount) {
+        closeChoice();
+        if (window.NotelyShutter && typeof window.NotelyShutter.navigate === 'function') window.NotelyShutter.navigate('/dashboard');
+        else window.location.assign('/dashboard');
+        return;
+      }
       var data = await api('/api/trial/start', {});
       status = data;
       try {
-        localStorage.setItem(ACTIVE_KEY, '1');
-        if (data.expires_at) localStorage.setItem(EXPIRES_KEY, data.expires_at);
+        if (window.SS && typeof SS.setTrialSession === 'function') SS.setTrialSession(data);
+        else {
+          if (data.device_token) localStorage.setItem(DEVICE_KEY, data.device_token);
+          localStorage.setItem(ACTIVE_KEY, '1');
+          if (data.expires_at) localStorage.setItem(EXPIRES_KEY, data.expires_at);
+        }
       } catch (_) {}
       closeChoice();
       showLoading(function () {
