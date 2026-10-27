@@ -102,7 +102,7 @@ const SS = (() => {
 
     if (res.status === 402 && res.headers.get('X-Notely-Trial-Expired') === 'true') {
       clearSession();
-      if (!/\\/(login|signup|forgot)(\\.html)?$/.test(window.location.pathname)) window.location.assign('/signup?trial=expired');
+      if (!/\/(login|signup|forgot)(\.html)?$/.test(window.location.pathname)) window.location.assign('/signup?trial=expired');
     }
 
     if (res.status === 401 && auth) {
