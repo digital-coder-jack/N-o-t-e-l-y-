@@ -129,6 +129,66 @@ def init_db() -> None:
             """
         )
 
+        # --- Auth hardening and anonymous trials --------------------------
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS trial_sessions (
+                id TEXT PRIMARY KEY,
+                device_hash TEXT NOT NULL,
+                ip_hash TEXT NOT NULL,
+                fingerprint_hash TEXT NOT NULL,
+                started_at TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                converted_user_id INTEGER,
+                workspace_user_id INTEGER NOT NULL,
+                FOREIGN KEY (workspace_user_id) REFERENCES users(id)
+            )
+            """
+        )
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_trial_device ON trial_sessions(device_hash)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_trial_fingerprint ON trial_sessions(fingerprint_hash)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_trial_ip ON trial_sessions(ip_hash)")
+
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS trial_attempts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                kind TEXT NOT NULL,
+                key_hash TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_trial_attempts_key ON trial_attempts(kind, key_hash, created_at)")
+
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS email_verifications (
+                email TEXT PRIMARY KEY,
+                delivery_email TEXT NOT NULL,
+                name TEXT NOT NULL,
+                username TEXT,
+                password_hash TEXT NOT NULL,
+                otp_hash TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                resend_after TEXT NOT NULL,
+                attempts INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
+
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS auth_signin_attempts (
+                key_hash TEXT PRIMARY KEY,
+                attempts INTEGER NOT NULL DEFAULT 0,
+                locked_until TEXT,
+                updated_at TEXT NOT NULL
+            )
+            """
+        )
+
         # --- Chat threads -------------------------------------------------
         conn.execute(
             """
@@ -353,17 +413,19 @@ def db_find_answer(user_id: int, question: str) -> str | None:
 # USERS
 # ===========================================================================
 def create_user(name: str, email: str, password_hash: str,
-                username: str | None = None, telegram_id: int | None = None) -> int | None:
-    """Insert a new user. Returns new id, or None on duplicate email/username."""
+                username: str | None = None, telegram_id: int | None = None,
+                start_trial: bool = False) -> int | None:
+    """Insert a verified account; account trials are opt-in and never start implicitly."""
     try:
         with closing(get_connection()) as conn:
-            trial_started = datetime.now(timezone.utc)
-            trial_ends = trial_started + timedelta(days=7)
+            trial_started = datetime.now(timezone.utc) if start_trial else None
+            trial_ends = trial_started + timedelta(days=7) if trial_started else None
             cur = conn.execute(
                 "INSERT INTO users (name, email, username, password_hash, telegram_id, trial_started_at, trial_ends_at) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (name.strip(), email.strip().lower(), username, password_hash, telegram_id,
-                 trial_started.isoformat(timespec="seconds"), trial_ends.isoformat(timespec="seconds")),
+                 trial_started.isoformat(timespec="seconds") if trial_started else None,
+                 trial_ends.isoformat(timespec="seconds") if trial_ends else None),
             )
             user_id = cur.lastrowid
             # Initialize default settings
