@@ -36,7 +36,6 @@ Nothing in the frontend logic or the database structure was rewritten.
 | `GROQ_MODEL` | Optional | Defaults to `openai/gpt-oss-20b`, the current Groq shared-inference model for AI Notebook Pro Max. |
 | `ALLOWED_ORIGINS` | **Yes (prod)** | Comma-separated frontend origins allowed by CORS, e.g. `https://your-app.vercel.app`. `*.vercel.app` preview URLs and `localhost` are always allowed automatically. |
 | `JWT_SECRET` | **Strongly recommended** | Stable secret for signing login tokens. Without it, logins break across restarts/instances. (Render `render.yaml` auto-generates one.) |
-| `DB_PATH` | Recommended (prod) | Absolute path to the SQLite file on a **persistent disk** (e.g. `/data/ai_notebook.db`). Without a persistent disk, data resets on each redeploy. |
 | `JWT_TTL_SECONDS` | Optional | Token lifetime (default `604800` = 7 days). |
 | `TELEGRAM_BOT_TOKEN` | Optional | Enables the Telegram bot. |
 | `WEBHOOK_SECRET` | Optional | Verifies Telegram webhook calls. |
@@ -73,7 +72,6 @@ Nothing in the frontend logic or the database structure was rewritten.
 1. Push this repo to GitHub.
 2. Render → **New + → Blueprint** → select the repo → **Apply**.
 3. Render reads `render.yaml`: it creates the web service, a 1 GB disk mounted
-   at `/data`, sets `DB_PATH=/data/ai_notebook.db`, and auto-generates `JWT_SECRET`.
 4. In the dashboard, fill the secret vars marked *sync:false*:
    `TELEGRAM_BOT_TOKEN`, etc.
 
@@ -83,11 +81,9 @@ Nothing in the frontend logic or the database structure was rewritten.
 3. **Start:** the gunicorn command above.
 4. **Health check path:** `/api/health`.
 5. Add a **Disk** (Settings → Disks): mount path `/data`, size 1 GB, then set
-   `DB_PATH=/data/ai_notebook.db`.
 6. Add the environment variables from section 1.
 
 > **Free plan note:** Render's free tier has **no persistent disk**, so omit the
-> disk and leave `DB_PATH` unset (SQLite will live in ephemeral storage and reset
 > on redeploy). Use a paid plan or migrate to a hosted DB for durable data.
 
 Your backend URL will look like `https://ai-notebook.onrender.com`.
@@ -104,7 +100,6 @@ Your backend URL will look like `https://ai-notebook.onrender.com`.
 3. **Variables** tab → add the env vars from section 1
    (`GEMINI_API_KEY`, `OPENROUTER_API_KEY`, `GROQ_API_KEY`, `ALLOWED_ORIGINS`, `JWT_SECRET`, …).
 4. For persistent data: add a **Volume**, mount it at `/data`, and set
-   `DB_PATH=/data/ai_notebook.db`.
 5. Railway sets `$PORT` automatically; the start command already uses it.
 
 Your backend URL will look like
@@ -167,9 +162,7 @@ Requires `TELEGRAM_BOT_TOKEN` (and optionally `WEBHOOK_SECRET`) to be set.
 ---
 
 ## 8. Notes on the database
-
-- **SQLite** (users, chats, messages, notes, quizzes, uploads) — structure
-  **unchanged**. Use `DB_PATH` on a mounted disk for persistence.
+- **Neon PostgreSQL** is the persistent application database. Runtime requests use the pooled Neon URL; schema migrations use the direct URL.
 - **Analytics** are process-local counters only. They are best-effort,
   privacy-preserving, and reset when the backend process restarts.
 - For fully durable, multi-instance SQL on serverless, consider migrating the
