@@ -21,6 +21,8 @@ Telegram user and a web user can be the same person if they connect.
 
 Production requests use the Neon pooled connection URL. Schema migrations use
 the direct/non-pooled URL and are run separately from application startup.
+All persistent application data is stored in Neon PostgreSQL. No local SQLite
+file is opened by this data-access layer.
 =====================================================================
 """
 
@@ -34,7 +36,8 @@ import psycopg
 from contextlib import closing
 from datetime import datetime, timedelta, timezone
 
-# All persistent application data is stored in Neon PostgreSQL.
+# All persistent application data is stored in Neon PostgreSQL. The legacy
+# DB_PATH variable is intentionally not read by this module.
 
 class HybridRow:
     """Row object supporting both positional and named column access."""

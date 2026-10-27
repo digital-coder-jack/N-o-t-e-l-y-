@@ -415,7 +415,7 @@ async def verify_email(body: VerifyEmailIn, request: Request):
             raise HTTPException(status_code=400, detail="The verification code is invalid or expired. Request a new one.")
         user_id = int(existing_user_id)
     else:
-        user_id = db.create_user(row["name"], email, row["password_hash"], username=row["username"], start_trial=False)
+        user_id = db.create_user(row["name"], email, row["password_hash"], username=row["username"], start_trial=True)
         if user_id is None:
             with closing(db.get_connection()) as conn:
                 conn.execute("DELETE FROM email_verifications WHERE email=?", (email,))
