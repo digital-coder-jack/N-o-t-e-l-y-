@@ -219,10 +219,19 @@ async def current_user(
         if user is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sign in or start your 7-day trial to continue.")
 
-    # A legacy account trial or anonymous trial is blocked on ALL workspace API
-    # requests after expiry. Authentication endpoints remain available so the
-    # visitor can sign up or sign in and retain access to migrated work.
-    if not path.startswith("/api/auth/") and not path.startswith("/api/trial/"):
+    # Only routes needed to establish/recover an account stay available after
+    # trial expiry. Profile, settings, password changes and account operations
+    # are still workspace access and must remain blocked.
+    public_auth_paths = {
+        "/api/auth/signup",
+        "/api/auth/login",
+        "/api/auth/verify-email",
+        "/api/auth/resend-verification",
+        "/api/auth/forgot-password",
+        "/api/auth/reset-password",
+    }
+    expiry_exempt = path in public_auth_paths or path.startswith("/api/trial/")
+    if not expiry_exempt:
         status_info = trial_status(user)
         is_anonymous_trial = bool(user.get("is_trial")) if isinstance(user, dict) else False
         if (is_anonymous_trial or status_info["is_trial"]) and status_info["trial_expired"]:
