@@ -331,11 +331,14 @@
     var existingToken = SS.getToken();
     if (!existingToken) return false;
     try {
-      var response = await fetch(apiUrl('/api/auth/me'), {
-        method: 'GET',
-        headers: { 'Authorization': 'Bearer ' + existingToken },
+      // /refresh is account-token-only (trial fallback is deliberately
+      // disallowed there), unlike /me which also supports workspace trials.
+      var response = await fetch(apiUrl('/api/auth/refresh'), {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + existingToken, 'Content-Type': 'application/json' },
         credentials: 'include',
-        cache: 'no-store'
+        cache: 'no-store',
+        body: '{}'
       });
       if (response.ok) return true;
     } catch (_) {}
