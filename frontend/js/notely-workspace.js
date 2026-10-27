@@ -15,6 +15,30 @@
   async function api(path, opts) { return SS.api(path, opts || {}); }
   async function load() {
     try {
+      // The landing-page trial start returns a server-issued device credential.
+      // Revalidate it before redirecting: navigation can race storage writes on
+      // slower/mobile browsers, and an active anonymous trial must never be
+      // mistaken for a signed-out account.
+      if (!SS.isAuthed()) {
+        try {
+          var trialResponse = await fetch('/api/trial/status', {
+            method: 'POST',
+            credentials: 'include',
+            cache: 'no-store',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              device_token: localStorage.getItem('notely-trial-device') || undefined,
+              fingerprint: ''
+            })
+          });
+          if (trialResponse.ok) {
+            var trialData = await trialResponse.json();
+            if (trialData.status === 'active' && trialData.device_token && typeof SS.setTrialSession === 'function') {
+              SS.setTrialSession(trialData);
+            }
+          }
+        } catch (_) {}
+      }
       if (!SS.isAuthed()) { window.location.replace('/login'); return; }
       var results = await Promise.allSettled([api('/api/stats'), api('/api/tools/notes'), api('/api/files'), api('/api/auth/me'), api('/api/auth/settings'), api('/api/topics'), api('/api/tasks')]);
       state.stats = results[0].status === 'fulfilled' ? results[0].value : {};
