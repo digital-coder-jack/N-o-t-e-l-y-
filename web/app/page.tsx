@@ -61,6 +61,10 @@ async function apiRequest<T = any>(path: string, init: RequestInit = {}): Promis
   const response = await fetch(API_BASE + path, { ...init, headers });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
+    if (response.headers.get("X-Notely-Trial-Expired") === "true") {
+      if (typeof window !== "undefined") window.location.assign("/signup");
+      throw new Error("Your 7-day trial has ended. Redirecting to sign up.");
+    }
     const detail = payload && (payload.detail || payload.message);
     throw new Error(typeof detail === "string" ? detail : "Request failed (" + response.status + ").");
   }
@@ -132,8 +136,11 @@ function TrialStatusBanner() {
     let live = true;
     apiRequest<{ user: any }>("/api/auth/me").then((result) => {
       if (!live) return;
+      if (result.user?.trial_expired) {
+        window.location.assign("/signup");
+        return;
+      }
       setUser(result.user || null);
-      if (result.user?.trial_expired) document.body.classList.add("trial-readonly");
       if (result.user?.is_trial && (result.user.trial_days_left === 2 || result.user.trial_days_left === 1)) {
         const key = "notely-trial-reminder-" + result.user.id + "-" + result.user.trial_days_left;
         setReminderDismissed(Boolean(localStorage.getItem(key)));
