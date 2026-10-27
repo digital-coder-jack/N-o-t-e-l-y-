@@ -2,9 +2,8 @@
 =====================================================================
  AI NOTEBOOK  -  backend/database.py
 =====================================================================
-Shared SQLite data-access layer used by BOTH the Telegram bot and the
-web application. A single database file means the bot and the website
-operate on the same data.
+Shared Neon PostgreSQL data-access layer used by the Telegram bot and web
+application. Both use the same durable database.
 
 Tables
 ------
@@ -37,7 +36,6 @@ from contextlib import closing
 from datetime import datetime, timedelta, timezone
 
 # All persistent application data is stored in Neon PostgreSQL.
-# DB_PATH and local SQLite files are intentionally not used by the production backend.
 
 class HybridRow:
     """Row object supporting both positional and named column access."""
