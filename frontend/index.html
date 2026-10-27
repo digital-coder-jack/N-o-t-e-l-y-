@@ -56,6 +56,8 @@ header{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;justify-conte
 .logo{font:800 24px 'Bricolage Grotesque',sans-serif;display:flex;gap:10px;align-items:center}
 .logo img{width:34px;height:34px;border-radius:9px;display:block}
 .btn{display:inline-block;padding:16px 30px;border-radius:999px;font-weight:500;background:var(--lime);color:var(--theme-contrast-ink)}
+button.btn{font-family:inherit;border:0;cursor:pointer}
+button.btn:disabled{opacity:.65;cursor:wait}
 .btn.o{background:transparent;color:var(--ink);border:1.5px solid var(--hero-glass-border)}
 .w{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.12em}
 .c{display:inline-block}
@@ -125,18 +127,19 @@ footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;paddin
 </style>
 <link rel="stylesheet" href="/css/notely-theme-shared.css">
 <link rel="stylesheet" href="/css/notely-shutter.css">
+<link rel="stylesheet" href="/css/notely-flow.css">
 <script>(function(){try{if(sessionStorage.getItem('notely-shutter-next')==='1')document.documentElement.classList.add('notely-shutter-pending');}catch(e){}})();</script>
 </head>
 <body>
 <div id="pre" class="notely-shutter"><div style="text-align:center"><img src="/assets/logo.png" alt="Notely"><div id="cnt">0</div></div></div>
 <div id="bar"></div><div id="cur"></div><canvas id="fx" aria-hidden="true"></canvas>
-<header><a class="logo" href="#"><img src="/assets/logo.png">Notely</a><div class="landing-nav-actions"><button class="notely-theme-toggle" type="button" data-notely-theme-toggle aria-label="Switch theme" title="Switch theme (Shift+T)" aria-pressed="false"><svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"></path></svg><svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.7 8.7 0 1 0 20.2 15.4Z"></path></svg></button><a class="btn o mag" href="/login">Log in</a><a class="btn mag" href="/signup">Get started</a></div></header>
+<header><a class="logo" href="#"><img src="/assets/logo.png">Notely</a><div class="landing-nav-actions"><button class="notely-theme-toggle" type="button" data-notely-theme-toggle aria-label="Switch theme" title="Switch theme (Shift+T)" aria-pressed="false"><svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"></path></svg><svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.7 8.7 0 1 0 20.2 15.4Z"></path></svg></button></div></header>
 <main>
 <section class="hero">
 <div class="t">
 <h1><span class="ln" data-split>Study at</span><span class="ln g" data-split>warp speed.</span></h1>
 <p class="in">Notely is the study workspace for students: notebooks, flashcards, quizzes, recorded lectures and an assistant that answers from your own course materials.</p>
-<div class="row in"><a class="btn mag" href="/signup">Get started</a><a class="btn o mag" href="/dashboard">Open web app</a></div>
+<div class="row in"><button class="btn mag" id="getStarted" type="button">Get Started <span aria-hidden="true">↗</span></button></div>
 </div>
 <div class="pw"><div class="ph ph0" id="tilt"><div class="sc"><b>Notely</b><div class="n n1">Biology 101<i></i></div><div class="n n2">Organic Chemistry<i></i></div><div class="n n3">World History<i></i></div></div></div></div>
 </section>
@@ -178,8 +181,7 @@ footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;paddin
 <section class="cta" id="get">
 <h2 class="g" data-split>Ace the semester.</h2>
 <p>Start using Notely in your browser, or install the Android app when a release is available.</p>
-<div class="row"><a class="btn mag" href="/signup">Download the app</a><a class="btn o mag" href="/dashboard">Open web app</a></div>
-<p class="note">Android APK downloads will be linked here when a release is published.</p>
+<p class="note">One calm space for your notes, practice and study planning.</p>
 </section>
 </main>
 <footer><span>© 2026 Notely</span><span>Privacy · Terms · Contact</span></footer>
@@ -293,5 +295,6 @@ if(comingThroughShutter){
 </script>
 <script src="/js/notely-theme.js" defer></script>
 <script src="/js/notely-shutter.js" defer></script>
+<script src="/js/trial-flow.js" defer></script>
 </body>
 </html>
