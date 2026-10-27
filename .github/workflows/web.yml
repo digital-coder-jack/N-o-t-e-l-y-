@@ -35,6 +35,8 @@ jobs:
         run: |
           node --check frontend/js/auth.js
           node --check frontend/js/app.js
+          node --check frontend/js/trial-flow.js
+          node --check frontend/js/notely-trial-workspace.js
           node --check frontend/js/main.js
           node --check frontend/js/sidebar.js
           node --check frontend/js/dashboard.js
