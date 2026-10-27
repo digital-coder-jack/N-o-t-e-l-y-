@@ -7,6 +7,7 @@
   opacity: 0; visibility: hidden; transition: opacity .24s ease, visibility .24s ease;
 }
 .notely-choice-layer.is-open { opacity: 1; visibility: visible; }
+.notely-choice-layer[hidden] { display:none; }
 .notely-choice-card {
   width: min(100%, 440px); position: relative; overflow: hidden;
   color: var(--ink, #f4f6ff); background: var(--hero-surface, #0d1020);
