@@ -80,7 +80,6 @@ def _validate_environment() -> None:
         "GROQ_MODEL": "Pro Max tier model override",
         "TELEGRAM_BOT_TOKEN": "Telegram bot integration",
         "WEBHOOK_SECRET": "verify Telegram webhook calls",
-        "DB_PATH": "database path (a /tmp path is ephemeral on Vercel)",
         "TELEGRAM_ADMIN_ID": "admin id allowed to read analytics dashboard stats",
         "DIAG_TOKEN": "protect live AI provider diagnostics",
         "OPENROUTER_SITE_URL": "optional OpenRouter attribution URL",
