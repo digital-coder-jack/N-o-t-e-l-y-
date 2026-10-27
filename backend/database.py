@@ -2,9 +2,8 @@
 =====================================================================
  AI NOTEBOOK  -  backend/database.py
 =====================================================================
-Shared SQLite data-access layer used by BOTH the Telegram bot and the
-web application. A single database file means the bot and the website
-operate on the same data.
+Shared Neon PostgreSQL data-access layer used by the Telegram bot and web
+application. Both use the same durable database.
 
 Tables
 ------
@@ -20,9 +19,8 @@ uploads    : metadata about user-uploaded files.
 The bot links to web accounts through users.telegram_id (nullable), so a
 Telegram user and a web user can be the same person if they connect.
 
-On Vercel the filesystem is read-only except for /tmp, so the database
-path automatically falls back to /tmp there. Locally it lives beside the
-project for easy inspection.
+All persistent application data is stored in Neon PostgreSQL. No local SQLite
+file is opened by this data-access layer.
 =====================================================================
 """
 
@@ -37,41 +35,8 @@ import psycopg
 from contextlib import closing
 from datetime import datetime, timedelta, timezone
 
-# ---------------------------------------------------------------------------
-# Database location
-# ---------------------------------------------------------------------------
-# Resolution order:
-#   1. DB_PATH env var  -> use it verbatim (set this to a MOUNTED DISK path in
-#                          production so data survives restarts/redeploys, e.g.
-#                          Render disk mounted at /data -> DB_PATH=/data/ai_notebook.db
-#                          Railway volume mounted at /data -> DB_PATH=/data/ai_notebook.db).
-#   2. Vercel           -> /tmp (only writable location; note: EPHEMERAL).
-#   3. Local/dev        -> ai_notebook.db beside the project.
-#
-# The parent directory is created automatically if it does not exist.
-IS_VERCEL = os.environ.get("VERCEL") == "1"
-_DEFAULT_LOCAL = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "ai_notebook.db",
-)
-DB_PATH = os.environ.get(
-    "DB_PATH",
-    "/tmp/ai_notebook.db" if IS_VERCEL else _DEFAULT_LOCAL,
-)
-
-# Ensure the directory holding the DB file exists (e.g. a mounted /data disk).
-_db_dir = os.path.dirname(os.path.abspath(DB_PATH))
-try:
-    os.makedirs(_db_dir, exist_ok=True)
-except OSError:
-    # If we cannot create it (read-only FS), fall back to /tmp so the app
-    # still boots rather than crash-looping.
-    DB_PATH = "/tmp/ai_notebook.db"
-    try:
-        os.makedirs("/tmp", exist_ok=True)
-    except OSError:
-        pass
-
+# Persistent application data is stored in Neon PostgreSQL. The legacy DB_PATH
+# variable is intentionally not read by this module.
 
 class HybridRow:
     """Row object supporting both positional and named column access."""
@@ -144,6 +109,11 @@ def init_db() -> None:
             "Neon schema is unavailable. Run python -m backend.migrate_neon "
             "with the non-pooled Neon URL before deploying."
         ) from None
+
+
+def _utcnow() -> str:
+    """Return an ISO-8601 UTC timestamp for text timestamp columns."""
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
 # ===========================================================================
