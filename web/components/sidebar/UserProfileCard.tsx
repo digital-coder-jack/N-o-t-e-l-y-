@@ -30,6 +30,12 @@ export function UserProfileCard({
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  const handleLogout = () => {
+    window.localStorage.removeItem("ss_token");
+    window.localStorage.removeItem("ss_user");
+    window.location.assign("/login");
+  };
   const storagePct = Math.min(
     100,
     (user.storageUsedGB / user.storageTotalGB) * 100
@@ -100,6 +106,7 @@ export function UserProfileCard({
             <button
               type="button"
               role="menuitem"
+              onClick={handleLogout}
               className="flex min-h-[40px] w-full items-center gap-2.5 rounded-xl px-3 text-[13px] font-medium text-red-400 transition-colors hover:bg-red-500/10"
             >
               <LogOut className="h-4 w-4" aria-hidden />

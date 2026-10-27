@@ -6,7 +6,7 @@
 const HOP_BY_HOP = new Set([
   "connection", "keep-alive", "proxy-authenticate", "proxy-authorization",
   "te", "trailers", "transfer-encoding", "upgrade", "host",
-  "content-length", "accept-encoding"
+  "content-length", "accept-encoding", "content-encoding"
 ]);
 
 module.exports = async function handler(req, res) {

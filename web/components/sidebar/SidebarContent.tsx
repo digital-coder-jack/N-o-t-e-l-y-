@@ -39,6 +39,12 @@ export function SidebarContent({
 }: SidebarContentProps) {
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState | null>(null);
 
+  const handleLogout = () => {
+    window.localStorage.removeItem("ss_token");
+    window.localStorage.removeItem("ss_user");
+    window.location.assign("/login");
+  };
+
   const handleContextMenu = useCallback(
     (e: React.MouseEvent, item: NavItem) => {
       e.preventDefault();
@@ -87,6 +93,7 @@ export function SidebarContent({
             <button
               type="button"
               aria-label="Logout"
+              onClick={handleLogout}
               className={cn(
                 "group flex min-h-[44px] w-full items-center gap-3 rounded-xl px-3 text-[13px] font-medium text-ink-muted",
                 "transition-colors duration-200 hover:bg-red-500/10 hover:text-red-400",
