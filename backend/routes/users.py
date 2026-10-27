@@ -279,7 +279,7 @@ async def signup(body: SignupIn, request: Request):
         raise HTTPException(status_code=400, detail=problem)
     email, delivery_email = _validated_email(body.email)
     existing_user = db.get_user_by_email(email)
-    password_matches = int(existing_user is not None and auth.verify_password(password, existing_user["password_hash"]))
+    password_matches = 0
     if existing_user:
         # Same response and OTP delivery path for an existing address: only
         # the mailbox holder can complete this step, and a matching password
@@ -323,6 +323,8 @@ async def signup(body: SignupIn, request: Request):
         conn.execute("INSERT INTO trial_attempts(kind, key_hash, created_at) VALUES('signup-ip', ?, ?)", (signup_ip_key, now_s))
         conn.commit()
 
+    # Argon2 verification is intentionally after the signup rate-limit check.
+    password_matches = int(existing_user is not None and auth.verify_password(password, existing_user["password_hash"]))
     otp = _new_otp()
     expires = (now + timedelta(minutes=10)).isoformat(timespec="seconds")
     resend_after = (now + timedelta(seconds=60)).isoformat(timespec="seconds")
