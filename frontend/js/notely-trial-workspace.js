@@ -44,11 +44,12 @@
   }
   function apiUrl(path) {
     var base = '';
-    try { base = String(window.SS_API_BASE || '').trim().replace(/\\/+$/, ''); } catch (_) {}
+    try { base = String(window.SS_API_BASE || '').trim(); } catch (_) {}
     if (!base) {
-      try { var meta = document.querySelector('meta[name="api-base"]'); if (meta && meta.content) base = meta.content.trim().replace(/\\/+$/, ''); } catch (_) {}
+      try { var meta = document.querySelector('meta[name="api-base"]'); if (meta && meta.content) base = meta.content.trim(); } catch (_) {}
     }
-    return /^https?:\\/\\//i.test(path) ? path : base + path;
+    while (base.endsWith('/')) base = base.slice(0, -1);
+    return path.indexOf('https://') === 0 || path.indexOf('http://') === 0 ? path : base + path;
   }
 
   async function run() {
