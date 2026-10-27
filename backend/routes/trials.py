@@ -215,7 +215,7 @@ async def start_trial(body: TrialRequest, request: Request, response: Response):
         raise HTTPException(status_code=403, detail="Trial start is unavailable in automated browsers.")
 
     now = _now()
-    with db.get_connection() as conn:
+    with closing(db.get_connection()) as conn:
         existing = _find_trial(conn, device_hash, fingerprint_hash)
         if existing is not None:
             if existing["device_hash"] != device_hash:
@@ -273,7 +273,7 @@ async def start_trial(body: TrialRequest, request: Request, response: Response):
 async def rehydrate_trial_identity(body: TrialRequest, request: Request, response: Response):
     token = _token_from_request(request, body.device_token)
     token, device_hash, fingerprint_hash, _ = _prepare_identity(request, response, token, body.fingerprint)
-    with db.get_connection() as conn:
+    with closing(db.get_connection()) as conn:
         trial = _find_trial(conn, device_hash, fingerprint_hash)
         if trial is not None and trial["device_hash"] != device_hash:
             conn.execute("UPDATE trial_sessions SET device_hash = ? WHERE id = ?", (device_hash, trial["id"]))
@@ -286,7 +286,7 @@ def resolve_trial_user(request: Request) -> dict[str, Any] | None:
     device_hash, _ = _identity_hash(token)
     if not device_hash:
         return None
-    with db.get_connection() as conn:
+    with closing(db.get_connection()) as conn:
         trial = conn.execute(
             "SELECT * FROM trial_sessions WHERE device_hash = ? OR id IN (SELECT trial_id FROM trial_device_aliases WHERE device_hash = ?) ORDER BY started_at ASC LIMIT 1",
             (device_hash, device_hash),
@@ -323,10 +323,10 @@ def convert_trial_to_account(request: Request, new_user_id: int) -> bool:
     device_hash, _ = _identity_hash(token)
     if not device_hash:
         return False
-    with db.get_connection() as conn:
+    with closing(db.get_connection()) as conn:
         trial = conn.execute(
             "SELECT * FROM trial_sessions WHERE (device_hash = ? OR id IN (SELECT trial_id FROM trial_device_aliases WHERE device_hash = ?)) AND converted_user_id IS NULL LIMIT 1",
-            (device_hash,),
+            (device_hash, device_hash),
         ).fetchone()
         if trial is None:
             return False
