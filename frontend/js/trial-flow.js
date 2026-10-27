@@ -217,7 +217,11 @@
     heading.textContent = status.status === 'expired' ? 'Your next chapter starts here.' : 'Make room to learn.';
     description.textContent = status.status === 'expired'
       ? 'This device has already used its seven-day trial. Sign up or sign in to continue.'
-      : 'Start with seven days of workspace access, or use your Notely account.';
+      : status.status === 'active'
+        ? 'Your trial is already active. Resume with your saved work and remaining time.'
+        : status.status === 'converted'
+          ? 'This trial is connected to an account. Sign in to continue with your saved work.'
+          : 'Start with seven days of workspace access, or use your Notely account.';
     var trial;
     if (status.status === 'active') {
       var days = Math.max(1, Number(status.days_left) || 1);
