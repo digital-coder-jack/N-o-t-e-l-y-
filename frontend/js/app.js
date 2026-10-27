@@ -60,7 +60,7 @@ const SS = (() => {
     if (!response.ok || !data.token) {
       if (response.status === 401) {
         clearSession();
-        if (!/\\/(login|signup|forgot)(\\.html)?$/.test(window.location.pathname)) window.location.assign('/login');
+        if (!/\/(login|signup|forgot)(\.html)?$/.test(window.location.pathname)) window.location.assign('/login');
         throw new Error('Your session expired. Sign in again.');
       }
       throw new Error((data && (data.detail || data.message)) || 'Could not refresh your session.');
