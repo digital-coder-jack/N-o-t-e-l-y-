@@ -298,24 +298,28 @@ async def get_dashboard_stats_endpoint(current_user: dict = Depends(current_user
 # Health / API status
 # ---------------------------------------------------------------------------
 @app.get("/api/health")
-async def health() -> dict:
-    from backend import providers
+async def health() -> JSONResponse:
+    """Safe Neon connectivity check; never returns a connection string or raw DB error."""
+    from backend.neon_database import check_neon_connection
 
-    snapshot = providers.status_snapshot()
-    return {
-        "status": "ok",
-        "app": "Notely",
-        "storage": "sqlite",
-        "db_path": db.DB_PATH,
-        "ai_configured": snapshot["any_configured"],
-        "ai_providers": snapshot["providers"],
-        "ai_health": snapshot["health"],
-        "ai_health_scope": snapshot["health_scope"],
-        "ai_fallback_order": [tier["label"] for tier in snapshot["tiers"]],
-        "bot_configured": bool(os.environ.get("TELEGRAM_BOT_TOKEN")),
-        "analytics_persistence": "process-local",
-        "cors_allowed_origins": ALLOWED_ORIGINS,
-    }
+    result = check_neon_connection()
+    if result["ok"]:
+        return JSONResponse(
+            {
+                "status": "ok",
+                "database": "ok",
+                "database_engine": "neon_postgres",
+            },
+            status_code=200,
+        )
+    return JSONResponse(
+        {
+            "status": "error",
+            "database": "unavailable",
+            "error": result["error"],
+        },
+        status_code=503,
+    )
 
 
 @app.get("/api")
