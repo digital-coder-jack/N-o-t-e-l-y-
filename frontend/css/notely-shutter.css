@@ -19,7 +19,7 @@
 }
 .notely-shutter-overlay img { display: block; width: clamp(72px, 10vw, 128px); max-height: 96px; height: auto; object-fit: contain; }
 #pre.notely-shutter.is-covered, .notely-shutter-overlay.is-covered { transform: translateY(0); }
-#pre.notely-shutter.is-lifting, .notely-shutter-overlay.is-lifting { transform: translateY(-100%); }
+#pre.notely-shutter.is-lifting, .notely-shutter-overlay.is-lifting { transform: translateY(100%); }
 html.notely-shutter-pending body > *:not(#notely-shutter):not(#pre) { opacity: 0 !important; }
 html.notely-shutter-pending #notely-shutter,
 html.notely-shutter-pending #pre { opacity: 1 !important; }
