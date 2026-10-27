@@ -266,7 +266,7 @@ def _clear_signin_failures(key: str) -> None:
 
 
 @router.post("/signup")
-async def signup(body: SignupIn):
+async def signup(body: SignupIn, request: Request):
     name = (body.name or "").strip()
     password = body.password or ""
     confirm_password = body.confirm_password or ""
@@ -278,32 +278,62 @@ async def signup(body: SignupIn):
     if problem:
         raise HTTPException(status_code=400, detail=problem)
     email, delivery_email = _validated_email(body.email)
-    if db.get_user_by_email(email):
-        # Use the same response as an eligible address to avoid account
-        # enumeration. No OTP is sent and no account state is changed.
-        return {"verification_required": True, "email": delivery_email, "message": GENERIC_SIGNUP_MESSAGE}
+    existing_user = db.get_user_by_email(email)
+    password_matches = int(existing_user is not None and auth.verify_password(password, existing_user["password_hash"]))
+    if existing_user:
+        # Same response and OTP delivery path for an existing address: only
+        # the mailbox holder can complete this step, and a matching password
+        # converts the "sign up" attempt into a normal sign-in.
+        username = existing_user["username"] or ""
+        name = existing_user["name"]
+    else:
+        username = (body.username or "").strip().lower()
+        if not username:
+            base = re.sub(r"[^a-z0-9_]", "", email.split("@", 1)[0])[:24] or "student"
+            username = base
+            if db.get_user_by_username(username):
+                username = f"{base}_{secrets.token_hex(3)}"
+        elif db.get_user_by_username(username):
+            raise HTTPException(status_code=400, detail="Unable to create this account with those details.")
 
-    username = (body.username or "").strip().lower()
-    if not username:
-        base = re.sub(r"[^a-z0-9_]", "", email.split("@", 1)[0])[:24] or "student"
-        username = base
-        if db.get_user_by_username(username):
-            username = f"{base}_{secrets.token_hex(3)}"
-    elif db.get_user_by_username(username):
-        raise HTTPException(status_code=400, detail="Unable to create this account with those details.")
+    now = datetime.now(timezone.utc)
+    ip_raw = request.headers.get("x-forwarded-for", "")
+    if ip_raw:
+        ip_raw = ip_raw.split(",", 1)[0].strip()
+    elif request.client:
+        ip_raw = request.client.host
+    secret = (os.environ.get("OTP_SECRET") or os.environ.get("JWT_SECRET") or auth.JWT_SECRET).encode()
+    signup_ip_key = hmac.new(secret, ("signup-ip|" + (ip_raw or "unknown")).encode(), hashlib.sha256).hexdigest()
+    now_s = now.isoformat(timespec="seconds")
+    cutoff = (now - timedelta(hours=1)).isoformat(timespec="seconds")
+    with closing(db.get_connection()) as conn:
+        pending = conn.execute("SELECT expires_at, resend_after FROM email_verifications WHERE email=?", (email,)).fetchone()
+        if pending is not None:
+            try:
+                if _parse_time(pending["expires_at"]) > now and _parse_time(pending["resend_after"]) > now:
+                    return {"verification_required": True, "email": delivery_email, "message": "A verification code was already sent. Check your inbox or wait before requesting another."}
+            except (TypeError, ValueError):
+                pass
+        ip_attempts = conn.execute(
+            "SELECT COUNT(*) FROM trial_attempts WHERE kind='signup-ip' AND key_hash=? AND created_at>=?",
+            (signup_ip_key, cutoff),
+        ).fetchone()[0]
+        if ip_attempts >= 5:
+            raise HTTPException(status_code=429, detail="Too many verification requests. Please try again later.")
+        conn.execute("INSERT INTO trial_attempts(kind, key_hash, created_at) VALUES('signup-ip', ?, ?)", (signup_ip_key, now_s))
+        conn.commit()
 
     otp = _new_otp()
-    now = datetime.now(timezone.utc)
     expires = (now + timedelta(minutes=10)).isoformat(timespec="seconds")
     resend_after = (now + timedelta(seconds=60)).isoformat(timespec="seconds")
     password_hash = auth.hash_password(password)
     try:
         with closing(db.get_connection()) as conn:
             conn.execute(
-                "INSERT INTO email_verifications (email, delivery_email, name, username, password_hash, otp_hash, expires_at, resend_after, attempts, created_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?) "
-                "ON CONFLICT(email) DO UPDATE SET delivery_email=excluded.delivery_email, name=excluded.name, username=excluded.username, password_hash=excluded.password_hash, otp_hash=excluded.otp_hash, expires_at=excluded.expires_at, resend_after=excluded.resend_after, attempts=0, created_at=excluded.created_at",
-                (email, delivery_email, name, username, password_hash, _otp_hash(email, otp), expires, resend_after, now.isoformat(timespec="seconds")),
+                "INSERT INTO email_verifications (email, delivery_email, name, username, password_hash, otp_hash, expires_at, resend_after, attempts, created_at, existing_user_id, password_matches) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?) "
+                "ON CONFLICT(email) DO UPDATE SET delivery_email=excluded.delivery_email, name=excluded.name, username=excluded.username, password_hash=excluded.password_hash, otp_hash=excluded.otp_hash, expires_at=excluded.expires_at, resend_after=excluded.resend_after, attempts=0, created_at=excluded.created_at, existing_user_id=excluded.existing_user_id, password_matches=excluded.password_matches",
+                (email, delivery_email, name, username, password_hash, _otp_hash(email, otp), expires, resend_after, now.isoformat(timespec="seconds"), existing_user["id"] if existing_user else None, password_matches),
             )
             conn.commit()
         _send_email(delivery_email, "Your Notely verification code", f"Your Notely verification code is {otp}. It expires in 10 minutes. If you did not request this, you can ignore this email.")
@@ -371,16 +401,28 @@ async def verify_email(body: VerifyEmailIn, request: Request):
                 conn.execute("UPDATE email_verifications SET attempts=? WHERE email=?", (attempts, email))
             conn.commit()
             raise HTTPException(status_code=400, detail="The verification code is invalid or expired. Request a new one.")
-    user_id = db.create_user(row["name"], email, row["password_hash"], username=row["username"], start_trial=False)
-    if user_id is None:
+    existing_user_id = row["existing_user_id"] if "existing_user_id" in row.keys() else None
+    if existing_user_id is not None:
         with closing(db.get_connection()) as conn:
             conn.execute("DELETE FROM email_verifications WHERE email=?", (email,))
             conn.commit()
-        raise HTTPException(status_code=400, detail="The verification code is invalid or expired. Request a new one.")
+        if not int(row["password_matches"] or 0):
+            raise HTTPException(status_code=400, detail="Could not complete this step. Check your details or sign in.")
+        existing = db.get_user_by_id(int(existing_user_id))
+        if existing is None:
+            raise HTTPException(status_code=400, detail="The verification code is invalid or expired. Request a new one.")
+        user_id = int(existing_user_id)
+    else:
+        user_id = db.create_user(row["name"], email, row["password_hash"], username=row["username"], start_trial=False)
+        if user_id is None:
+            with closing(db.get_connection()) as conn:
+                conn.execute("DELETE FROM email_verifications WHERE email=?", (email,))
+                conn.commit()
+            raise HTTPException(status_code=400, detail="The verification code is invalid or expired. Request a new one.")
+        with closing(db.get_connection()) as conn:
+            conn.execute("DELETE FROM email_verifications WHERE email=?", (email,))
+            conn.commit()
     db.touch_last_login(user_id)
-    with closing(db.get_connection()) as conn:
-        conn.execute("DELETE FROM email_verifications WHERE email=?", (email,))
-        conn.commit()
     try:
         from backend.routes.trials import convert_trial_to_account
         convert_trial_to_account(request, user_id)
@@ -416,6 +458,8 @@ async def login(body: LoginIn, request: Request):
 
 @router.post("/refresh")
 async def refresh_session(user=Depends(auth.current_user)):
+    if isinstance(user, dict) and user.get("is_trial"):
+        raise HTTPException(status_code=401, detail="Sign in with a verified account to refresh this session.")
     status_info = auth.trial_status(user)
     if status_info["is_trial"] and status_info["trial_expired"]:
         raise HTTPException(status_code=402, detail="Your 7-day trial has ended. Sign up or sign in to continue.", headers={"X-Notely-Trial-Expired": "true"})
