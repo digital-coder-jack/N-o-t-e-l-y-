@@ -40,7 +40,7 @@
     document.documentElement.classList.add('notely-shutter-pending');void el.offsetHeight;
     requestAnimationFrame(function(){requestAnimationFrame(function(){
       el.style.transition=reduced?'opacity 120ms ease':'transform 700ms cubic-bezier(.76,0,.24,1), opacity 700ms ease';
-      el.classList.remove('is-covered');el.classList.add('is-lifting');el.style.transform=reduced?'none':'translateY(-100%)';el.style.opacity='0';
+      el.classList.remove('is-covered');el.classList.add('is-lifting');el.style.transform=reduced?'none':'translateY(100%)';el.style.opacity='0';
       setTimeout(function(){if(el.id!=='pre')el.remove();else el.style.display='none';document.documentElement.classList.remove('notely-shutter-pending');document.body.style.overflow='';active=false;window.dispatchEvent(new CustomEvent('notely-shutter:lifted'));},reduced?120:720);
     });});
     setTimeout(function(){document.documentElement.classList.remove('notely-shutter-pending');if(el.id!=='pre')el.remove();else el.style.display='none';document.body.style.overflow='';active=false;window.dispatchEvent(new CustomEvent('notely-shutter:lifted'));},3500);
