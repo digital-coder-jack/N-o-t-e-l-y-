@@ -309,6 +309,7 @@ async def health() -> JSONResponse:
                 "status": "ok",
                 "database": "ok",
                 "database_engine": "neon_postgres",
+                "application_storage": "sqlite_pending_migration",
             },
             status_code=200,
         )
