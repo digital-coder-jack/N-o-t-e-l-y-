@@ -95,6 +95,10 @@ class ProviderFailure(Exception):
         # Safe provider code/type only; never store or expose response messages.
         self.provider_code = provider_code
 
+    @property
+    def friendly_message(self) -> str:
+        return _FRIENDLY_ERRORS.get(self.error_class, _FRIENDLY_ERRORS["unavailable"])
+
 
 def _provider_error_code(data: object) -> str | None:
     if not isinstance(data, dict):
@@ -107,10 +111,6 @@ def _provider_error_code(data: object) -> str | None:
         if isinstance(value, (str, int)) and str(value).strip():
             return str(value).strip()[:80]
     return None
-
-    @property
-    def friendly_message(self) -> str:
-        return _FRIENDLY_ERRORS.get(self.error_class, _FRIENDLY_ERRORS["unavailable"])
 
 
 def _normalize_selection(selection: str | None) -> str:
