@@ -139,7 +139,7 @@ internal fun NativeLaunchFlow(
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Image(painterResource(R.drawable.official_logo), contentDescription = "Notely logo", modifier = Modifier.size(88.dp))
+                    Image(painterResource(R.drawable.official_logo), contentDescription = "Notely logo", modifier = Modifier.size(64.dp))
                     Text("Notely", color = ShutterInk, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                 }
             }
