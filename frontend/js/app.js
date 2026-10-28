@@ -377,7 +377,7 @@ const SS = (() => {
     const overlay = document.createElement('div');
     overlay.className = 'ainb-boot';
     overlay.setAttribute('aria-label', 'Loading Notely');
-    overlay.innerHTML = '<div class="ainb-boot-card"><img src="/assets/logo.png" alt="" /><span>Notely<small>Preparing your workspace</small></span></div>';
+    overlay.innerHTML = '<div class="ainb-boot-card"><img src="/assets/notely-symbol.svg" alt="" /><span>Notely<small>Preparing your workspace</small></span></div>';
     document.body.prepend(overlay);
     requestAnimationFrame(() => {
       window.setTimeout(() => overlay.classList.add('is-out'), 120);
