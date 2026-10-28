@@ -36,10 +36,12 @@ Authentication/trial configuration:
 - `ALLOWED_ORIGINS`: exact frontend origins, comma-separated, if any browser calls still go directly to the backend. With the same-origin proxy, normal browser API calls should not need cross-origin CORS.
 
 Email configuration:
-- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_USE_TLS`, and `SMTP_USE_SSL`.
-- Free Gmail option: enable Google 2-Step Verification and create an App Password. Set `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, `SMTP_USER` to your Gmail address, `SMTP_PASSWORD` to the App Password, `SMTP_FROM` to `Notely <your-address@gmail.com>`, `SMTP_USE_TLS=1`, and `SMTP_USE_SSL=0`.
-- Free Brevo option: verify a sender in Brevo, create SMTP credentials in SMTP & API settings, then use the relay host and SMTP login/password provided by Brevo, port 587, TLS enabled, SSL disabled.
-- If SMTP is absent, signup email delivery responds with HTTP 503 and a clear configuration message; one warning is logged.
+- `MAILGUN_API_KEY` and `MAILGUN_DOMAIN`: required Mailgun HTTP API credentials/domain.
+- Optional `MAILGUN_FROM`: defaults to `Notely <postmaster@MAILGUN_DOMAIN>`.
+- Optional `MAILGUN_API_BASE`: defaults to `https://api.mailgun.net`; set `https://api.eu.mailgun.net` for Mailgun EU accounts.
+- Mailgun sandbox domains can send only to addresses added under **Mailgun → Authorized Recipients**. Add your test mailbox there. To send to arbitrary real users, verify a custom domain with Mailgun and use a sender on that domain.
+- Mailgun delivery errors return safe HTTP 503 messages; API keys and full provider responses are not exposed to clients or logs.
+
 
 Do not copy the actual values into this document.
 
