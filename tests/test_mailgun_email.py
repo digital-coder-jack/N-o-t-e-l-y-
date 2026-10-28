@@ -71,8 +71,15 @@ class MailgunEmailTests(unittest.TestCase):
         self.assertEqual(caught.exception.status_code, 503)
         self.assertEqual(caught.exception.detail, "Could not send email, try again")
 
-    def test_missing_environment_is_503(self):
+    def test_missing_api_key_is_503(self):
         os.environ.pop("MAILGUN_API_KEY", None)
+        with self.assertRaises(HTTPException) as caught:
+            users._send_email("authorized@example.test", "subject", "body")
+        self.assertEqual(caught.exception.status_code, 503)
+        self.assertIn("not configured", caught.exception.detail.lower())
+
+    def test_missing_domain_is_503(self):
+        os.environ.pop("MAILGUN_DOMAIN", None)
         with self.assertRaises(HTTPException) as caught:
             users._send_email("authorized@example.test", "subject", "body")
         self.assertEqual(caught.exception.status_code, 503)
