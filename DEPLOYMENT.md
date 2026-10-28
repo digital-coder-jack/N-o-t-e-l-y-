@@ -5,7 +5,7 @@ Notely's deployed architecture uses two separate Vercel projects:
 - **Backend:** FastAPI, deployed from the repository root through `api/index.py`.
 - **Frontend:** either the static site under `frontend/` or the Next.js app under `web/`.
 - **Persistent database:** Neon PostgreSQL. The backend does not use a local SQLite file for application data.
-- **Email verification:** Resend API (preferred) or SMTP fallback, configured through backend environment variables.
+- **Email verification:** SMTP only, configured through backend environment variables.
 
 ## 1. Backend Vercel project
 
@@ -43,8 +43,10 @@ Configure these names in the backend project:
 - `COOKIE_SECURE=1` — production cookies use HTTPS.
 - `APP_BASE_URL` — public frontend URL used to create password-reset links.
 - `ALLOWED_ORIGINS` — comma-separated exact frontend origins if direct browser-to-backend requests are used. Preview origins must be explicitly listed.
-- `RESEND_API_KEY` and `RESEND_FROM` — preferred email delivery. `RESEND_FROM` must be a sender identity verified in Resend.
-- SMTP fallback: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_USE_TLS`, `SMTP_USE_SSL`.
+- SMTP only: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_USE_TLS`, `SMTP_USE_SSL`.
+- Free Gmail option: enable Google 2-Step Verification, create an App Password, then use `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, `SMTP_USER` as the Gmail address, `SMTP_PASSWORD` as the app password, `SMTP_FROM` as `Notely <your-address@gmail.com>`, `SMTP_USE_TLS=1`, `SMTP_USE_SSL=0`.
+- Free Brevo option: create a Brevo account, verify sender identity, generate SMTP credentials in SMTP & API settings, and configure the displayed SMTP relay host/login/password with port 587, TLS enabled, SSL disabled.
+- If SMTP is not configured, signup email delivery returns HTTP 503 with a clear message; the server logs one warning.
 - `TEMP_EMAIL_DOMAINS` — optional comma-separated additions to the built-in disposable-email blocklist.
 
 Optional features use `GEMINI_API_KEY`, `OPENROUTER_API_KEY`, `GROQ_API_KEY`, and their model/tuning variables. Telegram integration uses `TELEGRAM_BOT_TOKEN`, `WEBHOOK_SECRET`, `WEB_APP_URL`, and optionally `TELEGRAM_ADMIN_ID`.
