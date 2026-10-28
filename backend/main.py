@@ -153,7 +153,10 @@ async def ai_provider_error_handler(request: Request, exc: providers.ProviderFai
 _raw_origins = os.environ.get("ALLOWED_ORIGINS", "").strip()
 _DEFAULT_ORIGINS = [
     "https://notely-mwlq.vercel.app",
+    "https://notely-sble.vercel.app",
     "https://notely-frontend.vercel.app",
+    "https://notely-frontend-digital-coder-jacks-projects.vercel.app",
+    "https://notely-frontend-git-main-digital-coder-jacks-projects.vercel.app",
     "https://localhost",
     "capacitor://localhost",
     "http://localhost",
@@ -164,6 +167,11 @@ ALLOWED_ORIGINS = (
     [origin.strip() for origin in _raw_origins.split(",") if origin.strip()]
     if _raw_origins else _DEFAULT_ORIGINS
 )
+# Keep the production static frontend origin enabled even when a custom
+# ALLOWED_ORIGINS list is supplied; this is the browser origin for the shipped
+# landing/auth/trial pages.
+if "https://notely-sble.vercel.app" not in ALLOWED_ORIGINS:
+    ALLOWED_ORIGINS.append("https://notely-sble.vercel.app")
 # Only local development and Capacitor origins are pattern-matched; production
 # web origins must be explicitly listed in ALLOWED_ORIGINS.
 _ALLOW_ORIGIN_REGEX = (
