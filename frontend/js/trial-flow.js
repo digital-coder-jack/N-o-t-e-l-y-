@@ -420,7 +420,7 @@
       var dot = document.createElement('i'); dot.style.left = (5 + i * 5.2) + '%'; dot.style.top = (12 + ((i * 23) % 72)) + '%'; particles.appendChild(dot);
     }
     var logoWrap = document.createElement('div'); logoWrap.className = 'notely-loading-logo';
-    var logo = document.createElement('img'); logo.src = '/assets/logo.png'; logo.alt = 'Notely'; logoWrap.appendChild(logo);
+    var logo = document.createElement('img'); logo.src = '/assets/notely-symbol.svg'; logo.alt = 'Notely'; logoWrap.appendChild(logo);
     var orbit = document.createElement('span'); orbit.className = 'notely-loading-orbit'; logoWrap.appendChild(orbit);
     var title = document.createElement('h1'); title.textContent = 'Loading your trial workspace...';
     var subtitle = document.createElement('p'); subtitle.className = 'notely-loading-greeting'; subtitle.textContent = 'Your seven-day study space is ready.';
