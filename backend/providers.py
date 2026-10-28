@@ -83,10 +83,30 @@ _PROBE_LOCK = asyncio.Lock()
 
 
 class ProviderFailure(Exception):
-    def __init__(self, error_class: str, http_status: int | None = None):
+    def __init__(
+        self,
+        error_class: str,
+        http_status: int | None = None,
+        provider_code: str | None = None,
+    ):
         super().__init__(error_class)
         self.error_class = error_class
         self.http_status = http_status
+        # Safe provider code/type only; never store or expose response messages.
+        self.provider_code = provider_code
+
+
+def _provider_error_code(data: object) -> str | None:
+    if not isinstance(data, dict):
+        return None
+    error = data.get("error")
+    if not isinstance(error, dict):
+        return None
+    for field in ("code", "type", "status"):
+        value = error.get(field)
+        if isinstance(value, (str, int)) and str(value).strip():
+            return str(value).strip()[:80]
+    return None
 
     @property
     def friendly_message(self) -> str:
@@ -296,31 +316,52 @@ def _record_failure(tier: str, error_class: str, status: int | None = None) -> N
 
 def _raise_for_response(response: httpx.Response) -> None:
     if response.status_code < 200 or response.status_code >= 300:
-        raise ProviderFailure(_classify_status(response.status_code), response.status_code)
+        provider_code = None
+        try:
+            provider_code = _provider_error_code(response.json())
+        except ValueError:
+            pass
+        raise ProviderFailure(
+            _classify_status(response.status_code),
+            response.status_code,
+            provider_code,
+        )
 
 
-def _parse_openai_response(data: dict) -> str:
+def _parse_openai_response(data: dict, http_status: int | None = None) -> str:
+    if not isinstance(data, dict):
+        raise ProviderFailure("parse_error", http_status, "invalid_response_shape")
+    if isinstance(data.get("error"), dict):
+        raise ProviderFailure(
+            "parse_error", http_status, _provider_error_code(data) or "provider_error"
+        )
     try:
         value = data["choices"][0]["message"]["content"]
     except (KeyError, IndexError, TypeError) as exc:
-        raise ProviderFailure("parse_error") from exc
+        raise ProviderFailure("parse_error", http_status, "missing_choices") from exc
     if isinstance(value, list):
         value = "".join(str(item.get("text", "")) if isinstance(item, dict) else str(item)
                         for item in value)
     text = str(value or "").strip()
     if not text:
-        raise ProviderFailure("parse_error")
+        raise ProviderFailure("parse_error", http_status, "empty_content")
     return text
 
 
-def _parse_gemini_response(data: dict) -> str:
+def _parse_gemini_response(data: dict, http_status: int | None = None) -> str:
+    if not isinstance(data, dict):
+        raise ProviderFailure("parse_error", http_status, "invalid_response_shape")
+    if isinstance(data.get("error"), dict):
+        raise ProviderFailure(
+            "parse_error", http_status, _provider_error_code(data) or "provider_error"
+        )
     try:
         parts = data["candidates"][0]["content"]["parts"]
     except (KeyError, IndexError, TypeError) as exc:
-        raise ProviderFailure("parse_error") from exc
+        raise ProviderFailure("parse_error", http_status, "missing_candidates") from exc
     text = "".join(str(part.get("text", "")) for part in parts if isinstance(part, dict)).strip()
     if not text:
-        raise ProviderFailure("parse_error")
+        raise ProviderFailure("parse_error", http_status, "empty_content")
     return text
 
 
@@ -356,15 +397,22 @@ async def _complete_tier(tier: str, messages: list[dict], temperature: float,
                 json_body=_gemini_payload(messages, temperature, max_tokens, config["model"]),
                 headers={"x-goog-api-key": key, "Content-Type": "application/json", "Accept": "application/json"},
             )
-            data = response.json()
-            return _parse_gemini_response(data)
+            try:
+                data = response.json()
+            except ValueError as exc:
+                raise ProviderFailure("parse_error", response.status_code, "invalid_json") from exc
+            return _parse_gemini_response(data, response.status_code)
         base = OPENROUTER_BASE_URL if config["provider"] == "openrouter" else GROQ_BASE_URL
         response = await _post_with_retry(
             client, tier, f"{base}/chat/completions",
             json_body=_openai_payload(config["model"], messages, temperature, max_tokens, False, config["provider"]),
             headers=_openai_headers(key, config["provider"]),
         )
-        return _parse_openai_response(response.json())
+        try:
+            data = response.json()
+        except ValueError as exc:
+            raise ProviderFailure("parse_error", response.status_code, "invalid_json") from exc
+        return _parse_openai_response(data, response.status_code)
 
 
 async def probe_tier(tier: str, *, force: bool = False) -> dict:
@@ -390,8 +438,8 @@ async def probe_tier(tier: str, *, force: bool = False) -> dict:
         else:
             try:
                 await _complete_tier(
-                    tier, [{"role": "user", "content": "Reply with exactly: OK"}],
-                    temperature=0.0, max_tokens=16, timeout=12.0,
+                    tier, [{"role": "user", "content": "Reply with the single word OK and no extra text."}],
+                    temperature=0.0, max_tokens=64, timeout=12.0,
                 )
                 result = {
                     "tier": tier, "ok": True, "http_status": 200, "error_class": None,
@@ -403,6 +451,7 @@ async def probe_tier(tier: str, *, force: bool = False) -> dict:
                 result = {
                     "tier": tier, "ok": False, "http_status": status,
                     "error_class": exc.error_class,
+                    "provider_code": exc.provider_code,
                     "latency_ms": round((time.perf_counter() - started) * 1000),
                     "model": TIER_CONFIG[tier]["model"], "checked_at": datetime.now(timezone.utc).isoformat(),
                 }
@@ -410,6 +459,7 @@ async def probe_tier(tier: str, *, force: bool = False) -> dict:
             except (ValueError, TypeError):
                 result = {
                     "tier": tier, "ok": False, "http_status": status, "error_class": "parse_error",
+                    "provider_code": "invalid_response",
                     "latency_ms": round((time.perf_counter() - started) * 1000),
                     "model": TIER_CONFIG[tier]["model"], "checked_at": datetime.now(timezone.utc).isoformat(),
                 }
