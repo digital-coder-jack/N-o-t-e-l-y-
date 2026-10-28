@@ -11,14 +11,18 @@ from typing import Any
 import psycopg
 
 
-# Vercel's Neon integration prefixes the standard Neon variable names.
-# Prefer the pooled URL for serverless requests; direct URLs are migration-only.
+# Prefer the explicitly configured owner/runtime connection when present.
+# Neon Auth's integration-scoped connection can use a restricted auth role and
+# search_path=neon_auth; Notely's app tables are in public. Keep the prefixed
+# Neon integration names as fallbacks for environments without DATABASE_URL.
 RUNTIME_URL_NAMES = (
+    "DATABASE_URL",
     "NOTELY_DATABASE_URL_POSTGRES_URL",
     "NOTELY_DATABASE_URL_POSTGRES_PRISMA_URL",
     "NOTELY_DATABASE_URL_DATABASE_URL",
 )
 MIGRATION_URL_NAMES = (
+    "DATABASE_URL_UNPOOLED",
     "NOTELY_DATABASE_URL_POSTGRES_URL_NON_POOLING",
     "NOTELY_DATABASE_URL_DATABASE_URL_UNPOOLED",
 )
@@ -33,12 +37,11 @@ def _connection_url(*names: str) -> str | None:
 
 
 def connect_neon(*, for_migration: bool = False):
-    """Open a Neon connection with the app schema first in its search path.
+    """Open a Neon connection with Notely's public app schema in its search path.
 
-    Neon Auth can provision a role whose default search_path is `neon_auth`.
-    Notely's application tables live in `public`; without setting this per
-    connection, unqualified app queries fail with UndefinedTable even when
-    those tables exist in the connected Neon database.
+    The runtime role must have privileges on the application tables in public.
+    Setting search_path alone cannot grant access; connection selection above
+    intentionally prefers the owner/runtime URL when it is configured.
     """
     names = MIGRATION_URL_NAMES if for_migration else RUNTIME_URL_NAMES
     url = _connection_url(*names)
