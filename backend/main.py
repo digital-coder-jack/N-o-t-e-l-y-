@@ -172,11 +172,13 @@ ALLOWED_ORIGINS = (
 # landing/auth/trial pages.
 if "https://notely-sble.vercel.app" not in ALLOWED_ORIGINS:
     ALLOWED_ORIGINS.append("https://notely-sble.vercel.app")
-# Only local development and Capacitor origins are pattern-matched; production
-# web origins must be explicitly listed in ALLOWED_ORIGINS.
+# This regex allows local development / Capacitor origins and this team's
+# notely-frontend Vercel deployment/preview URLs; all other production origins
+# must remain explicitly listed in ALLOWED_ORIGINS.
 _ALLOW_ORIGIN_REGEX = (
     r"^(https?://localhost(:\d+)?|http://127\.0\.0\.1(:\d+)?|"
-    r"https://localhost|capacitor://localhost)$"
+    r"https://localhost|capacitor://localhost|"
+    r"https://notely-frontend-[a-z0-9-]+-digital-coder-jacks-projects\.vercel\.app)$"
 )
 
 app.add_middleware(
