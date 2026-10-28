@@ -18,10 +18,12 @@
    the same origin (single-host deploy) — then same-origin requests are used.
    ===================================================================== */
 
-/* Keep this empty: /api/* is proxied by the frontend Vercel project using
-   the server-side NOTELY_BACKEND_URL environment variable. This also lets
-   HttpOnly trial cookies stay first-party in the browser. */
-window.SS_API_BASE = "";
+/* The static frontend is hosted at notely-sble.vercel.app and the
+   FastAPI backend at notely-mwlq.vercel.app. Use the backend's public origin;
+   its CORS allow-list includes this frontend origin. Trial device tokens are
+   returned to and sent by the client, so the flow does not rely on a
+   third-party cookie being accepted by the browser. */
+window.SS_API_BASE = "https://notely-mwlq.vercel.app";
 
 /* Optional: allow overriding via a <meta name="api-base"> tag or a
    ?api_base=... query string during testing, without editing this file. */
