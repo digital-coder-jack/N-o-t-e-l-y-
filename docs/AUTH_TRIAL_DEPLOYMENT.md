@@ -79,6 +79,6 @@ The expected application tables are `users`, `email_verifications`, `trial_sessi
 3. Start a trial, close/reopen the tab, and confirm it resumes with the same expiry.
 4. Attempt a second trial from the same browser/device; it should be blocked/resumed, not create a second trial.
 5. Test temporary-email rejection, Gmail dot/plus normalization, real-email signup, OTP verification, signin, signout, and an expired trial.
-6. Check backend Vercel Function Logs for `api/index.py` / `backend.main`; check frontend deployment/function logs for the `/api/[...path]` proxy. For delivery failures, inspect your SMTP provider's delivery/activity logs.
+6. Check backend Vercel Function Logs for `api/index.py` / `backend.main`; check frontend deployment/function logs for the `/api/[...path]` proxy. For delivery failures, inspect Mailgun's Logs / Sending activity and the backend Vercel runtime logs.
 
 The repository tools cannot inspect your private Vercel or Neon dashboard values. Do not mark the live smoke tests passed until you run them against the deployed projects.
