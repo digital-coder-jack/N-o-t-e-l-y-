@@ -24,6 +24,8 @@ import os
 import re
 import secrets
 import smtplib
+
+import httpx
 from contextlib import closing
 
 import dns.resolver
@@ -226,6 +228,35 @@ def _otp_hash(email: str, otp: str) -> str:
 
 
 def _send_email(recipient: str, subject: str, body: str) -> None:
+    # Prefer Resend when its API key is configured. RESEND_FROM must be a
+    # sender identity verified in the Resend account; SMTP remains supported
+    # for deployments that do not use Resend.
+    resend_api_key = os.environ.get("RESEND_API_KEY", "").strip()
+    resend_from = os.environ.get("RESEND_FROM", "").strip()
+    if resend_api_key:
+        if not resend_from:
+            raise RuntimeError("RESEND_FROM must be configured for Resend email delivery.")
+        try:
+            response = httpx.post(
+                "https://api.resend.com/emails",
+                headers={
+                    "Authorization": f"Bearer {resend_api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "from": resend_from,
+                    "to": [recipient],
+                    "subject": subject,
+                    "text": body,
+                },
+                timeout=12.0,
+            )
+            response.raise_for_status()
+        except httpx.HTTPError as exc:
+            # Do not propagate provider response bodies or credentials.
+            raise RuntimeError("Resend email delivery failed.") from exc
+        return
+
     host = os.environ.get("SMTP_HOST", "").strip()
     sender = os.environ.get("SMTP_FROM", os.environ.get("SMTP_USER", "")).strip()
     if not host or not sender:
@@ -248,7 +279,6 @@ def _send_email(recipient: str, subject: str, body: str) -> None:
         if username:
             server.login(username, password)
         server.send_message(message)
-
 
 def _parse_time(value: str) -> datetime:
     parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
