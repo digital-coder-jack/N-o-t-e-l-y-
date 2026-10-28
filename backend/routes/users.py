@@ -23,13 +23,13 @@ import logging
 import os
 import re
 import secrets
-import smtplib
+
+import httpx
 
 from contextlib import closing
 
 import dns.resolver
 from datetime import datetime, timedelta, timezone
-from email.message import EmailMessage
 from urllib.parse import quote
 
 from email_validator import validate_email, EmailNotValidError
@@ -178,7 +178,7 @@ def _validated_email(raw: str) -> tuple[str, str]:
 
     # Only a definite NXDOMAIN is treated as a missing domain. Temporary DNS
     # failures (timeouts, SERVFAIL, unavailable resolvers) must not block a
-    # syntactically valid address; SMTP delivery will provide the final check.
+    # syntactically valid address; Mailgun delivery will provide the final check.
     try:
         resolver = dns.resolver.Resolver()
         resolver.timeout = 1.0
@@ -195,19 +195,15 @@ def _validated_email(raw: str) -> tuple[str, str]:
     return _canonical_email(delivery_email), delivery_email
 
 
-def _smtp_error_code(exc: Exception) -> int | None:
-    code = getattr(exc, "smtp_code", None)
-    return code if isinstance(code, int) else None
-
-
-def _log_smtp_failure(action: str, exc: Exception) -> None:
-    # Do not log exception text or tracebacks: SMTP exceptions can include
-    # server details and potentially sensitive configuration information.
+def _log_mailgun_failure(action: str, exc: Exception | None = None, *, status: int | None = None, body: str = "", error_type: str | None = None) -> None:
+    # Never log exception text: it may contain request details or credentials.
+    short_body = re.sub(r"\s+", " ", body or "").strip()[:240]
     logging.getLogger("notely-auth").error(
-        "%s failed; error_type=%s smtp_code=%s",
+        "%s failed; status=%s error_type=%s body=%s",
         action,
-        type(exc).__name__,
-        _smtp_error_code(exc),
+        status,
+        error_type or (type(exc).__name__ if exc else None),
+        short_body,
     )
 
 
@@ -227,34 +223,60 @@ def _otp_hash(email: str, otp: str) -> str:
 
 
 def _send_email(recipient: str, subject: str, body: str) -> None:
-    host = os.environ.get("SMTP_HOST", "").strip()
-    sender = os.environ.get("SMTP_FROM", os.environ.get("SMTP_USER", "")).strip()
-    if not host or not sender:
-        if not getattr(_send_email, "_smtp_warning_logged", False):
-            logger.warning("SMTP not configured; email delivery is unavailable.")
-            _send_email._smtp_warning_logged = True
-        raise HTTPException(
-            status_code=503,
-            detail="Email delivery is not configured. Please try again later.",
+    api_key = (os.environ.get("MAILGUN_API_KEY") or "").strip()
+    domain = (os.environ.get("MAILGUN_DOMAIN") or "").strip()
+    if not api_key or not domain:
+        if not getattr(_send_email, "_mailgun_warning_logged", False):
+            logger.warning("Mailgun email service is not configured; MAILGUN_API_KEY and MAILGUN_DOMAIN are required.")
+            _send_email._mailgun_warning_logged = True
+        raise HTTPException(status_code=503, detail="Email service is not configured. Please try again later.")
+
+    api_base = (os.environ.get("MAILGUN_API_BASE") or "https://api.mailgun.net").strip().rstrip("/")
+    sender = (os.environ.get("MAILGUN_FROM") or "").strip() or f"Notely <postmaster@{domain}>"
+    url = f"{api_base}/v3/{domain}/messages"
+
+    import html
+    escaped_body = html.escape(body)
+    otp_match = re.search(r"\b(\d{6})\b", body)
+    if otp_match:
+        code = html.escape(otp_match.group(1))
+        highlighted = f'<span style="display:inline-block;font-size:32px;font-weight:700;letter-spacing:8px;padding:12px 18px;background:#eefaff;border-radius:10px;color:#10243a">{code}</span>'
+        escaped_body = escaped_body.replace(code, highlighted, 1)
+    paragraphs = "".join(
+        f'<p style="margin:0 0 16px;line-height:1.6">{part.replace(chr(10), "<br>")}</p>'
+        for part in escaped_body.split("\n\n")
+    )
+    html_body = (
+        '<!doctype html><html><body style="margin:0;background:#f4f7fb;padding:24px;font-family:Arial,Helvetica,sans-serif;color:#172033">'
+        '<div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;padding:28px">'
+        '<div style="font-size:22px;font-weight:700;color:#10243a;margin-bottom:24px">Notely</div>'
+        f'{paragraphs}'
+        '<p style="margin:24px 0 0;color:#64748b;font-size:12px">Sent by Notely account services.</p>'
+        '</div></body></html>'
+    )
+    try:
+        response = httpx.post(
+            url,
+            auth=("api", api_key),
+            data={"from": sender, "to": recipient, "subject": subject, "text": body, "html": html_body},
+            timeout=10.0,
         )
-    message = EmailMessage()
-    message["From"] = sender
-    message["To"] = recipient
-    message["Subject"] = subject
-    message.set_content(body)
-    port = int(os.environ.get("SMTP_PORT", "587"))
-    use_ssl = os.environ.get("SMTP_USE_SSL", "0").lower() in {"1", "true", "yes"}
-    use_tls = os.environ.get("SMTP_USE_TLS", "1").lower() in {"1", "true", "yes"}
-    smtp_cls = smtplib.SMTP_SSL if use_ssl else smtplib.SMTP
-    with smtp_cls(host, port, timeout=12) as server:
-        if use_tls and not use_ssl:
-            server.starttls()
-            server.ehlo()
-        username = os.environ.get("SMTP_USER", "")
-        password = os.environ.get("SMTP_PASSWORD", "")
-        if username:
-            server.login(username, password)
-        server.send_message(message)
+    except httpx.TimeoutException as exc:
+        _log_mailgun_failure("Mailgun email delivery", exc, error_type="timeout")
+        raise HTTPException(status_code=503, detail="Could not send email, try again")
+    except httpx.HTTPError as exc:
+        _log_mailgun_failure("Mailgun email delivery", exc)
+        raise HTTPException(status_code=503, detail="Could not send email, try again")
+
+    if response.status_code == 401:
+        _log_mailgun_failure("Mailgun email delivery", status=401, error_type="invalid_api_key")
+        raise HTTPException(status_code=503, detail="Could not send email, try again")
+    if response.status_code == 403:
+        logger.warning("Mailgun sandbox recipient not authorized. Add this recipient under Mailgun sandbox Authorized Recipients or verify a custom domain.")
+        raise HTTPException(status_code=503, detail="Email could not be delivered to this address yet. Please authorize the recipient in Mailgun or try another address.")
+    if response.status_code < 200 or response.status_code >= 300:
+        _log_mailgun_failure("Mailgun email delivery", status=response.status_code, body=response.text, error_type="provider_error")
+        raise HTTPException(status_code=503, detail="Could not send email, try again")
 
 def _parse_time(value: str) -> datetime:
     parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
@@ -384,12 +406,17 @@ async def signup(body: SignupIn, request: Request):
             )
             conn.commit()
         _send_email(delivery_email, "Your Notely verification code", f"Your Notely verification code is {otp}. It expires in 10 minutes. If you did not request this, you can ignore this email.")
-    except Exception as exc:
-        _log_smtp_failure("Signup OTP email delivery", exc)
+    except HTTPException:
         with closing(db.get_connection()) as conn:
             conn.execute("DELETE FROM email_verifications WHERE email=?", (email,))
             conn.commit()
-        raise HTTPException(status_code=503, detail="We couldn't send your verification email. Please check your email settings or try again later.")
+        raise
+    except Exception as exc:
+        _log_mailgun_failure("Signup OTP email delivery", exc)
+        with closing(db.get_connection()) as conn:
+            conn.execute("DELETE FROM email_verifications WHERE email=?", (email,))
+            conn.commit()
+        raise HTTPException(status_code=503, detail="Could not send email, try again")
     return {"verification_required": True, "email": delivery_email, "message": "Check your email for a six-digit verification code. It expires in 10 minutes."}
 
 
@@ -415,9 +442,11 @@ async def resend_verification(body: ResendVerificationIn):
         conn.commit()
     try:
         _send_email(row["delivery_email"], "Your Notely verification code", f"Your Notely verification code is {otp}. It expires in 10 minutes.")
+    except HTTPException:
+        raise
     except Exception as exc:
-        _log_smtp_failure("Resend OTP email delivery", exc)
-        raise HTTPException(status_code=503, detail="We couldn't send your verification email. Please check your email settings or try again later.")
+        _log_mailgun_failure("Resend OTP email delivery", exc)
+        raise HTTPException(status_code=503, detail="Could not send email, try again")
     return {"message": "A new verification code has been sent."}
 
 

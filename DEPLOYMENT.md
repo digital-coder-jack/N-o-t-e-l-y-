@@ -5,7 +5,7 @@ Notely's deployed architecture uses two separate Vercel projects:
 - **Backend:** FastAPI, deployed from the repository root through `api/index.py`.
 - **Frontend:** either the static site under `frontend/` or the Next.js app under `web/`.
 - **Persistent database:** Neon PostgreSQL. The backend does not use a local SQLite file for application data.
-- **Email verification:** SMTP only, configured through backend environment variables.
+- **Email verification:** Mailgun HTTP API, configured through backend environment variables.
 
 ## 1. Backend Vercel project
 
@@ -43,15 +43,15 @@ Configure these names in the backend project:
 - `COOKIE_SECURE=1` — production cookies use HTTPS.
 - `APP_BASE_URL` — public frontend URL used to create password-reset links.
 - `ALLOWED_ORIGINS` — comma-separated exact frontend origins if direct browser-to-backend requests are used. Preview origins must be explicitly listed.
-- SMTP only: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_USE_TLS`, `SMTP_USE_SSL`.
-- Free Gmail option: enable Google 2-Step Verification, create an App Password, then use `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, `SMTP_USER` as the Gmail address, `SMTP_PASSWORD` as the app password, `SMTP_FROM` as `Notely <your-address@gmail.com>`, `SMTP_USE_TLS=1`, `SMTP_USE_SSL=0`.
-- Free Brevo option: create a Brevo account, verify sender identity, generate SMTP credentials in SMTP & API settings, and configure the displayed SMTP relay host/login/password with port 587, TLS enabled, SSL disabled.
-- If SMTP is not configured, signup email delivery returns HTTP 503 with a clear message; the server logs one warning.
+- Mailgun HTTP API: configure `MAILGUN_API_KEY` and `MAILGUN_DOMAIN` in the backend environment.
+- Optional `MAILGUN_FROM`: custom sender; defaults to `Notely <postmaster@MAILGUN_DOMAIN>`.
+- Optional `MAILGUN_API_BASE`: defaults to `https://api.mailgun.net`; use `https://api.eu.mailgun.net` for Mailgun EU accounts.
+- Mailgun sandbox domains can deliver only to recipients added under **Mailgun → Authorized Recipients**. Add and verify each test recipient before testing signup or password reset. For delivery to arbitrary real users, verify a custom sending domain in Mailgun and configure an authorized sender.
+- If the Mailgun API key or domain is missing, email delivery returns HTTP 503 with a clear configuration message. Provider credentials and full responses are never sent to clients or logged.
 - `TEMP_EMAIL_DOMAINS` — optional comma-separated additions to the built-in disposable-email blocklist.
 
 Optional features use `GEMINI_API_KEY`, `OPENROUTER_API_KEY`, `GROQ_API_KEY`, and their model/tuning variables. Telegram integration uses `TELEGRAM_BOT_TOKEN`, `WEBHOOK_SECRET`, `WEB_APP_URL`, and optionally `TELEGRAM_ADMIN_ID`.
 
-For Resend SMTP, check the host/port/TLS mode in the Resend dashboard, use the correct SMTP credentials, and ensure the sender address/domain is verified. Do not log or commit the SMTP password/API key.
 
 ## 2. Frontend Vercel project
 
