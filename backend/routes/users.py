@@ -178,7 +178,7 @@ def _validated_email(raw: str) -> tuple[str, str]:
 
     # Only a definite NXDOMAIN is treated as a missing domain. Temporary DNS
     # failures (timeouts, SERVFAIL, unavailable resolvers) must not block a
-    # syntactically valid address; SMTP delivery will provide the final check.
+    # syntactically valid address; Mailgun delivery will provide the final check.
     try:
         resolver = dns.resolver.Resolver()
         resolver.timeout = 1.0
