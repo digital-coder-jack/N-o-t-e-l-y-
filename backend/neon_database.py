@@ -33,12 +33,25 @@ def _connection_url(*names: str) -> str | None:
 
 
 def connect_neon(*, for_migration: bool = False):
-    """Open a Neon connection without printing or exposing its credentials."""
+    """Open a Neon connection with the app schema first in its search path.
+
+    Neon Auth can provision a role whose default search_path is `neon_auth`.
+    Notely's application tables live in `public`; without setting this per
+    connection, unqualified app queries fail with UndefinedTable even when
+    those tables exist in the connected Neon database.
+    """
     names = MIGRATION_URL_NAMES if for_migration else RUNTIME_URL_NAMES
     url = _connection_url(*names)
     if not url:
         raise RuntimeError("neon_database_url_missing")
-    return psycopg.connect(url, connect_timeout=5, sslmode="require")
+
+    conn = psycopg.connect(url, connect_timeout=5, sslmode="require")
+    try:
+        conn.execute("SET search_path TO public")
+    except Exception:
+        conn.close()
+        raise
+    return conn
 
 
 REQUIRED_TABLES = (
@@ -62,7 +75,7 @@ REQUIRED_TABLES = (
 
 
 def check_neon_connection() -> dict[str, Any]:
-    """Run SELECT 1, verify the expected schema, and return safe status only."""
+    """Run SELECT 1, verify the expected public schema, and return safe status only."""
     try:
         with connect_neon() as conn:
             row = conn.execute("SELECT 1").fetchone()
@@ -70,7 +83,7 @@ def check_neon_connection() -> dict[str, Any]:
                 return {"ok": False, "error": "database_check_failed"}
             rows = conn.execute(
                 "SELECT table_name FROM information_schema.tables "
-                "WHERE table_schema = current_schema() AND table_type = 'BASE TABLE' "
+                "WHERE table_schema = 'public' AND table_type = 'BASE TABLE' "
                 "AND table_name = ANY(%s)",
                 (list(REQUIRED_TABLES),),
             ).fetchall()
