@@ -217,7 +217,7 @@ function AuroraOrb({ size = 28 }: { size?: number }) {
 }
 
 function AppLogo({ compact = false }: { compact?: boolean }) {
-  return <div className="app-logo"><img src="/assets/logo.png" alt="Notely" /></div>;
+  return <div className="app-logo"><img src="/logo-symbol.svg" alt="Notely" /></div>;
 }
 
 function Sidebar({
