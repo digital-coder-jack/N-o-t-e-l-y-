@@ -5,7 +5,7 @@ Notely's deployed architecture uses two separate Vercel projects:
 - **Backend:** FastAPI, deployed from the repository root through `api/index.py`.
 - **Frontend:** either the static site under `frontend/` or the Next.js app under `web/`.
 - **Persistent database:** Neon PostgreSQL. The backend does not use a local SQLite file for application data.
-- **Email verification:** Resend SMTP configuration supplied through backend environment variables.
+- **Email verification:** Resend API (preferred) or SMTP fallback, configured through backend environment variables.
 
 ## 1. Backend Vercel project
 
@@ -16,16 +16,20 @@ Notely's deployed architecture uses two separate Vercel projects:
 
 ### Neon PostgreSQL
 
-The backend runtime uses the first non-empty pooled URL in this order:
+The backend runtime prefers the explicitly configured owner/runtime connection:
 
-1. `NOTELY_DATABASE_URL_POSTGRES_URL`
-2. `NOTELY_DATABASE_URL_POSTGRES_PRISMA_URL`
-3. `NOTELY_DATABASE_URL_DATABASE_URL`
+1. `DATABASE_URL`
+2. `NOTELY_DATABASE_URL_POSTGRES_URL`
+3. `NOTELY_DATABASE_URL_POSTGRES_PRISMA_URL`
+4. `NOTELY_DATABASE_URL_DATABASE_URL`
 
-The schema migration uses a direct/non-pooled URL:
+The schema migration prefers a direct/non-pooled URL:
 
-- `NOTELY_DATABASE_URL_POSTGRES_URL_NON_POOLING`, or
-- `NOTELY_DATABASE_URL_DATABASE_URL_UNPOOLED`.
+- `DATABASE_URL_UNPOOLED`
+- `NOTELY_DATABASE_URL_POSTGRES_URL_NON_POOLING`
+- `NOTELY_DATABASE_URL_DATABASE_URL_UNPOOLED`
+
+The app connection sets `search_path=public` because Notely's application tables live in the public schema.
 
 These names are supplied by the Vercel Neon integration. Do not paste connection strings into source code, commits, issue comments, or logs.
 
@@ -39,7 +43,8 @@ Configure these names in the backend project:
 - `COOKIE_SECURE=1` — production cookies use HTTPS.
 - `APP_BASE_URL` — public frontend URL used to create password-reset links.
 - `ALLOWED_ORIGINS` — comma-separated exact frontend origins if direct browser-to-backend requests are used. Preview origins must be explicitly listed.
-- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_USE_TLS`, `SMTP_USE_SSL`.
+- `RESEND_API_KEY` and `RESEND_FROM` — preferred email delivery. `RESEND_FROM` must be a sender identity verified in Resend.
+- SMTP fallback: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_USE_TLS`, `SMTP_USE_SSL`.
 - `TEMP_EMAIL_DOMAINS` — optional comma-separated additions to the built-in disposable-email blocklist.
 
 Optional features use `GEMINI_API_KEY`, `OPENROUTER_API_KEY`, `GROQ_API_KEY`, and their model/tuning variables. Telegram integration uses `TELEGRAM_BOT_TOKEN`, `WEBHOOK_SECRET`, `WEB_APP_URL`, and optionally `TELEGRAM_ADMIN_ID`.
@@ -48,17 +53,13 @@ For Resend SMTP, check the host/port/TLS mode in the Resend dashboard, use the c
 
 ## 2. Frontend Vercel project
 
-The frontend API requests now use a **same-origin proxy** at `/api/*`. This avoids browser CORS and cross-site cookie problems between two different `vercel.app` domains.
+The static frontend uses the public backend origin in `frontend/js/config.js`:
 
-1. Open the frontend Vercel project → **Settings → Environment Variables**.
-2. Add `NOTELY_BACKEND_URL`.
-3. Set it to the backend project's public HTTPS origin only, with no trailing slash or path. Do not include database credentials.
-4. Enable it for **Production** and **Preview**.
-5. Save and redeploy the frontend.
+`window.SS_API_BASE = "https://notely-mwlq.vercel.app"`
 
-If both the static `frontend/` project and the Next.js `web/` project are deployed separately, set `NOTELY_BACKEND_URL` in each one. The proxy uses this server-side variable; the browser does not receive the backend host from a `NEXT_PUBLIC_` variable.
+This makes the browser call the FastAPI backend directly. The backend CORS allow-list includes the production static frontend origin `https://notely-sble.vercel.app`; add any custom frontend domain to `ALLOWED_ORIGINS` before using it. Trial device tokens are returned in the API response and sent in the request body/header, so the flow does not depend on cross-site cookies being accepted.
 
-The Next.js frontend no longer reads `NEXT_PUBLIC_API_BASE_URL`. Its API calls stay on the frontend origin and are forwarded by `web/app/api/[...path]/route.ts`. The static frontend uses `frontend/api/[...path].js` in the same way.
+The Next.js workspace under `web/`, when deployed separately, uses its server-side proxy at `web/app/api/[...path]/route.ts` and the `NOTELY_BACKEND_URL` environment variable. Configure that variable in the Next.js Vercel project for Production and Preview.
 
 ## 3. Run the Neon schema migration
 
