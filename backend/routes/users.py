@@ -197,7 +197,7 @@ def _validated_email(raw: str) -> tuple[str, str]:
 
 def _log_mailgun_failure(action: str, exc: Exception | None = None, *, status: int | None = None, body: str = "", error_type: str | None = None) -> None:
     # Never log exception text: it may contain request details or credentials.
-    short_body = re.sub(r"\\s+", " ", body or "").strip()[:240]
+    short_body = re.sub(r"\s+", " ", body or "").strip()[:240]
     logging.getLogger("notely-auth").error(
         "%s failed; status=%s error_type=%s body=%s",
         action,
@@ -237,14 +237,14 @@ def _send_email(recipient: str, subject: str, body: str) -> None:
 
     import html
     escaped_body = html.escape(body)
-    otp_match = re.search(r"\\b(\\d{6})\\b", body)
+    otp_match = re.search(r"\b(\d{6})\b", body)
     if otp_match:
         code = html.escape(otp_match.group(1))
         highlighted = f'<span style="display:inline-block;font-size:32px;font-weight:700;letter-spacing:8px;padding:12px 18px;background:#eefaff;border-radius:10px;color:#10243a">{code}</span>'
         escaped_body = escaped_body.replace(code, highlighted, 1)
     paragraphs = "".join(
         f'<p style="margin:0 0 16px;line-height:1.6">{part.replace(chr(10), "<br>")}</p>'
-        for part in escaped_body.split("\\n\\n")
+        for part in escaped_body.split("\n\n")
     )
     html_body = (
         '<!doctype html><html><body style="margin:0;background:#f4f7fb;padding:24px;font-family:Arial,Helvetica,sans-serif;color:#172033">'
