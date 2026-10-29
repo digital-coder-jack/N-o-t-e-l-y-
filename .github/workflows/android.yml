@@ -17,12 +17,12 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Grant Execute Permission
-        run: chmod +x gradlew
+      - name: Make Gradlew executable
+        run: chmod +x ./gradlew
         working-directory: api/Android
 
-      - name: Build APK
-        run: ./gradlew assembleDebug
+      - name: Build Debug APK
+        run: ./gradlew clean assembleDebug
         working-directory: api/Android
 
       - name: Upload APK
