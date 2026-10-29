@@ -187,7 +187,11 @@ const SS = (() => {
     }
     const el = document.createElement('div');
     el.className = `toast ${type}`;
-    el.innerHTML = `<i class="fas fa-${type === 'error' ? 'circle-exclamation' : 'circle-check'}"></i> ${message}`;
+    const icon = document.createElement('i');
+    icon.className = `fas fa-${type === 'error' ? 'circle-exclamation' : 'circle-check'}`;
+    icon.setAttribute('aria-hidden', 'true');
+    el.appendChild(icon);
+    el.appendChild(document.createTextNode(String(message == null ? '' : message)));
     wrap.appendChild(el);
     setTimeout(() => {
       el.style.transition = 'opacity .3s, transform .3s';
