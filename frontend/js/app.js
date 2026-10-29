@@ -261,10 +261,10 @@ const SS = (() => {
     const current = document.documentElement.getAttribute('data-theme');
     return current === 'dark' ? 'dark' : 'light';
   }
-  function applyTheme(theme) {
+  function applyTheme(theme, button, animate) {
     const next = theme === 'dark' ? 'dark' : 'light';
     if (window.NotelyTheme && typeof window.NotelyTheme.setTheme === 'function') {
-      window.NotelyTheme.setTheme(next, null, false);
+      window.NotelyTheme.setTheme(next, button || null, animate !== false);
       return next;
     }
     document.documentElement.setAttribute('data-theme', next);
@@ -275,14 +275,15 @@ const SS = (() => {
     } catch { /* ignore */ }
     return next;
   }
-  function toggleTheme() {
+  function toggleTheme(button) {
     const next = getTheme() === 'dark' ? 'light' : 'dark';
-    return applyTheme(next);
+    const origin = button || document.querySelector('#themeToggle, .theme-toggle, [data-notely-theme-toggle]');
+    return applyTheme(next, origin, true);
   }
   function initTheme() {
     if (document.querySelector('.auth-cinema')) return; // auth pages use the shared controller directly
     // Do not overwrite NotelyTheme's resolved system/user preference during boot.
-    if (!window.NotelyTheme) applyTheme(getTheme());
+    if (!window.NotelyTheme) applyTheme(getTheme(), null, false);
     document.querySelectorAll('#themeToggle, .theme-toggle').forEach((btn) => {
       if (btn.dataset.bound) return;
       btn.dataset.bound = '1';
