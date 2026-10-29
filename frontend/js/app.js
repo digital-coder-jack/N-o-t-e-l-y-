@@ -241,22 +241,49 @@ const SS = (() => {
     });
   }
 
-  /* ---------- theme (Notely light is the only theme) ---------- */
-  const THEME_KEY = 'ss_theme';
+  /* ---------- theme compatibility layer ---------- */
+  // The newer NotelyTheme controller owns the root theme, saved preference,
+  // and animated reveal. Keep this legacy SS API as a bridge for older
+  // workspace controls instead of forcing every page into light mode.
+  const THEME_KEY = 'notely-theme';
+  const LEGACY_THEME_KEY = 'ss_theme';
   function getTheme() {
-    try { return localStorage.getItem(THEME_KEY) || 'light'; } catch { return 'light'; }
+    if (window.NotelyTheme && typeof window.NotelyTheme.getTheme === 'function') {
+      return window.NotelyTheme.getTheme();
+    }
+    try {
+      const saved = localStorage.getItem(THEME_KEY) || localStorage.getItem(LEGACY_THEME_KEY);
+      if (saved === 'light' || saved === 'dark') return saved;
+      if (saved === 'system') {
+        return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+    } catch { /* use the root attribute fallback */ }
+    const current = document.documentElement.getAttribute('data-theme');
+    return current === 'dark' ? 'dark' : 'light';
   }
-  function applyTheme(theme) {
-    document.documentElement.setAttribute('data-theme', 'light');
-    try { localStorage.setItem(THEME_KEY, 'light'); } catch { /* ignore */ }
+  function applyTheme(theme, button, animate) {
+    const next = theme === 'dark' ? 'dark' : 'light';
+    if (window.NotelyTheme && typeof window.NotelyTheme.setTheme === 'function') {
+      window.NotelyTheme.setTheme(next, button || null, animate !== false);
+      return next;
+    }
+    document.documentElement.setAttribute('data-theme', next);
+    document.documentElement.style.colorScheme = next;
+    try {
+      localStorage.setItem(THEME_KEY, next);
+      localStorage.setItem(LEGACY_THEME_KEY, next);
+    } catch { /* ignore */ }
+    return next;
   }
-  function toggleTheme() {
-    // No-op: the Notely look is light-only.
-    return 'light';
+  function toggleTheme(button) {
+    const next = getTheme() === 'dark' ? 'light' : 'dark';
+    const origin = button || document.querySelector('#themeToggle, .theme-toggle, [data-notely-theme-toggle]');
+    return applyTheme(next, origin, true);
   }
   function initTheme() {
-    if (document.querySelector('.auth-cinema')) return; // cinematic auth uses the shared animated Notely theme controller
-    applyTheme(getTheme()); // ensure attribute is set even without inline script
+    if (document.querySelector('.auth-cinema')) return; // auth pages use the shared controller directly
+    // Do not overwrite NotelyTheme's resolved system/user preference during boot.
+    if (!window.NotelyTheme) applyTheme(getTheme(), null, false);
     document.querySelectorAll('#themeToggle, .theme-toggle').forEach((btn) => {
       if (btn.dataset.bound) return;
       btn.dataset.bound = '1';
