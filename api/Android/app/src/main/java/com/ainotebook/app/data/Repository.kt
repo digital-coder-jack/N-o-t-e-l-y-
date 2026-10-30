@@ -16,6 +16,12 @@ class Repository(private val session: SessionStore) {
 
     suspend fun currentToken(): String? = session.token()
 
+    suspend fun accounts() = session.accounts()
+
+    suspend fun switchAccount(userId: Int) = session.switchAccount(userId)
+
+    suspend fun beginAddAccount() = session.beginAddAccount()
+
     /* ---------- Auth ---------- */
     suspend fun login(identifier: String, password: String): User {
         val res = ApiClient.api.login(LoginRequest(identifier, password))
@@ -55,10 +61,12 @@ class Repository(private val session: SessionStore) {
      * call can never leave a stale token or user behind.
      */
     suspend fun deleteAccount(): String {
+        val userId = session.userFlow.first()?.id
         return try {
             ApiClient.api.deleteAccount().message
         } finally {
-            session.clear()
+            session.clear(preserveCurrent = false)
+            if (userId != null) session.removeAccount(userId)
         }
     }
 
