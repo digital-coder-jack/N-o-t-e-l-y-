@@ -144,6 +144,38 @@ def decode_access_token(token: str) -> dict:
 # ---------------------------------------------------------------------------
 # FastAPI dependency
 # ---------------------------------------------------------------------------
+def testing_auth_enabled() -> bool:
+    """Temporary preview-only auth bypass. Production can never enable this."""
+    return (
+        os.environ.get("DISABLE_AUTH_FOR_TESTING", "").strip().lower() in {"1", "true", "yes", "on"}
+        and os.environ.get("VERCEL_ENV", "").strip().lower() == "preview"
+    )
+
+
+def preview_test_user() -> dict:
+    """Return one persistent, non-login Test User for protected preview testing."""
+    email = "notely-preview-test-user@notely.invalid"
+    row = db.get_user_by_email(email)
+    if row is None:
+        # TEMP: remove after testing
+        user_id = db.create_user(
+            "Test User",
+            email,
+            "PREVIEW_TEST_ACCOUNT_LOGIN_DISABLED",
+            username="notely-preview-test-user",
+        )
+        row = db.get_user_by_id(user_id) if user_id else db.get_user_by_email(email)
+    if row is None:
+        raise HTTPException(status_code=503, detail="Preview test user could not be initialized.")
+    user = dict(row)
+    user["is_test_user"] = True
+    user["is_trial"] = False
+    user["trial_expired"] = False
+    user["trial_active"] = True
+    user["trial_days_left"] = None
+    return user
+
+
 bearer_scheme = HTTPBearer(auto_error=False)
 
 CREDENTIALS_EXCEPTION = HTTPException(
@@ -206,6 +238,11 @@ async def current_user(
     method = request.method.upper()
     user = None
     account_token_present = credentials is not None and bool(credentials.credentials)
+
+    # TEMP: remove after testing — only the Vercel Preview environment can use this bypass.
+    # Vercel SSO protection must remain enabled for preview deployments.
+    if testing_auth_enabled() and not path.startswith("/api/auth/") and not path.startswith("/api/trial/"):
+        return preview_test_user()
 
     if account_token_present:
         try:
