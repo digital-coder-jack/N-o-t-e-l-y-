@@ -15,6 +15,13 @@
   async function api(path, opts) { return SS.api(path, opts || {}); }
   async function load() {
     try {
+      // TEMP: remove after testing — supports direct preview dashboard entry without running auth/trial pages.
+      if (!SS.isAuthed()) {
+        try {
+          var testSession = await api('/api/testing/session', { auth: false });
+          if (testSession && testSession.enabled && testSession.user && SS.setTestingSession) SS.setTestingSession(testSession.user);
+        } catch (_) {}
+      }
       // The landing-page trial start returns a server-issued device credential.
       // Revalidate it before redirecting: navigation can race storage writes on
       // slower/mobile browsers, and an active anonymous trial must never be
