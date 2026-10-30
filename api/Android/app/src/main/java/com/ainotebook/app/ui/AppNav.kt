@@ -236,7 +236,6 @@ private fun MainShell(factory: VMFactory) {
 
     fun navigate(route: String) {
         if (route != Routes.DASHBOARD) assistantMode = 0
-        if (route == Routes.DASHBOARD) activeWorkspaceTab = "chat"
         scope.launch { drawerState.close() }
         if (current != route) {
             nav.navigate(route) {
@@ -415,7 +414,7 @@ private fun MainShell(factory: VMFactory) {
                                 val selected = activeWorkspaceTab == option.first
                                 Surface(
                                     modifier = Modifier.weight(1f).clip(RoundedCornerShape(999.dp))
-                                        .clickable { if (option.first == "chat") { navigate(Routes.DASHBOARD); assistantMode = 0 } else { activeWorkspaceTab = "workspace"; if (current != Routes.DASHBOARD) navigate(Routes.DASHBOARD) } },
+                                        .clickable { if (option.first == "chat") { activeWorkspaceTab = "chat"; navigate(Routes.DASHBOARD); assistantMode = 0 } else { activeWorkspaceTab = "workspace"; if (current != Routes.DASHBOARD) navigate(Routes.DASHBOARD) } },
                                     shape = RoundedCornerShape(999.dp),
                                     color = if (selected) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent
                                 ) {
