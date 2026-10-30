@@ -103,3 +103,9 @@ button.nch-library-item{cursor:pointer}
 .nch-file-preview p,.nch-file-preview small{color:var(--nch-muted);font:400 12px/1.5 "DM Sans",sans-serif}
 .nch-file-preview pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:50vh;overflow:auto;padding:16px;border-radius:13px;background:rgba(120,140,170,.09);font:400 12px/1.65 "DM Sans",sans-serif}
 .nch-preview-close{position:absolute;right:15px;top:14px;width:34px;height:34px;border:0;border-radius:50%;background:rgba(120,140,170,.14);color:var(--nch-text);font-size:22px;cursor:pointer}
+
+.nw-assistant-chat-actions-wrap{position:relative;display:inline-flex}
+.nw-assistant-chat-actions{position:absolute;z-index:90;right:0;top:calc(100% + 7px);min-width:138px;padding:5px;border:1px solid var(--nch-border);border-radius:12px;background:var(--nch-panel);box-shadow:0 12px 30px rgba(0,0,0,.2)}
+.nw-assistant-chat-actions[hidden]{display:none}
+.nw-assistant-chat-actions button{display:block;width:100%;padding:8px 10px;border:0;border-radius:8px;background:transparent;color:var(--nch-text);text-align:left;font:500 12px "DM Sans",sans-serif;cursor:pointer}
+.nw-assistant-chat-actions button:hover{background:rgba(64,157,208,.12)}
