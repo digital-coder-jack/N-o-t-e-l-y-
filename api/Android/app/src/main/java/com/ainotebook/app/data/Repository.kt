@@ -1,6 +1,7 @@
 package com.ainotebook.app.data
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 
 /**
  * Thin repository wrapping [ApiClient] + [SessionStore]. Holds the session
