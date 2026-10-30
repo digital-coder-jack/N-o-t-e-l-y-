@@ -142,7 +142,7 @@
   function showTrialReminder(days,userId){
     if(document.getElementById('nwTrialReminder'))return;
     var card=document.createElement('aside');card.id='nwTrialReminder';card.className='nw-trial-reminder';card.setAttribute('role','status');
-    card.innerHTML='<div><strong>'+(days===2?'Your trial ends in two days':'Your trial ends today')+'</strong><p>Your notes will stay safe. Review your plan before the trial ends.</p></div><button type="button" aria-label="Dismiss reminder">×</button>';
+    card.innerHTML='<div><strong>'+(days===2?'Your trial ends in two days':'Your trial ends today')+'</strong><p>Your notes will stay safe. Some workspace features pause when the trial ends.</p></div><button type="button" aria-label="Dismiss reminder">×</button>';
     document.body.appendChild(card);card.querySelector('button').onclick=function(){localStorage.setItem('notely-trial-reminder-'+userId+'-'+days,'1');card.remove();};
   }
   function showTrialEnded(){
