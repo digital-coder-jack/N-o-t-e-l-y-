@@ -229,6 +229,7 @@ private fun MainShell(factory: VMFactory) {
     }
 
     fun navigate(route: String) {
+        if (route != Routes.DASHBOARD) assistantMode = 0
         scope.launch { drawerState.close() }
         if (current != route) {
             nav.navigate(route) {
