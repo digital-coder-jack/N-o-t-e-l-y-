@@ -7,6 +7,10 @@ import android.util.Base64
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -44,6 +48,26 @@ private data class StoredAccount(
  * once for backwards compatibility and are encrypted on the next save.
  */
 class SessionStore(private val context: Context) {
+
+    init {
+        // Migrate legacy plaintext session tokens/registries to Keystore encryption.
+        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            runCatching {
+                context.dataStore.edit { prefs ->
+                    prefs[TOKEN_KEY]?.let { stored ->
+                        if (stored.isNotBlank() && !stored.startsWith(ENCRYPTED_PREFIX)) {
+                            prefs[TOKEN_KEY] = encryptStored(stored)
+                        }
+                    }
+                    prefs[ACCOUNTS_KEY]?.let { stored ->
+                        if (stored.isNotBlank() && !stored.startsWith(ENCRYPTED_PREFIX)) {
+                            prefs[ACCOUNTS_KEY] = encryptStored(stored)
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     companion object {
         private val TOKEN_KEY = stringPreferencesKey("ss_token")
