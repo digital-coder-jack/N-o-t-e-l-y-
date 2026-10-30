@@ -241,7 +241,8 @@ async def current_user(
 
     # TEMP: remove after testing — only the Vercel Preview environment can use this bypass.
     # Vercel SSO protection must remain enabled for preview deployments.
-    if testing_auth_enabled() and not path.startswith("/api/auth/") and not path.startswith("/api/trial/"):
+    test_profile_read = method == "GET" and path in {"/api/auth/me", "/api/auth/settings"}
+    if testing_auth_enabled() and (not path.startswith("/api/auth/") or test_profile_read) and not path.startswith("/api/trial/"):
         return preview_test_user()
 
     if account_token_present:
