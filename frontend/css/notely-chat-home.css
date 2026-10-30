@@ -88,3 +88,5 @@ body.nch-home-active #nwAssistantPanel{display:none!important}
 
 .nch-sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .nch-home.is-leaving{opacity:0;transform:translateY(-8px);transition:opacity .18s ease,transform .18s ease}
+
+.nch-recent-label{display:block;padding:8px 10px 3px;color:var(--nch-muted);font:700 9px 'DM Sans',sans-serif;letter-spacing:1.1px}.nch-activity-error{grid-column:1/-1;padding:20px;border:1px dashed var(--nch-line);border-radius:16px;color:var(--nch-muted);font-size:12px;text-align:center}
