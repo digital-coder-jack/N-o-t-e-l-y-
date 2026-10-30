@@ -93,3 +93,11 @@ button.nch-library-item{cursor:pointer}
 .nch-library-toolbar button:disabled{opacity:.45;cursor:not-allowed}
 .nch-tab-toggle button:hover:not([aria-selected="true"]){filter:brightness(.96)}
 @media(prefers-reduced-motion:reduce){.nch-view-in{animation:none!important}}
+
+.nch-file-preview{position:fixed;z-index:99990;inset:0;display:grid;place-items:center;padding:18px;background:rgba(4,10,22,.64);backdrop-filter:blur(8px)}
+.nch-file-preview section{position:relative;width:min(760px,100%);max-height:min(82vh,760px);overflow:auto;padding:26px;border:1px solid var(--nch-border);border-radius:22px;background:var(--nch-panel);color:var(--nch-text);box-shadow:0 24px 70px rgba(0,0,0,.3)}
+.nch-file-preview section>span{color:var(--nch-accent);font:700 10px "DM Sans",sans-serif;letter-spacing:1.5px}
+.nch-file-preview h2{margin:10px 40px 6px 0;font:700 24px "Bricolage Grotesque",sans-serif}
+.nch-file-preview p,.nch-file-preview small{color:var(--nch-muted);font:400 12px/1.5 "DM Sans",sans-serif}
+.nch-file-preview pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:50vh;overflow:auto;padding:16px;border-radius:13px;background:rgba(120,140,170,.09);font:400 12px/1.65 "DM Sans",sans-serif}
+.nch-preview-close{position:absolute;right:15px;top:14px;width:34px;height:34px;border:0;border-radius:50%;background:rgba(120,140,170,.14);color:var(--nch-text);font-size:22px;cursor:pointer}
