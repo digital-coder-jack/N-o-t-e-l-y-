@@ -17,6 +17,16 @@ class Repository(private val session: SessionStore) {
 
     suspend fun currentToken(): String? = session.token()
 
+    // TEMP: remove after testing — no test identity is created unless the backend Preview flag is enabled.
+    suspend fun bootstrapPreviewTestSession(): Boolean {
+        val response = ApiClient.api.testingSession()
+        if (!response.enabled) return false
+        session.saveTestingSession(response.user)
+        return true
+    }
+
+    suspend fun clearPreviewTestSession() = session.clear(preserveCurrent = false)
+
     suspend fun accounts() = session.accounts()
 
     suspend fun switchAccount(userId: Int) = session.switchAccount(userId)
