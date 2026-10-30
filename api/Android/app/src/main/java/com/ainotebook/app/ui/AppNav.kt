@@ -198,10 +198,16 @@ private fun MainShell(factory: VMFactory) {
     val profileVm: ProfileViewModel = viewModel(factory = factory)
     val userState by profileVm.state.collectAsState()
     val chatState by chatVm.state.collectAsState()
+    val homeActivityPrefs = remember(appContext, userState.user?.id) {
+        appContext.getSharedPreferences("notely_home_activity_${userState.user?.id ?: 0}", Context.MODE_PRIVATE)
+    }
 
     LaunchedEffect(Unit) {
         chatVm.loadChats()
         accountList = factory.repository.accounts()
+    }
+    LaunchedEffect(chatState.currentChatId, userState.user?.id) {
+        chatState.currentChatId?.let { id -> homeActivityPrefs.edit().putLong("chat:$id", System.currentTimeMillis()).apply() }
     }
     LaunchedEffect(userState.user?.trial_expired) {
         if (userState.user?.trial_expired == true) {
