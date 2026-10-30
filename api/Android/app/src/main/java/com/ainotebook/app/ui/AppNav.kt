@@ -440,7 +440,7 @@ private fun MainShell(factory: VMFactory) {
                         ToolsScreen(vm = toolsVm, initialTool = tool)
                     }
                     composable(Routes.NOTES) {
-                        NotesScreen(vm = notesVm, onOpenTools = { nav.navigate(Routes.TOOLS) { launchSingleTop = true } })
+                        NotesScreen(vm = notesVm, userId = userState.user?.id ?: 0, onOpenTools = { nav.navigate(Routes.TOOLS) { launchSingleTop = true } })
                     }
                     composable(Routes.PROFILE) {
                         ProfileScreen(vm = profileVm, onLoggedOut = { })
