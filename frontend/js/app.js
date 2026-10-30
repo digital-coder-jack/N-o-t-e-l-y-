@@ -8,6 +8,8 @@
 const SS = (() => {
   const TOKEN_KEY = 'ss_token';
   const USER_KEY = 'ss_user';
+  // TEMP: remove after testing — local marker for the server-validated preview test identity.
+  const TEST_SESSION_KEY = 'notely-preview-test-session';
 
   /* ---------- API base URL ----------
      The frontend (Vercel) and backend (Render/Railway) live on DIFFERENT
@@ -111,6 +113,7 @@ const SS = (() => {
     });
   }
   function setSession(token, user) {
+    localStorage.removeItem(TEST_SESSION_KEY);
     const previousToken = getToken();
     const previousUser = getUser();
     const previousId = String(previousUser.id || previousUser.user_id || previousUser.email || '');
@@ -157,13 +160,25 @@ const SS = (() => {
     catch { return {}; }
   }
   function clearSession() {
+    // TEMP: remove after testing
+    localStorage.removeItem(TEST_SESSION_KEY);
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     // Next account gets its own onboarding check (server-side state decides).
     localStorage.removeItem('ainb_onboarded');
     clearTrialSession();
   }
-  function isAuthed() { return !!getToken() || localStorage.getItem('notely-trial-active') === '1'; }
+  // TEMP: remove after testing — marker is set only after the backend confirms Preview mode.
+  function setTestingSession(user) {
+    const token = getToken();
+    const currentUser = getUser();
+    if (token && currentUser && currentUser.id) storeAccountSession(token, currentUser);
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.setItem(USER_KEY, JSON.stringify(user || { id: 'preview-test-user', name: 'Test User', email: 'notely-preview-test-user@notely.invalid', is_test_user: true }));
+    localStorage.setItem(TEST_SESSION_KEY, '1');
+  }
+  function isTestingSession() { return localStorage.getItem(TEST_SESSION_KEY) === '1'; }
+  function isAuthed() { return isTestingSession() || !!getToken() || localStorage.getItem('notely-trial-active') === '1'; }
   function logout() { const token = getToken(); const user = getUser(); if (token) storeAccountSession(token, user); clearSession(); window.location.href = '/'; }
 
   function requireAuth() {
@@ -485,7 +500,7 @@ const SS = (() => {
     boot();
   }
 
-  return { api, getToken, setSession, getUser, getAccounts, beginAddAccount, switchAccount, clearSession, isAuthed, logout, refreshSession: refreshSessionToken,
+  return { api, getToken, setSession, getUser, getAccounts, beginAddAccount, switchAccount, clearSession, isAuthed, logout, refreshSession: refreshSessionToken, setTestingSession, isTestingSession,
            setTrialSession, clearTrialSession, requireAuth, toast, attachRipples, initParticles,
            toggleTheme, getTheme, applyTheme };
 })();
