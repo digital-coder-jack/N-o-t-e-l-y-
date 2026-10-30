@@ -126,6 +126,8 @@ const SS = (() => {
     localStorage.removeItem('notely-trial-expires');
   }
   function beginAddAccount() {
+    // TEMP: remove after testing
+    localStorage.removeItem(TEST_SESSION_KEY);
     const token = getToken();
     const user = getUser();
     if (token) storeAccountSession(token, user);
@@ -135,6 +137,8 @@ const SS = (() => {
     window.location.assign('/login?addAccount=1&return=%2Fdashboard');
   }
   function switchAccount(userId) {
+    // TEMP: remove after testing
+    localStorage.removeItem(TEST_SESSION_KEY);
     const target = readAccountSessions().find(function (item) { return String(item.id) === String(userId); });
     if (!target) return false;
     const token = getToken();
