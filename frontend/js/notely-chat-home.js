@@ -82,7 +82,7 @@
         ? 'data-topic-open="' + esc(item.id) + '"'
         : item.kind === 'chat'
           ? 'data-home-chat="' + esc(item.id) + '"'
-          : 'data-view="' + esc(item.view || 'documents') + '"';
+          : 'data-file-open="' + esc(item.id) + '"';
     return '<button type="button" class="nch-activity" ' + attrs + ' data-home-kind="' + esc(item.kind) + '" data-home-id="' + esc(item.id) + '">' +
       '<span class="nch-activity-icon" aria-hidden="true">' + icon(item.kind) + '</span>' +
       '<strong>' + esc(item.title || 'Untitled') + '</strong>' +
@@ -346,9 +346,36 @@
       event.preventDefault();
       recordActivity('chat', chat.dataset.homeChat);
       openChat(chat.dataset.homeChat);
+      return;
     }
-  });
-  document.addEventListener('click', function (event) {
+    var note = event.target.closest('.nch-home [data-note-id]');
+    if (note && window.NotelyWorkspace) {
+      event.preventDefault();
+      recordActivity('note', note.dataset.noteId);
+      window.NotelyWorkspace.openNote(note.dataset.noteId);
+      return;
+    }
+    var topic = event.target.closest('.nch-home [data-topic-open]');
+    if (topic && window.NotelyWorkspace) {
+      event.preventDefault();
+      recordActivity('topic', topic.dataset.topicOpen);
+      window.NotelyWorkspace.openTopic(topic.dataset.topicOpen);
+      return;
+    }
+    var file = event.target.closest('.nch-home [data-file-open]');
+    if (file && window.NotelyWorkspace) {
+      event.preventDefault();
+      recordActivity('file', file.dataset.fileOpen);
+      window.NotelyWorkspace.openDocument(file.dataset.fileOpen);
+      return;
+    }
+    var homeNav = event.target.closest('.nch-home [data-view]');
+    if (homeNav && window.NotelyWorkspace) {
+      event.preventDefault();
+      document.body.classList.remove('nch-home-active');
+      window.NotelyWorkspace.navigate(homeNav.dataset.view);
+      return;
+    }
     var nav = event.target.closest('[data-view]');
     if (nav && nav.dataset.view !== 'overview') {
       document.body.classList.remove('nch-home-active');
