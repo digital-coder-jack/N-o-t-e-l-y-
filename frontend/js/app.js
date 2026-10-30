@@ -80,11 +80,68 @@ const SS = (() => {
     }
     return refreshPromise;
   }
+  const ACCOUNT_SESSIONS_KEY = 'notely-account-sessions-v1';
+  function readAccountSessions() {
+    try {
+      const value = JSON.parse(localStorage.getItem(ACCOUNT_SESSIONS_KEY) || '[]');
+      return Array.isArray(value) ? value.filter(function (item) { return item && item.token && item.user; }) : [];
+    } catch { return []; }
+  }
+  function storeAccountSession(token, user) {
+    if (!token || !user) return;
+    const id = String(user.id || user.user_id || user.email || '');
+    if (!id) return;
+    const sessions = readAccountSessions().filter(function (item) {
+      return String(item.id) !== id;
+    });
+    sessions.unshift({ id: id, token: token, user: user, saved_at: Date.now() });
+    localStorage.setItem(ACCOUNT_SESSIONS_KEY, JSON.stringify(sessions.slice(0, 8)));
+  }
+  function getAccounts() {
+    const sessions = readAccountSessions();
+    const activeUser = getUser();
+    const activeToken = getToken();
+    const activeId = String(activeUser.id || activeUser.user_id || activeUser.email || '');
+    const combined = sessions.slice();
+    if (activeToken && activeId && !combined.some(function (item) { return String(item.id) === activeId; })) {
+      combined.unshift({ id: activeId, token: activeToken, user: activeUser });
+    }
+    return combined.map(function (item) {
+      return { id: String(item.id), name: item.user.name || item.user.full_name || '', email: item.user.email || '', is_current: String(item.id) === activeId };
+    });
+  }
   function setSession(token, user) {
+    const previousToken = getToken();
+    const previousUser = getUser();
+    const previousId = String(previousUser.id || previousUser.user_id || previousUser.email || '');
+    const nextId = String((user || {}).id || (user || {}).user_id || (user || {}).email || '');
+    if (previousToken && previousId && previousId !== nextId) storeAccountSession(previousToken, previousUser);
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(USER_KEY, JSON.stringify(user || {}));
+    if (token && nextId) storeAccountSession(token, user || {});
     localStorage.removeItem('notely-trial-active');
     localStorage.removeItem('notely-trial-expires');
+  }
+  function beginAddAccount() {
+    const token = getToken();
+    const user = getUser();
+    if (token) storeAccountSession(token, user);
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+    clearTrialSession();
+    window.location.assign('/login?addAccount=1&return=%2Fdashboard');
+  }
+  function switchAccount(userId) {
+    const target = readAccountSessions().find(function (item) { return String(item.id) === String(userId); });
+    if (!target) return false;
+    const token = getToken();
+    const user = getUser();
+    if (token) storeAccountSession(token, user);
+    localStorage.setItem(TOKEN_KEY, target.token);
+    localStorage.setItem(USER_KEY, JSON.stringify(target.user || {}));
+    clearTrialSession();
+    window.location.assign('/dashboard');
+    return true;
   }
   function setTrialSession(trial) {
     if (trial && trial.device_token) localStorage.setItem('notely-trial-device', trial.device_token);
@@ -428,7 +485,7 @@ const SS = (() => {
     boot();
   }
 
-  return { api, getToken, setSession, getUser, clearSession, isAuthed, logout, refreshSession: refreshSessionToken,
+  return { api, getToken, setSession, getUser, getAccounts, beginAddAccount, switchAccount, clearSession, isAuthed, logout, refreshSession: refreshSessionToken,
            setTrialSession, clearTrialSession, requireAuth, toast, attachRipples, initParticles,
            toggleTheme, getTheme, applyTheme };
 })();
