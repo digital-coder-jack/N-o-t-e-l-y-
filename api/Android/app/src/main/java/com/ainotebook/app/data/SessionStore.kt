@@ -74,6 +74,8 @@ class SessionStore(private val context: Context) {
         private val USER_KEY = stringPreferencesKey("ss_user")
         private val ACCOUNTS_KEY = stringPreferencesKey("notely_account_sessions_v1")
         private const val KEY_ALIAS = "notely_session_aes_v1"
+        // TEMP: remove after testing
+        private const val PREVIEW_TEST_TOKEN = "notely-preview-test-session"
         private const val ENCRYPTED_PREFIX = "enc:"
         private val json = Json { ignoreUnknownKeys = true }
     }
@@ -88,12 +90,22 @@ class SessionStore(private val context: Context) {
 
     suspend fun token(): String? = decryptStored(context.dataStore.data.first()[TOKEN_KEY])
 
+    // TEMP: remove after testing — backend accepts this marker only in Vercel Preview when the flag is enabled.
+    suspend fun saveTestingSession(user: User) {
+        context.dataStore.edit { prefs ->
+            prefs[TOKEN_KEY] = encryptStored(PREVIEW_TEST_TOKEN)
+            prefs[USER_KEY] = json.encodeToString(User.serializer(), user)
+        }
+    }
+
+    suspend fun isTestingSession(): Boolean = token() == PREVIEW_TEST_TOKEN
+
     suspend fun save(token: String, user: User) {
         context.dataStore.edit { prefs ->
             val sessions = readStoredAccounts(prefs[ACCOUNTS_KEY]).toMutableList()
             val previousToken = decryptStored(prefs[TOKEN_KEY])
             val previousUser = prefs[USER_KEY]?.let { runCatching { json.decodeFromString<User>(it) }.getOrNull() }
-            if (!previousToken.isNullOrBlank() && previousUser != null && previousUser.id != user.id) {
+            if (!previousToken.isNullOrBlank() && previousToken != PREVIEW_TEST_TOKEN && previousUser != null && previousUser.id != user.id) {
                 sessions.removeAll { it.id == previousUser.id }
                 sessions.add(0, StoredAccount(previousUser.id, previousToken, previousUser))
             }
@@ -124,7 +136,7 @@ class SessionStore(private val context: Context) {
         val activeToken = decryptStored(prefs[TOKEN_KEY])
         val activeUser = prefs[USER_KEY]?.let { runCatching { json.decodeFromString<User>(it) }.getOrNull() }
         val sessions = readStoredAccounts(prefs[ACCOUNTS_KEY]).toMutableList()
-        if (!activeToken.isNullOrBlank() && activeUser != null) {
+        if (!activeToken.isNullOrBlank() && activeToken != PREVIEW_TEST_TOKEN && activeUser != null) {
             sessions.removeAll { it.id == activeUser.id }
             sessions.add(0, StoredAccount(activeUser.id, activeToken, activeUser))
         }
@@ -139,7 +151,7 @@ class SessionStore(private val context: Context) {
             val sessions = readStoredAccounts(prefs[ACCOUNTS_KEY]).toMutableList()
             val currentToken = decryptStored(prefs[TOKEN_KEY])
             val currentUser = prefs[USER_KEY]?.let { runCatching { json.decodeFromString<User>(it) }.getOrNull() }
-            if (!currentToken.isNullOrBlank() && currentUser != null) {
+            if (!currentToken.isNullOrBlank() && currentToken != PREVIEW_TEST_TOKEN && currentUser != null) {
                 sessions.removeAll { it.id == currentUser.id }
                 sessions.add(0, StoredAccount(currentUser.id, currentToken, currentUser))
             }
@@ -158,7 +170,7 @@ class SessionStore(private val context: Context) {
             val token = decryptStored(prefs[TOKEN_KEY])
             val user = prefs[USER_KEY]?.let { runCatching { json.decodeFromString<User>(it) }.getOrNull() }
             val sessions = readStoredAccounts(prefs[ACCOUNTS_KEY]).toMutableList()
-            if (!token.isNullOrBlank() && user != null) {
+            if (!token.isNullOrBlank() && token != PREVIEW_TEST_TOKEN && user != null) {
                 sessions.removeAll { it.id == user.id }
                 sessions.add(0, StoredAccount(user.id, token, user))
                 prefs[ACCOUNTS_KEY] = encryptStored(json.encodeToString(sessions.take(8)))
@@ -186,7 +198,7 @@ class SessionStore(private val context: Context) {
         context.dataStore.edit { prefs ->
             val token = decryptStored(prefs[TOKEN_KEY])
             val user = prefs[USER_KEY]?.let { runCatching { json.decodeFromString<User>(it) }.getOrNull() }
-            if (preserveCurrent && !token.isNullOrBlank() && user != null) {
+            if (preserveCurrent && !token.isNullOrBlank() && token != PREVIEW_TEST_TOKEN && user != null) {
                 val sessions = readStoredAccounts(prefs[ACCOUNTS_KEY]).toMutableList()
                 sessions.removeAll { it.id == user.id }
                 sessions.add(0, StoredAccount(user.id, token, user))
