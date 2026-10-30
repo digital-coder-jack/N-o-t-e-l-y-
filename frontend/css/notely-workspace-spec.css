@@ -84,3 +84,12 @@ button.nch-library-item{cursor:pointer}
 @media(prefers-reduced-motion:reduce){.nch-sidebar-new,.nch-sidebar-new:before,.nch-sidebar-new:after,.nch-plus,.nch-tab-toggle:before,.nch-tab-toggle button,.nch-tool-card,.nch-tool-icon{animation:none!important;transition:none!important}}
 [data-theme="dark"] .nch-tab-toggle[data-active="workspace"]{background:#354154}
 [data-theme="dark"] .nch-tab-toggle[data-active="workspace"] button[aria-selected="false"]{color:#d9e2f1}
+
+.nch-view-in{animation:nch-tab-forward .3s cubic-bezier(.66,0,.34,1) both}
+.nch-view-in[data-transition="back"]{animation-name:nch-tab-back}
+@keyframes nch-tab-forward{from{opacity:.5;transform:translateX(26px)}to{opacity:1;transform:translateX(0)}}
+@keyframes nch-tab-back{from{opacity:.5;transform:translateX(-26px)}to{opacity:1;transform:translateX(0)}}
+.nch-library-notice{margin:0 0 18px;padding:12px 14px;border:1px solid var(--nch-border);border-radius:12px;background:var(--nch-panel);color:var(--nch-muted);font:400 12px/1.55 "DM Sans",sans-serif}
+.nch-library-toolbar button:disabled{opacity:.45;cursor:not-allowed}
+.nch-tab-toggle button:hover:not([aria-selected="true"]){filter:brightness(.96)}
+@media(prefers-reduced-motion:reduce){.nch-view-in{animation:none!important}}
