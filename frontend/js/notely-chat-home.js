@@ -10,6 +10,9 @@
   var activityKey = 'notely-home-activity-v1';
   var homeRendered = false;
   var menuOpen = false;
+  var shell = document.querySelector('.nw-shell');
+  if (shell) shell.classList.add('nch-shell');
+  document.body.classList.add('nch-shell-active');
 
   function esc(value) {
     return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) {
@@ -98,7 +101,7 @@
     }).join('');
   }
   async function fetchActivity() {
-    if (!window.SS || !SS.api) return [];
+    if (typeof SS === 'undefined' || !SS.api) return [];
     var results = await Promise.allSettled([
       SS.api('/api/tools/notes'),
       SS.api('/api/topics'),
@@ -130,7 +133,7 @@
   }
   function renderRecentChats() {
     var holder = document.getElementById('nchRecent');
-    if (!holder || !window.SS || !SS.api) return;
+    if (!holder || typeof SS === 'undefined' || !SS.api) return;
     SS.api('/api/chats').then(function (data) {
       var chats = (data.chats || []).slice(0, 5);
       holder.innerHTML = chats.map(function (chat) {
@@ -317,6 +320,7 @@
   function syncHomeState() {
     var homeButton = sidebar.querySelector('[data-view="overview"]');
     var isHome = !!(homeButton && homeButton.classList.contains('active'));
+    if (shell) shell.classList.toggle('nch-on-home', isHome);
     if (isHome) {
       if (!homeRendered || !root.querySelector('.nch-home')) renderHome();
       document.body.classList.add('nch-home-active');
