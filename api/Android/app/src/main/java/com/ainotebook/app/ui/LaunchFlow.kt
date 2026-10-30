@@ -98,7 +98,18 @@ internal fun NativeLaunchFlow(
     LaunchedEffect(introFinished, sessionLoading, isAuthed, stage) {
         if (introFinished && !sessionLoading && stage == LaunchStage.INTRO) {
             val addAccount = context.getSharedPreferences("notely_account_flow", android.content.Context.MODE_PRIVATE).getBoolean("add_account_pending", false)
-            stage = if (isAuthed) LaunchStage.WORKSPACE else if (addAccount) LaunchStage.AUTH else LaunchStage.LANDING
+            // TEMP: remove after testing — bypass only when the backend confirms protected Preview mode.
+            val testSessionActive = runCatching {
+                if (factory.repository.currentToken() == "notely-preview-test-session") {
+                    val enabled = factory.repository.bootstrapPreviewTestSession()
+                    if (!enabled) factory.repository.clearPreviewTestSession()
+                    enabled
+                } else if (!isAuthed && !addAccount) {
+                    factory.repository.bootstrapPreviewTestSession()
+                } else false
+            }.getOrDefault(false)
+            stage = if (testSessionActive || isAuthed && factory.repository.currentToken() != null) LaunchStage.WORKSPACE
+                    else if (addAccount) LaunchStage.AUTH else LaunchStage.LANDING
         }
     }
 
