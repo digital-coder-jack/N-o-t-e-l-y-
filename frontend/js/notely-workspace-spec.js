@@ -31,6 +31,7 @@
   }
   function renderSidebar() {
     var brand = sidebar.querySelector('.nw-brand');
+    var legacySearch = sidebar.querySelector('.nw-search'); if (legacySearch) legacySearch.remove();
     if (!nav) return;
     nav.innerHTML =
       '<button class="nch-sidebar-new" id="nchSidebarNewChat" type="button"><span class="nch-plus" aria-hidden="true">＋</span><span>New chat</span></button>' +
