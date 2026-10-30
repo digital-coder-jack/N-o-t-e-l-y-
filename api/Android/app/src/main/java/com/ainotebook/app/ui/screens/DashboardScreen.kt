@@ -66,8 +66,10 @@ import com.ainotebook.app.data.Chat
 import com.ainotebook.app.data.SavedNote
 import com.ainotebook.app.ui.DashboardViewModel
 import com.ainotebook.app.ui.components.BrandLogo
-import java.time.Instant
-import java.time.temporal.ChronoUnit
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 private data class RecentWork(
     val key: String,
@@ -371,7 +373,7 @@ private fun StarterCard(title: String, description: String, label: String, onCli
 }
 
 private fun timeGreeting(): String {
-    val hour = java.time.LocalTime.now().hour
+    val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
     return when {
         hour < 12 -> "Good morning"
         hour < 17 -> "Good afternoon"
@@ -381,11 +383,18 @@ private fun timeGreeting(): String {
 
 private fun parseTimestamp(value: String?): Long {
     if (value.isNullOrBlank()) return 0L
-    return runCatching { Instant.parse(value).toEpochMilli() }.getOrDefault(0L)
+    val patterns = listOf(
+        "yyyy-MM-dd'T'HH:mm:ss.SSSX",
+        "yyyy-MM-dd'T'HH:mm:ssX",
+        "yyyy-MM-dd HH:mm:ss"
+    )
+    return patterns.firstNotNullOfOrNull { pattern ->
+        runCatching { SimpleDateFormat(pattern, Locale.US).parse(value)?.time }.getOrNull()
+    } ?: 0L
 }
 
 private fun timeAgo(timestamp: Long): String {
-    val minutes = ChronoUnit.MINUTES.between(Instant.ofEpochMilli(timestamp), Instant.now()).coerceAtLeast(0)
+    val minutes = TimeUnit.MILLISECONDS.toMinutes((System.currentTimeMillis() - timestamp).coerceAtLeast(0L))
     return when {
         minutes < 1 -> "just now"
         minutes < 60 -> "${minutes}m ago"
