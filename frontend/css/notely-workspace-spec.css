@@ -1,3 +1,5 @@
+:root{--nch-border:var(--nch-line);--nch-accent:var(--nch-accent-2)}
+html[data-theme="dark"]{--nch-border:var(--nch-line);--nch-accent:#8fe8f8}
 /* New sidebar, animated plus button, Chat/Workspace toggle and tool carousel. */
 .nw-shell.nch-shell .nw-nav{display:flex;flex-direction:column;gap:10px;overflow:auto;min-height:0;padding:12px 8px}
 .nw-shell.nch-shell .nw-nav>span{display:none}
