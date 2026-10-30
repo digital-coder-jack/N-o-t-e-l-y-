@@ -78,6 +78,7 @@ import com.ainotebook.app.ui.screens.SignupScreen
 import com.ainotebook.app.ui.screens.ToolsScreen
 import com.ainotebook.app.ui.theme.Indigo
 import com.ainotebook.app.ui.theme.MutedText
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.Menu
