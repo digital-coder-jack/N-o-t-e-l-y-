@@ -100,6 +100,12 @@
         '<strong>' + item.title + '</strong><small>' + item.description + '</small><time>Get started</time></button>';
     }).join('');
   }
+  function listFrom(value, keys) {
+    if (Array.isArray(value)) return value;
+    if (!value || typeof value !== 'object') return [];
+    for (var i = 0; i < keys.length; i++) if (Array.isArray(value[keys[i]])) return value[keys[i]];
+    return [];
+  }
   async function fetchActivity() {
     if (typeof SS === 'undefined' || !SS.api) return [];
     var results = await Promise.allSettled([
@@ -110,22 +116,22 @@
     ]);
     var items = [];
     if (results[0].status === 'fulfilled') {
-      (results[0].value.notes || []).filter(function (n) { return !n.deleted && !n.archived; }).forEach(function (n) {
+      listFrom(results[0].value, ['notes', 'items']).filter(function (n) { return !n.deleted && !n.archived; }).forEach(function (n) {
         items.push({ kind:'note', id:n.id, title:n.topic || n.title || 'Untitled note', description:'Your saved study note', timestamp:n.updated_at || n.created_at });
       });
     }
     if (results[1].status === 'fulfilled') {
-      (results[1].value.topics || []).forEach(function (t) {
+      listFrom(results[1].value, ['topics', 'items']).forEach(function (t) {
         items.push({ kind:'topic', id:t.id, title:t.title || 'Notebook', description:(t.sections || []).length + ' saved sections', timestamp:t.updated_at || t.created_at });
       });
     }
     if (results[2].status === 'fulfilled') {
-      (results[2].value.chats || []).forEach(function (c) {
+      listFrom(results[2].value, ['chats', 'items']).forEach(function (c) {
         items.push({ kind:'chat', id:c.id, title:c.title || 'New chat', description:'Notely Assistant conversation', timestamp:c.updated_at || c.created_at });
       });
     }
     if (results[3].status === 'fulfilled') {
-      (results[3].value.files || []).forEach(function (f) {
+      listFrom(results[3].value, ['files', 'uploads', 'items']).forEach(function (f) {
         items.push({ kind:'file', id:f.id, title:f.filename || f.name || 'Study document', description:'Course material', timestamp:f.updated_at || f.created_at, view:'documents' });
       });
     }
@@ -135,7 +141,7 @@
     var holder = document.getElementById('nchRecent');
     if (!holder || typeof SS === 'undefined' || !SS.api) return;
     SS.api('/api/chats').then(function (data) {
-      var chats = (data.chats || []).slice(0, 5);
+      var chats = listFrom(data, ['chats', 'items']).slice(0, 5);
       holder.innerHTML = chats.map(function (chat) {
         return '<button class="nch-recent-item" type="button" data-home-chat="' + esc(chat.id) + '" title="' + esc(chat.title || 'New chat') + '">' + esc(chat.title || 'New chat') + '</button>';
       }).join('');
