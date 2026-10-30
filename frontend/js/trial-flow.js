@@ -141,6 +141,13 @@
     return data;
   }
 
+  function appUrl(path) {
+    var value = String(path || '/');
+    if (/^https?:\/\//i.test(value)) return value;
+    var base = String(window.SS_API_BASE || '').replace(/\/+$/, '');
+    return base ? base + (value.charAt(0) === '/' ? value : '/' + value) : value;
+  }
+
   function apiUrl(path) {
     var base = '';
     try { base = String(window.SS_API_BASE || '').trim(); } catch (_) {}
@@ -327,8 +334,7 @@
   }
 
   async function resolveExistingAccountSession() {
-    if (!window.SS || typeof SS.getToken !== 'function') return false;
-    var existingToken = SS.getToken();
+    var existingToken = (window.SS && typeof SS.getToken === 'function' ? SS.getToken() : '') || localStorage.getItem('ss_token') || '';
     if (!existingToken) return false;
     try {
       // /refresh is account-token-only (trial fallback is deliberately
@@ -344,7 +350,8 @@
     } catch (_) {}
     // Old/expired tokens left in localStorage must not override the newly
     // started cookie-backed trial and force the visitor back to /login.
-    if (typeof SS.clearSession === 'function') SS.clearSession();
+    if (window.SS && typeof SS.clearSession === 'function') SS.clearSession();
+    else { try { localStorage.removeItem('ss_token'); localStorage.removeItem('ss_user'); } catch (_) {} }
     return false;
   }
 
@@ -361,8 +368,8 @@
       var hasAccount = await resolveExistingAccountSession();
       if (hasAccount) {
         closeChoice();
-        if (window.NotelyShutter && typeof window.NotelyShutter.navigate === 'function') window.NotelyShutter.navigate('/dashboard');
-        else window.location.assign('/dashboard');
+        if (window.NotelyShutter && typeof window.NotelyShutter.navigate === 'function') window.NotelyShutter.navigate(appUrl('/dashboard'));
+        else window.location.assign(appUrl('/dashboard'));
         return;
       }
       var data = await api('/api/trial/start', {});
@@ -403,10 +410,10 @@
     busy = true;
     closeChoice();
     if (window.NotelyShutter && typeof window.NotelyShutter.navigate === 'function') {
-      window.NotelyShutter.navigate(url);
+      window.NotelyShutter.navigate(appUrl(url));
     } else {
       try { sessionStorage.setItem('notely-shutter-next', '1'); } catch (_) {}
-      window.location.assign(url);
+      window.location.assign(appUrl(url));
     }
   }
 
@@ -441,12 +448,31 @@
     }, reduced ? 950 : 2450);
   }
 
-  function init() {
+  async function init() {
     var start = $('#getStarted');
     if (start) start.addEventListener('click', showChoicesWithShutter);
-    // Rehydrate the server cookie after a storage clear where fingerprint matching
-    // identifies the same trial. Viewing the landing page does not start a trial.
-    refreshStatus();
+
+    // Returning account users and active trial users should resume at the
+    // workspace. Expired/converted trials remain on the auth-choice flow.
+    var hasAccount = await resolveExistingAccountSession();
+    if (hasAccount) {
+      if (window.NotelyShutter && typeof window.NotelyShutter.navigate === 'function') window.NotelyShutter.navigate('/dashboard');
+      else { try { sessionStorage.setItem('notely-shutter-next', '1'); } catch (_) {} window.location.replace(appUrl('/dashboard')); }
+      return;
+    }
+
+    var currentStatus = await refreshStatus();
+    if (currentStatus.status === 'active') {
+      showLoading(function () {
+        if (window.NotelyShutter && typeof window.NotelyShutter.navigate === 'function') window.NotelyShutter.navigate('/dashboard');
+        else { try { sessionStorage.setItem('notely-shutter-next', '1'); } catch (_) {} window.location.replace('/dashboard'); }
+      });
+      return;
+    }
+    if (currentStatus.status === 'expired' || currentStatus.status === 'converted') {
+      renderChoice();
+      openChoice();
+    }
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });

@@ -74,8 +74,8 @@ private val TOOLS = listOf(
 )
 
 @Composable
-fun ToolsScreen(vm: ToolsViewModel) {
-    var selected by remember { mutableStateOf<Tool?>(null) }
+fun ToolsScreen(vm: ToolsViewModel, initialTool: Tool? = null) {
+    var selected by remember(initialTool) { mutableStateOf<Tool?>(initialTool) }
 
     val haptics = rememberHaptics()
 

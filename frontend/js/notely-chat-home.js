@@ -6,6 +6,9 @@
   if (!root || !sidebar) return;
 
   var activity = [];
+  var activityUnavailable = false;
+  var activityLoaded = false;
+  var activityLoading = false;
   var profile = {};
   var activityKey = 'notely-home-activity-v1';
   var homeRendered = false;
@@ -82,7 +85,7 @@
         ? 'data-topic-open="' + esc(item.id) + '"'
         : item.kind === 'chat'
           ? 'data-home-chat="' + esc(item.id) + '"'
-          : 'data-view="' + esc(item.view || 'documents') + '"';
+          : 'data-file-open="' + esc(item.id) + '"';
     return '<button type="button" class="nch-activity" ' + attrs + ' data-home-kind="' + esc(item.kind) + '" data-home-id="' + esc(item.id) + '">' +
       '<span class="nch-activity-icon" aria-hidden="true">' + icon(item.kind) + '</span>' +
       '<strong>' + esc(item.title || 'Untitled') + '</strong>' +
@@ -100,6 +103,12 @@
         '<strong>' + item.title + '</strong><small>' + item.description + '</small><time>Get started</time></button>';
     }).join('');
   }
+  function listFrom(value, keys) {
+    if (Array.isArray(value)) return value;
+    if (!value || typeof value !== 'object') return [];
+    for (var i = 0; i < keys.length; i++) if (Array.isArray(value[keys[i]])) return value[keys[i]];
+    return [];
+  }
   async function fetchActivity() {
     if (typeof SS === 'undefined' || !SS.api) return [];
     var results = await Promise.allSettled([
@@ -110,42 +119,49 @@
     ]);
     var items = [];
     if (results[0].status === 'fulfilled') {
-      (results[0].value.notes || []).filter(function (n) { return !n.deleted && !n.archived; }).forEach(function (n) {
+      listFrom(results[0].value, ['notes', 'items']).filter(function (n) { return !n.deleted && !n.archived; }).forEach(function (n) {
         items.push({ kind:'note', id:n.id, title:n.topic || n.title || 'Untitled note', description:'Your saved study note', timestamp:n.updated_at || n.created_at });
       });
     }
     if (results[1].status === 'fulfilled') {
-      (results[1].value.topics || []).forEach(function (t) {
+      listFrom(results[1].value, ['topics', 'items']).forEach(function (t) {
         items.push({ kind:'topic', id:t.id, title:t.title || 'Notebook', description:(t.sections || []).length + ' saved sections', timestamp:t.updated_at || t.created_at });
       });
     }
     if (results[2].status === 'fulfilled') {
-      (results[2].value.chats || []).forEach(function (c) {
+      listFrom(results[2].value, ['chats', 'items']).forEach(function (c) {
         items.push({ kind:'chat', id:c.id, title:c.title || 'New chat', description:'Notely Assistant conversation', timestamp:c.updated_at || c.created_at });
       });
     }
     if (results[3].status === 'fulfilled') {
-      (results[3].value.files || []).forEach(function (f) {
+      listFrom(results[3].value, ['files', 'uploads', 'items']).forEach(function (f) {
         items.push({ kind:'file', id:f.id, title:f.filename || f.name || 'Study document', description:'Course material', timestamp:f.updated_at || f.created_at, view:'documents' });
       });
     }
+    activityUnavailable = items.length === 0 && results.some(function (result) { return result.status === 'rejected'; });
     return sortActivities(items);
   }
   function renderRecentChats() {
     var holder = document.getElementById('nchRecent');
     if (!holder || typeof SS === 'undefined' || !SS.api) return;
     SS.api('/api/chats').then(function (data) {
-      var chats = (data.chats || []).slice(0, 5);
-      holder.innerHTML = chats.map(function (chat) {
+      var chats = listFrom(data, ['chats', 'items']).slice(0, 5);
+      var chatMarkup = chats.map(function (chat) {
         return '<button class="nch-recent-item" type="button" data-home-chat="' + esc(chat.id) + '" title="' + esc(chat.title || 'New chat') + '">' + esc(chat.title || 'New chat') + '</button>';
       }).join('');
+      var workMarkup = activity.filter(function (item) { return item.kind !== 'chat'; }).slice(0, 3).map(function (item) {
+        var attr = item.kind === 'note' ? 'data-sidebar-note="' + esc(item.id) + '"' : item.kind === 'topic' ? 'data-sidebar-topic="' + esc(item.id) + '"' : 'data-sidebar-file="' + esc(item.id) + '"';
+        return '<button class="nch-recent-item" type="button" ' + attr + ' title="' + esc(item.title) + '">' + esc(item.title) + '</button>';
+      }).join('');
+      holder.innerHTML = (chatMarkup ? '<small class="nch-recent-label">CHATS</small>' + chatMarkup : '') +
+        (workMarkup ? '<small class="nch-recent-label">RECENT WORK</small>' + workMarkup : '');
     }).catch(function () { holder.innerHTML = ''; });
   }
   function homeMarkup() {
     var user = readProfile();
     var name = getName();
     var isTrial = !!user.is_trial;
-    var cards = activity.length ? activity.map(card).join('') : starterCards();
+    var cards = activity.length ? activity.map(card).join('') : activityUnavailable ? '<div class="nch-activity-error">Recent work could not be loaded. Your saved data has not been changed.</div>' : starterCards();
     var trialText = isTrial && !user.trial_expired ? '<small class="nch-trial-note">Trial workspace</small>' : '';
     return '<div class="nch-home">' +
       '<div class="nch-hero">' + orb() +
@@ -324,9 +340,11 @@
     if (isHome) {
       if (!homeRendered || !root.querySelector('.nch-home')) renderHome();
       document.body.classList.add('nch-home-active');
+      if (!activityLoaded && !activityLoading) refreshActivity();
     } else {
       document.body.classList.remove('nch-home-active');
       homeRendered = false;
+      activityLoaded = false;
     }
     var launcher = document.getElementById('nwAssistantLauncher');
     if (launcher) launcher.hidden = isHome;
@@ -340,9 +358,57 @@
       event.preventDefault();
       recordActivity('chat', chat.dataset.homeChat);
       openChat(chat.dataset.homeChat);
+      return;
     }
-  });
-  document.addEventListener('click', function (event) {
+    var note = event.target.closest('.nch-home [data-note-id]');
+    if (note && window.NotelyWorkspace) {
+      event.preventDefault();
+      recordActivity('note', note.dataset.noteId);
+      window.NotelyWorkspace.openNote(note.dataset.noteId);
+      return;
+    }
+    var topic = event.target.closest('.nch-home [data-topic-open]');
+    if (topic && window.NotelyWorkspace) {
+      event.preventDefault();
+      recordActivity('topic', topic.dataset.topicOpen);
+      window.NotelyWorkspace.openTopic(topic.dataset.topicOpen);
+      return;
+    }
+    var file = event.target.closest('.nch-home [data-file-open]');
+    if (file && window.NotelyWorkspace) {
+      event.preventDefault();
+      recordActivity('file', file.dataset.fileOpen);
+      window.NotelyWorkspace.openDocument(file.dataset.fileOpen);
+      return;
+    }
+    var sidebarNote = event.target.closest('[data-sidebar-note]');
+    if (sidebarNote && window.NotelyWorkspace) {
+      event.preventDefault();
+      recordActivity('note', sidebarNote.dataset.sidebarNote);
+      window.NotelyWorkspace.openNote(sidebarNote.dataset.sidebarNote);
+      return;
+    }
+    var sidebarTopic = event.target.closest('[data-sidebar-topic]');
+    if (sidebarTopic && window.NotelyWorkspace) {
+      event.preventDefault();
+      recordActivity('topic', sidebarTopic.dataset.sidebarTopic);
+      window.NotelyWorkspace.openTopic(sidebarTopic.dataset.sidebarTopic);
+      return;
+    }
+    var sidebarFile = event.target.closest('[data-sidebar-file]');
+    if (sidebarFile && window.NotelyWorkspace) {
+      event.preventDefault();
+      recordActivity('file', sidebarFile.dataset.sidebarFile);
+      window.NotelyWorkspace.openDocument(sidebarFile.dataset.sidebarFile);
+      return;
+    }
+    var homeNav = event.target.closest('.nch-home [data-view]');
+    if (homeNav && window.NotelyWorkspace) {
+      event.preventDefault();
+      document.body.classList.remove('nch-home-active');
+      window.NotelyWorkspace.navigate(homeNav.dataset.view);
+      return;
+    }
     var nav = event.target.closest('[data-view]');
     if (nav && nav.dataset.view !== 'overview') {
       document.body.classList.remove('nch-home-active');
@@ -378,11 +444,27 @@
     window.requestAnimationFrame(syncHomeState);
   });
   observer.observe(root, { childList:true, subtree:false });
+  function refreshActivity() {
+    activityLoading = true;
+    fetchActivity().then(function (items) {
+      activity = items;
+      activityLoaded = true;
+      activityLoading = false;
+      if (sidebar.querySelector('[data-view="overview"].active')) {
+        homeRendered = false;
+        renderHome();
+      }
+    }).catch(function () {
+      activityUnavailable = true;
+      activityLoaded = true;
+      activityLoading = false;
+      if (sidebar.querySelector('[data-view="overview"].active')) {
+        homeRendered = false;
+        renderHome();
+      }
+    });
+  }
   installProfileMenu();
   readProfile();
-  fetchActivity().then(function (items) {
-    activity = items;
-    syncHomeState();
-  }).catch(function () { syncHomeState(); });
   setTimeout(syncHomeState, 0);
 })();

@@ -1,6 +1,7 @@
 package com.ainotebook.app.data
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 
 /**
  * Thin repository wrapping [ApiClient] + [SessionStore]. Holds the session
@@ -15,6 +16,12 @@ class Repository(private val session: SessionStore) {
     val userFlow get() = session.userFlow
 
     suspend fun currentToken(): String? = session.token()
+
+    suspend fun accounts() = session.accounts()
+
+    suspend fun switchAccount(userId: Int) = session.switchAccount(userId)
+
+    suspend fun beginAddAccount() = session.beginAddAccount()
 
     /* ---------- Auth ---------- */
     suspend fun login(identifier: String, password: String): User {
@@ -55,10 +62,12 @@ class Repository(private val session: SessionStore) {
      * call can never leave a stale token or user behind.
      */
     suspend fun deleteAccount(): String {
+        val userId = session.userFlow.first()?.id
         return try {
             ApiClient.api.deleteAccount().message
         } finally {
-            session.clear()
+            session.clear(preserveCurrent = false)
+            if (userId != null) session.removeAccount(userId)
         }
     }
 

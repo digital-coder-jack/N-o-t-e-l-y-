@@ -7,13 +7,16 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.zIndex
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -43,6 +46,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -60,6 +64,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.ainotebook.app.data.Repository
+import com.ainotebook.app.data.SessionAccount
 import com.ainotebook.app.ui.components.OfflineBanner
 import com.ainotebook.app.ui.components.SpaceBackground
 import com.ainotebook.app.ui.components.rememberHaptics
@@ -73,6 +78,32 @@ import com.ainotebook.app.ui.screens.SignupScreen
 import com.ainotebook.app.ui.screens.ToolsScreen
 import com.ainotebook.app.ui.theme.Indigo
 import com.ainotebook.app.ui.theme.MutedText
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.HelpOutline
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.DrawerValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.weight
+import com.ainotebook.app.ui.components.BrandLogo
+import kotlinx.coroutines.launch
+
 
 object Routes {
     const val LOGIN = "login"
@@ -100,7 +131,7 @@ fun AppRoot(repo: Repository) {
     val sessionLoading = token == "__NOTELY_SESSION_LOADING__"
     val isAuthed = !sessionLoading && !token.isNullOrBlank()
     NativeLaunchFlow(factory = factory, isAuthed = isAuthed, sessionLoading = sessionLoading) {
-        MainShell(factory)
+        key(token) { MainShell(factory) }
     }
 }
 
@@ -139,6 +170,7 @@ internal fun AuthFlow(factory: VMFactory, startRoute: String, onBackToLanding: (
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MainShell(factory: VMFactory) {
     val nav = rememberNavController()
@@ -146,13 +178,16 @@ private fun MainShell(factory: VMFactory) {
     val current = backStack?.destination?.route
     val haptic = rememberHaptics()
     val appContext = LocalContext.current.applicationContext
-    val widgetPrefs = remember(appContext) { appContext.getSharedPreferences("notely_assistant_widget", Context.MODE_PRIVATE) }
-    var assistantMode by rememberSaveable { mutableStateOf(widgetPrefs.getInt("mode", 0).coerceIn(0, 2)) }
-    var trialDetailsOpen by rememberSaveable { mutableStateOf(false) }
-    var trialUpgradeOpen by rememberSaveable { mutableStateOf(false) }
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    var assistantMode by remember { mutableStateOf(0) }
+    var drawerSearch by remember { mutableStateOf("") }
+    var profileMenuOpen by remember { mutableStateOf(false) }
+    var helpOpen by remember { mutableStateOf(false) }
+    var accountList by remember { mutableStateOf(emptyList<SessionAccount>()) }
     var trialReminderDismissed by rememberSaveable { mutableStateOf(false) }
     var trialEndedDismissed by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(assistantMode) { widgetPrefs.edit().putInt("mode", assistantMode).apply() }
+
     androidx.activity.compose.BackHandler(enabled = assistantMode > 0) {
         assistantMode = if (assistantMode == 2) 1 else 0
     }
@@ -162,51 +197,226 @@ private fun MainShell(factory: VMFactory) {
     val toolsVm: ToolsViewModel = viewModel(factory = factory)
     val notesVm: NotesViewModel = viewModel(factory = factory)
     val profileVm: ProfileViewModel = viewModel(factory = factory)
-
     val userState by profileVm.state.collectAsState()
-    LaunchedEffect(userState.user?.trial_expired) { if (userState.user?.trial_expired == true) { assistantMode = 0; trialEndedDismissed = false } }
+    val chatState by chatVm.state.collectAsState()
+    val dashboardState by dashboardVm.state.collectAsState()
+    val homeActivityPrefs = remember(appContext, userState.user?.id) {
+        appContext.getSharedPreferences("notely_home_activity_${userState.user?.id ?: 0}", Context.MODE_PRIVATE)
+    }
+
+    LaunchedEffect(Unit) {
+        chatVm.loadChats()
+        accountList = factory.repository.accounts()
+    }
+    LaunchedEffect(chatState.currentChatId, userState.user?.id) {
+        chatState.currentChatId?.let { id -> homeActivityPrefs.edit().putLong("chat:$id", System.currentTimeMillis()).apply() }
+    }
+    LaunchedEffect(userState.user?.trial_expired) {
+        if (userState.user?.trial_expired == true) {
+            assistantMode = 0
+            trialEndedDismissed = false
+        }
+    }
+
     val networkMonitor = LocalNetworkMonitor.current
     val isOnline by networkMonitor.isOnline.collectAsState(initial = networkMonitor.currentlyOnline())
+    val isHome = current == Routes.DASHBOARD
+    val title = when {
+        isHome -> "Home"
+        current == Routes.NOTES -> "Notes"
+        current == Routes.PROFILE -> "Settings"
+        current?.startsWith(Routes.TOOLS) == true -> "Study tools"
+        else -> "Workspace"
+    }
 
-    SpaceBackground {
-      Box(Modifier.fillMaxSize()) {
+    fun navigate(route: String) {
+        if (route != Routes.DASHBOARD) assistantMode = 0
+        scope.launch { drawerState.close() }
+        if (current != route) {
+            nav.navigate(route) {
+                popUpTo(Routes.DASHBOARD) { saveState = true }
+                launchSingleTop = true
+                restoreState = true
+            }
+        }
+    }
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        gesturesEnabled = true,
+        drawerContent = {
+            ModalDrawerSheet(
+                modifier = Modifier.widthIn(min = 270.dp, max = 310.dp),
+                drawerContainerColor = MaterialTheme.colorScheme.surface
+            ) {
+                Column(
+                    Modifier.fillMaxHeight().padding(horizontal = 14.dp, vertical = 18.dp)
+                ) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        BrandLogo(size = 34.dp)
+                        Spacer(Modifier.width(10.dp))
+                        Text("Notely", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = drawerSearch,
+                        onValueChange = { drawerSearch = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        placeholder = { Text("Search workspace") },
+                        shape = RoundedCornerShape(999.dp)
+                    )
+                    Text(
+                        "WORKSPACE",
+                        modifier = Modifier.padding(start = 12.dp, top = 22.dp, bottom = 8.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Bold
+                    )
+                    val navItems = listOf(
+                        Triple("Home", Routes.DASHBOARD, Icons.Default.Dashboard),
+                        Triple("Notes", Routes.NOTES, Icons.Default.AutoStories),
+                        Triple("Study tools", Routes.TOOLS, Icons.Default.AutoStories),
+                        Triple("Settings", Routes.PROFILE, Icons.Default.Settings)
+                    )
+                    navItems.filter { it.first.contains(drawerSearch, ignoreCase = true) }.forEach { item ->
+                        NavigationDrawerItem(
+                            label = { Text(item.first) },
+                            selected = when (item.second) {
+                                Routes.TOOLS -> current?.startsWith(Routes.TOOLS) == true
+                                else -> current == item.second
+                            },
+                            onClick = { haptic(); navigate(item.second) },
+                            icon = { Icon(item.third, contentDescription = null) },
+                            modifier = Modifier.padding(vertical = 2.dp)
+                        )
+                    }
+                    Text(
+                        "RECENT",
+                        modifier = Modifier.padding(start = 12.dp, top = 18.dp, bottom = 8.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Bold
+                    )
+                    chatState.chats.take(4).forEach { chat ->
+                        Text(
+                            chat.title.ifBlank { "New chat" },
+                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+                                .clickable {
+                                    chatVm.openChat(chat.id)
+                                    assistantMode = 2
+                                    scope.launch { drawerState.close() }
+                                }
+                                .padding(horizontal = 12.dp, vertical = 9.dp),
+                            maxLines = 1,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    dashboardState.notes.take(3).forEach { note ->
+                        Text(
+                            note.topic.ifBlank { "Untitled note" },
+                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+                                .clickable {
+                                    notesVm.select(note.id)
+                                    navigate(Routes.NOTES)
+                                }
+                                .padding(horizontal = 12.dp, vertical = 9.dp),
+                            maxLines = 1,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    Spacer(Modifier.weight(1f))
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f)
+                    ) {
+                        Row(
+                            Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)) {
+                                Text(
+                                    (userState.user?.name ?: "N").take(1).uppercase(),
+                                    modifier = Modifier.padding(horizontal = 11.dp, vertical = 9.dp),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Column(Modifier.weight(1f).padding(start = 10.dp)) {
+                                Text(userState.user?.name?.ifBlank { "Student" } ?: "Student", fontWeight = FontWeight.SemiBold, maxLines = 1)
+                                if (userState.user?.is_trial == true) {
+                                    Text("Trial", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                            Box {
+                                IconButton(onClick = { profileMenuOpen = true }) {
+                                    Icon(Icons.Default.MoreVert, contentDescription = "Account menu")
+                                }
+                                DropdownMenu(expanded = profileMenuOpen, onDismissRequest = { profileMenuOpen = false }) {
+                                    DropdownMenuItem(text = { Text(userState.user?.name?.ifBlank { "Your account" } ?: "Your account", fontWeight = FontWeight.Bold) }, onClick = { profileMenuOpen = false }, enabled = false)
+                                    accountList.forEach { account ->
+                                        DropdownMenuItem(
+                                            text = { Row(verticalAlignment = Alignment.CenterVertically) { Text(account.name.ifBlank { account.email.ifBlank { "Account" } }, modifier = Modifier.weight(1f)); if (account.isCurrent) Text("✓", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) } },
+                                            onClick = {
+                                                profileMenuOpen = false
+                                                if (!account.isCurrent) scope.launch { factory.repository.switchAccount(account.id) }
+                                            }
+                                        )
+                                    }
+                                    DropdownMenuItem(
+                                        text = { Text("Settings") },
+                                        onClick = { profileMenuOpen = false; navigate(Routes.PROFILE) },
+                                        leadingIcon = { Icon(Icons.Default.Settings, null) }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Help") },
+                                        onClick = { profileMenuOpen = false; helpOpen = true },
+                                        leadingIcon = { Icon(Icons.Default.HelpOutline, null) }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Add account") },
+                                        onClick = {
+                                            profileMenuOpen = false
+                                            scope.launch { factory.repository.beginAddAccount() }
+                                        },
+                                        leadingIcon = { Icon(Icons.Default.Add, null) }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Logout") },
+                                        onClick = { profileMenuOpen = false; scope.launch { factory.repository.logout() } },
+                                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.Logout, null) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ) {
         Scaffold(
             containerColor = androidx.compose.ui.graphics.Color.Transparent,
-            bottomBar = {
-                NavigationBar(
-                    modifier = Modifier.clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)),
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
-                    tonalElevation = 6.dp
+            topBar = {
+                Row(
+                    Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface.copy(alpha = 0.92f))
+                        .statusBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    BOTTOM_ITEMS.forEach { item ->
-                        val selected = current?.startsWith(item.route) == true
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = {
-                                if (!selected) {
-                                    haptic()
-                                    nav.navigate(item.route) {
-                                        popUpTo(Routes.DASHBOARD) { saveState = true }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
-                                }
-                            },
-                            icon = { Icon(item.icon, contentDescription = item.label) },
-                            label = {
-                                Text(
-                                    item.label,
-                                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
-                                )
-                            },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = MaterialTheme.colorScheme.primary,
-                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                unselectedIconColor = MutedText,
-                                unselectedTextColor = MutedText,
-                                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
-                            )
-                        )
+                    IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                        Icon(Icons.Default.Menu, contentDescription = "Open workspace menu")
+                    }
+                    Text(title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Button(
+                        onClick = { haptic(); chatVm.startNewChat(); assistantMode = 2 },
+                        shape = RoundedCornerShape(999.dp),
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 9.dp)
+                    ) {
+                        Text("＋ New Chat")
                     }
                 }
             }
@@ -225,31 +435,45 @@ private fun MainShell(factory: VMFactory) {
                         DashboardScreen(
                             vm = dashboardVm,
                             userName = userState.user?.name ?: "",
-                            onOpenChat = { id -> chatVm.openChat(id); assistantMode = 1 },
-                            onNewChat = { chatVm.startNewChat(); assistantMode = 1 },
-                            onOpenTools = {
-                                nav.navigate(Routes.TOOLS) {
-                                    popUpTo(Routes.DASHBOARD) { saveState = true }
-                                    launchSingleTop = true
-                                }
+                            userId = userState.user?.id ?: 0,
+                            onOpenChat = { id -> chatVm.openChat(id); assistantMode = 2 },
+                            onNewChat = { chatVm.startNewChat(); assistantMode = 2 },
+                            onSendPrompt = { prompt -> chatVm.startNewChat(); chatVm.send(prompt); assistantMode = 2 },
+                            onOpenNote = { id ->
+                                if (id == 0) notesVm.create() else notesVm.select(id)
+                                nav.navigate(Routes.NOTES) { launchSingleTop = true }
+                            },
+                            onOpenTools = { toolName ->
+                                val tool = runCatching { Tool.valueOf(toolName.uppercase()) }.getOrNull()
+                                if (tool != null) nav.navigate("${Routes.TOOLS}/${tool.name.lowercase()}") { launchSingleTop = true }
+                                else navigate(Routes.TOOLS)
                             }
                         )
                     }
                     composable(Routes.TOOLS) {
                         ToolsScreen(vm = toolsVm)
                     }
+                    composable(
+                        route = "${Routes.TOOLS}/{tool}",
+                        arguments = listOf(navArgument("tool") { type = NavType.StringType })
+                    ) { entry ->
+                        val tool = runCatching {
+                            Tool.valueOf(entry.arguments?.getString("tool")?.uppercase().orEmpty())
+                        }.getOrNull()
+                        ToolsScreen(vm = toolsVm, initialTool = tool)
+                    }
                     composable(Routes.NOTES) {
-                        NotesScreen(vm = notesVm, onOpenTools = { nav.navigate(Routes.TOOLS) { launchSingleTop = true } })
+                        NotesScreen(vm = notesVm, userId = userState.user?.id ?: 0, onOpenTools = { nav.navigate(Routes.TOOLS) { launchSingleTop = true } })
                     }
                     composable(Routes.PROFILE) {
-                        ProfileScreen(
-                            vm = profileVm,
-                            onLoggedOut = { /* token flow flips AppRoot to AuthFlow */ }
-                        )
+                        ProfileScreen(vm = profileVm, onLoggedOut = { })
                     }
                 }
             }
         }
+    }
+
+    if (current != Routes.DASHBOARD || assistantMode > 0) {
         if (userState.user?.trial_expired != true) FloatingAssistantWidget(
             mode = assistantMode,
             onModeChange = { assistantMode = it },
@@ -257,82 +481,55 @@ private fun MainShell(factory: VMFactory) {
             context = when {
                 current?.startsWith(Routes.NOTES) == true -> "Write · Notes"
                 current?.startsWith(Routes.TOOLS) == true -> "Practice · Study tools"
-                current?.startsWith(Routes.PROFILE) == true -> "Plan · Account"
+                current?.startsWith(Routes.PROFILE) == true -> "Settings"
                 else -> "Home"
             },
             onOpen = { haptic(); assistantMode = 1 }
         )
+    }
 
-        val trialUser = userState.user
-        if (trialUser != null && trialUser.is_trial) {
-            Box(Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 8.dp, end = 12.dp).zIndex(1100f)) {
-                Column(horizontalAlignment = Alignment.End) {
-                    Surface(
-                        modifier = Modifier.clickable { trialDetailsOpen = !trialDetailsOpen },
-                        shape = RoundedCornerShape(999.dp),
-                        color = MaterialTheme.colorScheme.surface,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                    ) {
-                        val daysLeft = trialUser.trial_days_left ?: 0
-                        Text(
-                            if (trialUser.trial_expired) "Trial ended" else "Trial: " + daysLeft + if (daysLeft == 1) " day left" else " days left",
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
+    val trialUser = userState.user
+    if (trialUser != null && trialUser.is_trial) {
+        val daysLeft = trialUser.trial_days_left ?: 0
+        if (!trialUser.trial_expired && (daysLeft == 2 || daysLeft == 1) && !trialReminderDismissed) {
+            Surface(
+                Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp).zIndex(1100f),
+                shape = RoundedCornerShape(14.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                shadowElevation = 3.dp
+            ) {
+                Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Column(Modifier.weight(1f)) {
+                        Text(if (daysLeft == 2) "Your trial ends in two days" else "Your trial ends today", fontWeight = FontWeight.SemiBold)
+                        Text("Your saved work stays yours.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                     }
-                    if (trialDetailsOpen) Surface(
-                        modifier = Modifier.padding(top = 8.dp).widthIn(max = 290.dp),
-                        shape = RoundedCornerShape(18.dp),
-                        color = MaterialTheme.colorScheme.surface,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                        shadowElevation = 8.dp
-                    ) {
-                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(if (trialUser.trial_expired) "Your trial has ended" else "Your seven-day trial", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                            Text(if (trialUser.trial_expired) "Your notes and materials remain safe in read-only mode." else "Everything is unlocked while your trial is active.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-                            Text("Upgrade payments are not connected yet.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
-                            TextButton(onClick = { trialDetailsOpen = false }) { Text("Close") }
-                        }
-                    }
+                    TextButton(onClick = { trialReminderDismissed = true }) { Text("Dismiss") }
                 }
             }
-            val daysLeft = trialUser.trial_days_left ?: 0
-            if (!trialUser.trial_expired && (daysLeft == 2 || daysLeft == 1) && !trialReminderDismissed) {
-                Surface(Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 54.dp, start = 12.dp, end = 12.dp), shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), shadowElevation = 4.dp) {
-                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Column(Modifier.weight(1f)) {
-                            Text(if (daysLeft == 2) "Your trial ends in two days" else "Your trial ends today", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
-                            Text("Your saved work stays yours.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-                        }
-                        TextButton(onClick = { trialReminderDismissed = true }) { Text("Dismiss") }
-                    }
-                }
-            }
-            if (trialUser.trial_expired && !trialEndedDismissed) {
-                Box(Modifier.fillMaxSize().zIndex(20000f).background(MaterialTheme.colorScheme.background.copy(alpha = .97f)), contentAlignment = Alignment.Center) {
-                    Surface(Modifier.padding(24.dp), shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surface, border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), shadowElevation = 8.dp) {
-                        Column(Modifier.padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                            Text("YOUR NEXT CHAPTER", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                            Text("Your trial has ended.", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                            Text("Your notes and materials are safe. You can still read your work; creating, editing and AI features are paused until you upgrade.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
-                            Button(onClick = { trialEndedDismissed = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(999.dp)) { Text("Continue to read-only workspace") }
-                            OutlinedButton(onClick = { trialUpgradeOpen = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(999.dp)) { Text("View upgrade options") }
-                            if (trialDetailsOpen) Text("Payments are not connected yet. Your saved work remains available.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+        }
+        if (trialUser.trial_expired && !trialEndedDismissed) {
+            Box(Modifier.fillMaxSize().zIndex(20000f).background(MaterialTheme.colorScheme.background.copy(alpha = .97f)), contentAlignment = Alignment.Center) {
+                Surface(Modifier.padding(24.dp), shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface, border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), shadowElevation = 8.dp) {
+                    Column(Modifier.padding(26.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        Text("WORKSPACE ACCESS", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                        Text("Your trial has ended.", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                        Text("Your notes and materials remain safe. You can still read your work; creating, editing and AI features are paused while the trial is inactive.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+                        Button(onClick = { trialEndedDismissed = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(999.dp)) {
+                            Text("Continue to read-only workspace")
                         }
                     }
                 }
             }
         }
+    }
 
-
-        if (trialUpgradeOpen) androidx.compose.material3.AlertDialog(
-            onDismissRequest = { trialUpgradeOpen = false },
-            title = { Text("Upgrade options") },
-            text = { Text("Payments are not connected yet. This is a placeholder; no charge will be made.") },
-            confirmButton = { TextButton(onClick = { trialUpgradeOpen = false }) { Text("Got it") } }
+    if (helpOpen) {
+        AlertDialog(
+            onDismissRequest = { helpOpen = false },
+            title = { Text("Notely Help") },
+            text = { Text("Choose a workspace item from the menu, or ask Notely Assistant whenever you need help with your studies.") },
+            confirmButton = { TextButton(onClick = { helpOpen = false }) { Text("Close") } }
         )
-      }
     }
 }

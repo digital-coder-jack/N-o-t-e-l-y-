@@ -1,5 +1,7 @@
 package com.ainotebook.app.ui.screens
 
+import android.content.Context
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -45,14 +47,17 @@ import com.ainotebook.app.ui.components.NotelyIconTrigger
 import com.ainotebook.app.ui.theme.MutedText
 
 @Composable
-fun NotesScreen(vm: NotesViewModel, onOpenTools: () -> Unit) {
+fun NotesScreen(vm: NotesViewModel, userId: Int = 0, onOpenTools: () -> Unit) {
     val state by vm.state.collectAsState()
+    val context = LocalContext.current
+    val activityPrefs = remember(context, userId) { context.getSharedPreferences("notely_home_activity_$userId", Context.MODE_PRIVATE) }
     val selected = state.notes.firstOrNull { it.id == state.selectedId }
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
     var dirty by remember { mutableStateOf(false) }
 
-    LaunchedEffect(state.selectedId) {
+    LaunchedEffect(state.selectedId, state.message) {
+        state.selectedId?.let { activityPrefs.edit().putLong("note:$it", System.currentTimeMillis()).apply() }
         title = selected?.topic.orEmpty()
         content = selected?.content.orEmpty()
         dirty = false
@@ -103,7 +108,7 @@ fun NotesScreen(vm: NotesViewModel, onOpenTools: () -> Unit) {
 
         state.notes.forEach { note ->
             Card(
-                modifier = Modifier.fillMaxWidth().clickable { vm.select(note.id) },
+                modifier = Modifier.fillMaxWidth().clickable { activityPrefs.edit().putLong("note:${note.id}", System.currentTimeMillis()).apply(); vm.select(note.id) },
                 shape = RoundedCornerShape(14.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = if (state.selectedId == note.id) MaterialTheme.colorScheme.primary.copy(alpha = 0.09f) else MaterialTheme.colorScheme.surface
