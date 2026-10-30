@@ -276,6 +276,7 @@
   });
   document.addEventListener('click',function(e){if(!e.target.closest('.nch-chat-row'))sidebar.querySelectorAll('.nch-chat-menu').forEach(function(m){m.hidden=true;});});
   window.addEventListener('notely:chat-updated',loadChats);
+  var topNewChat=document.getElementById('nchNewChat'); if(topNewChat) topNewChat.addEventListener('click',function(){window.setTimeout(loadChats,900);});
   installToggle();
   renderSidebar();
 })();
