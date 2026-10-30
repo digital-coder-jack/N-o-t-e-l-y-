@@ -18,53 +18,61 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Sans:wght@400;500;600;700&display=swap" />
   <link rel="stylesheet" href="/css/notely-theme-shared.css" />
   <link rel="stylesheet" href="/css/notely-lottie-icons.css" />
+  <link rel="stylesheet" href="/css/notely-chat-home.css" />
 </head>
 <body>
   <div id="notely-shutter" class="notely-shutter-overlay" aria-hidden="true"><div class="notely-shutter-inner"><img src="/assets/logo.png" alt="Notely"></div></div>
   <div class="nw-shell">
-    <aside class="nw-sidebar" id="nwSidebar">
-      <div class="nw-brand"><img src="/assets/notely-symbol.svg" alt="Notely logo" /><span class="nw-brand-name">Notely</span><button class="nw-icon nw-collapse" id="nwCollapse" aria-label="Toggle sidebar">‹</button></div>
-      <button class="nw-primary" data-new-note type="button"><span>＋</span> New note</button>
-      <button class="nw-search" data-view="search"><span>⌕</span> Search anything <kbd>⌘ K</kbd></button>
+    <aside class="nw-sidebar" id="nwSidebar" aria-label="Workspace sidebar">
+      <div class="nw-brand">
+        <img src="/assets/notely-symbol.svg" alt="Notely logo" />
+        <span class="nw-brand-name">Notely</span>
+        <button class="nw-icon nw-collapse" id="nwCollapse" aria-label="Collapse sidebar" type="button">‹</button>
+      </div>
+      <button class="nw-search" data-view="search" type="button"><span aria-hidden="true">⌕</span> Search <kbd>⌘ K</kbd></button>
       <nav class="nw-nav" aria-label="Workspace navigation">
-        <span>WRITE</span>
-        <button data-view="notebooks"><span class="nw-nav-icon" aria-hidden="true">▤</span><b>Notebooks</b></button>
-        <button data-view="documents"><span class="nw-nav-icon" aria-hidden="true">▧</span><b>Course materials</b></button>
-        <button data-view="lectures"><span class="nw-nav-icon" aria-hidden="true">◷</span><b>Recorded lectures</b></button>
-        <span>PRACTICE</span>
-        <button data-view="flashcards"><span class="nw-nav-icon" aria-hidden="true">▣</span><b>Flashcards</b></button>
-        <button data-view="quizzes"><span class="nw-nav-icon" aria-hidden="true">?</span><b>Quizzes</b></button>
-        <button data-view="mindmaps"><span class="nw-nav-icon" aria-hidden="true">◎</span><b>Mind maps</b></button>
-        <button data-view="roadmap"><span class="nw-nav-icon" aria-hidden="true">⌁</span><b>Study roadmap</b></button>
-        <span>PLAN</span>
-        <button data-view="tasks"><span class="nw-nav-icon" aria-hidden="true">✓</span><b>Tasks & calendar</b></button>
-        <button data-view="revision"><span class="nw-nav-icon" aria-hidden="true">↻</span><b>Revision planner</b></button>
+        <span>WORKSPACE</span>
+        <button data-view="overview" type="button"><span class="nch-nav-icon" aria-hidden="true">⌂</span><b>Home</b></button>
+        <button data-view="notes" type="button"><span class="nch-nav-icon" aria-hidden="true">▤</span><b>Notes</b></button>
+        <button data-view="flashcards" type="button"><span class="nch-nav-icon" aria-hidden="true">▣</span><b>Flashcards</b></button>
+        <button data-view="quizzes" type="button"><span class="nch-nav-icon" aria-hidden="true">?</span><b>Quiz</b></button>
+        <button data-view="tools" type="button"><span class="nch-nav-icon" aria-hidden="true">✧</span><b>Summarize</b></button>
+        <button data-view="mindmaps" type="button"><span class="nch-nav-icon" aria-hidden="true">◎</span><b>Mind maps</b></button>
+        <button data-view="roadmap" type="button"><span class="nch-nav-icon" aria-hidden="true">⌁</span><b>Study roadmap</b></button>
+        <button data-view="revision" type="button"><span class="nch-nav-icon" aria-hidden="true">↻</span><b>Revision planner</b></button>
+        <button data-view="documents" type="button"><span class="nch-nav-icon" aria-hidden="true">▧</span><b>Documents</b></button>
+        <button data-view="favorites" type="button"><span class="nch-nav-icon" aria-hidden="true">☆</span><b>Favorites</b></button>
+        <button data-view="settings" type="button"><span class="nch-nav-icon" aria-hidden="true">⚙</span><b>Settings</b></button>
+        <span>RECENT</span>
+        <div id="nchRecent" class="nch-recent-list" aria-label="Recent chats"></div>
       </nav>
       <div class="nw-sidebar-bottom">
-        <button class="nw-settings-link" data-view="settings" type="button"><span aria-hidden="true">⚙</span> Settings</button>
-        <div class="nw-sync"><span>Workspace sync</span><small>Your notes stay in your workspace</small></div>
-        <button class="nw-user" data-view="settings" type="button"><i>S</i><span><b id="nwUserName">Student</b><small>Student workspace</small></span>⋯</button>
+        <button class="nw-user" type="button" aria-label="Open account menu">
+          <i id="nwUserAvatar">N</i>
+          <span><b id="nwUserName">Student</b><small>Account menu</small></span>
+          <span class="nch-user-dots" aria-hidden="true">⋯</span>
+        </button>
       </div>
     </aside>
-    <button class="nw-scrim" id="nwScrim" aria-label="Close navigation"></button>
+    <button class="nw-scrim" id="nwScrim" aria-label="Close navigation" type="button"></button>
     <main class="nw-main">
       <header class="nw-topbar">
         <button class="nw-mobile-menu nw-icon" id="nwMenu" type="button" aria-label="Open navigation">☰</button>
-        <div class="nw-crumb"><span>Workspace</span><b>/</b><strong id="nwTitle">Home</strong></div>
+        <div class="nw-crumb"><span>Notely</span><b>/</b><strong id="nwTitle">Home</strong></div>
         <div class="nw-top-actions">
-          <button id="nwTrialBadge" class="nw-trial-pill" type="button" hidden aria-expanded="false">Trial: 7 days left</button>
-          <button class="nw-top-search" data-view="search" type="button" aria-label="Search workspace">⌕ <span>Search</span><kbd>Ctrl K</kbd></button>
-          <button class="nw-top-new" data-new-note type="button"><span aria-hidden="true">＋</span> New note</button>
-          <button class="notely-theme-toggle" type="button" data-notely-theme-toggle aria-label="Switch theme" title="Switch theme (Shift+T)" aria-pressed="false"><svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"></path></svg><svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.7 8.7 0 1 0 20.2 15.4Z"></path></svg></button>
-          <button class="nw-avatar" data-view="settings" type="button" aria-label="Open profile and settings">S</button>
+          <button class="nw-top-new" id="nchNewChat" type="button"><span aria-hidden="true">＋</span> New Chat</button>
+          <button class="notely-theme-toggle" type="button" data-notely-theme-toggle aria-label="Switch theme" title="Switch theme (Shift+T)" aria-pressed="false">
+            <svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"></path></svg>
+            <svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.7 8.7 0 1 0 20.2 15.4Z"></path></svg>
+          </button>
         </div>
       </header>
       <section id="nwContent" class="nw-content"><div class="nw-loading">Preparing your workspace…</div></section>
       <nav class="nw-bottom-nav" aria-label="Mobile workspace navigation">
         <button data-view="overview" type="button"><span aria-hidden="true">⌂</span><small>Home</small></button>
-        <button data-view="notebooks" type="button"><span aria-hidden="true">▤</span><small>Write</small></button>
-        <button data-view="tools" type="button"><span aria-hidden="true">▣</span><small>Practice</small></button>
-        <button data-view="tasks" type="button"><span aria-hidden="true">✓</span><small>Plan</small></button>
+        <button data-view="notes" type="button"><span aria-hidden="true">▤</span><small>Notes</small></button>
+        <button data-view="tools" type="button"><span aria-hidden="true">▣</span><small>Tools</small></button>
+        <button data-view="settings" type="button"><span aria-hidden="true">⚙</span><small>Settings</small></button>
       </nav>
     </main>
   </div>
@@ -72,6 +80,7 @@
   <script src="/js/app.js"></script>
   <script src="/js/notely-workspace.js"></script>
   <script src="/js/notely-trial-workspace.js"></script>
+  <script src="/js/notely-chat-home.js"></script>
   <script src="/js/notely-theme.js" defer></script>
   <script src="/js/notely-shutter.js"></script>
   <script defer src="/js/notely-lottie-registry.js"></script>
