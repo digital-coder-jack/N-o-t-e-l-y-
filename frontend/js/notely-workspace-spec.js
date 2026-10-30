@@ -144,6 +144,10 @@
   }
   function setTab(tab) {
     activeTab = tab;
+    root.classList.remove('nch-view-in');
+    root.dataset.transition = tab === 'workspace' ? 'forward' : 'back';
+    void root.offsetWidth;
+    root.classList.add('nch-view-in');
     var toggle = document.getElementById('nchTabToggle');
     if (toggle) {
       toggle.dataset.active = tab;
@@ -247,7 +251,16 @@
     var crumb=topbar.querySelector('.nw-crumb');
     if (crumb) crumb.outerHTML='<div class="nch-tab-toggle" id="nchTabToggle" data-active="chat" role="tablist" aria-label="Workspace mode"><button type="button" role="tab" data-tab="chat" aria-selected="true">Chat</button><button type="button" role="tab" data-tab="workspace" aria-selected="false">Workspace</button></div>';
     var toggle=document.getElementById('nchTabToggle');
-    if(toggle) toggle.addEventListener('click',function(e){var b=e.target.closest('[data-tab]');if(b)setTab(b.dataset.tab);});
+    if(toggle) {
+      toggle.addEventListener('click',function(e){var b=e.target.closest('[data-tab]');if(b)setTab(b.dataset.tab);});
+      toggle.addEventListener('keydown',function(e){
+        if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;
+        e.preventDefault();
+        var next=e.key==='ArrowRight'?'workspace':'chat';
+        setTab(next);
+        var target=toggle.querySelector('[data-tab="'+next+'"]');if(target)target.focus();
+      });
+    }
     topbar.classList.add('nch-topbar-updated');
   }
   sidebar.addEventListener('click',function(e){
