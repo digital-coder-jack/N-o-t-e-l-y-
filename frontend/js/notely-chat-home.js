@@ -146,9 +146,15 @@
     if (!holder || typeof SS === 'undefined' || !SS.api) return;
     SS.api('/api/chats').then(function (data) {
       var chats = listFrom(data, ['chats', 'items']).slice(0, 5);
-      holder.innerHTML = chats.map(function (chat) {
+      var chatMarkup = chats.map(function (chat) {
         return '<button class="nch-recent-item" type="button" data-home-chat="' + esc(chat.id) + '" title="' + esc(chat.title || 'New chat') + '">' + esc(chat.title || 'New chat') + '</button>';
       }).join('');
+      var workMarkup = activity.filter(function (item) { return item.kind !== 'chat'; }).slice(0, 3).map(function (item) {
+        var attr = item.kind === 'note' ? 'data-sidebar-note="' + esc(item.id) + '"' : item.kind === 'topic' ? 'data-sidebar-topic="' + esc(item.id) + '"' : 'data-sidebar-file="' + esc(item.id) + '"';
+        return '<button class="nch-recent-item" type="button" ' + attr + ' title="' + esc(item.title) + '">' + esc(item.title) + '</button>';
+      }).join('');
+      holder.innerHTML = (chatMarkup ? '<small class="nch-recent-label">CHATS</small>' + chatMarkup : '') +
+        (workMarkup ? '<small class="nch-recent-label">RECENT WORK</small>' + workMarkup : '');
     }).catch(function () { holder.innerHTML = ''; });
   }
   function homeMarkup() {
@@ -373,6 +379,27 @@
       event.preventDefault();
       recordActivity('file', file.dataset.fileOpen);
       window.NotelyWorkspace.openDocument(file.dataset.fileOpen);
+      return;
+    }
+    var sidebarNote = event.target.closest('[data-sidebar-note]');
+    if (sidebarNote && window.NotelyWorkspace) {
+      event.preventDefault();
+      recordActivity('note', sidebarNote.dataset.sidebarNote);
+      window.NotelyWorkspace.openNote(sidebarNote.dataset.sidebarNote);
+      return;
+    }
+    var sidebarTopic = event.target.closest('[data-sidebar-topic]');
+    if (sidebarTopic && window.NotelyWorkspace) {
+      event.preventDefault();
+      recordActivity('topic', sidebarTopic.dataset.sidebarTopic);
+      window.NotelyWorkspace.openTopic(sidebarTopic.dataset.sidebarTopic);
+      return;
+    }
+    var sidebarFile = event.target.closest('[data-sidebar-file]');
+    if (sidebarFile && window.NotelyWorkspace) {
+      event.preventDefault();
+      recordActivity('file', sidebarFile.dataset.sidebarFile);
+      window.NotelyWorkspace.openDocument(sidebarFile.dataset.sidebarFile);
       return;
     }
     var homeNav = event.target.closest('.nch-home [data-view]');
