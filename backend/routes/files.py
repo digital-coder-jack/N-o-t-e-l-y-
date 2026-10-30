@@ -120,6 +120,22 @@ async def list_files(topic_id: int | None = Query(default=None), user=Depends(au
     return {"files": [dict(f) for f in db.list_uploads(user["id"], topic_id)]}
 
 
+@router.get("/{upload_id}")
+async def preview_file(upload_id: int, user=Depends(auth.current_user)):
+    """Return extracted-text preview and metadata for a user's Library item."""
+    row = db.get_upload(user["id"], upload_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="File not found.")
+    return {
+        "id": upload_id,
+        "filename": row["filename"],
+        "content_type": row["content_type"],
+        "size_bytes": row["size_bytes"],
+        "preview": (row["extracted"] or "")[:12000],
+        "original_stored": False,
+    }
+
+
 @router.delete("/{upload_id}")
 async def delete_file(upload_id: int, user=Depends(auth.current_user)):
     if not db.delete_upload(user["id"], upload_id):
