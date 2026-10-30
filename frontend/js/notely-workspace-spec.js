@@ -242,8 +242,12 @@
     holder.addEventListener('click',async function(e){
       var b=e.target.closest('[data-library-file]');if(!b)return;
       var id=b.dataset.libraryFile;
-      try{var result=await SS.api('/api/files/'+encodeURIComponent(id)+'/summarize',{method:'POST',body:{}});window.alert(result.summary||'No text preview is available.');}
-      catch(err){showToast(err.message||'Preview unavailable.');}
+      try{
+        var result=await SS.api('/api/files/'+encodeURIComponent(id));
+        var modal=document.createElement('div');modal.className='nch-file-preview';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');
+        modal.innerHTML='<section><button type="button" class="nch-preview-close" aria-label="Close preview">×</button><span>LIBRARY PREVIEW</span><h2>'+esc(result.filename)+'</h2><p>'+esc(result.content_type||'File')+' · '+Math.max(1,Math.round((result.size_bytes||0)/1024))+' KB</p><pre>'+esc(result.preview||'No extracted text is available for this file.')+'</pre><small>'+(result.original_stored?'Original file is stored securely.':'The existing upload service currently retains extracted text and metadata only; original binary storage is not connected yet.')+'</small></section>';
+        document.body.appendChild(modal);modal.querySelector('button').onclick=function(){modal.remove();};modal.addEventListener('click',function(ev){if(ev.target===modal)modal.remove();});
+      } catch(err){showToast(err.message||'Preview unavailable.');}
     });
     await refresh();
   }
