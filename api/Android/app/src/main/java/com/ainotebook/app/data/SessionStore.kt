@@ -75,6 +75,7 @@ class SessionStore(private val context: Context) {
             sessions.add(0, StoredAccount(user.id, token, user))
             prefs[TOKEN_KEY] = encryptStored(token)
             prefs[USER_KEY] = json.encodeToString(User.serializer(), user)
+            context.getSharedPreferences("notely_account_flow", Context.MODE_PRIVATE).edit().putBoolean("add_account_pending", false).apply()
             prefs[ACCOUNTS_KEY] = encryptStored(json.encodeToString(sessions.take(8)))
         }
     }
@@ -138,6 +139,7 @@ class SessionStore(private val context: Context) {
             }
             prefs.remove(TOKEN_KEY)
             prefs.remove(USER_KEY)
+            context.getSharedPreferences("notely_account_flow", Context.MODE_PRIVATE).edit().putBoolean("add_account_pending", true).apply()
         }
     }
 
