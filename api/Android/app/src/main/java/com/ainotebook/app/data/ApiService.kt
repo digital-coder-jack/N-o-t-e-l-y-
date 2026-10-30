@@ -23,6 +23,10 @@ interface ApiService {
     @GET("api/auth/me")
     suspend fun me(): MeResponse
 
+    // TEMP: remove after testing — endpoint is inert outside protected Vercel Preview.
+    @GET("api/testing/session")
+    suspend fun testingSession(): TestingSessionResponse
+
     @PUT("api/auth/profile")
     suspend fun updateProfile(@Body body: ProfileRequest): MeResponse
 
