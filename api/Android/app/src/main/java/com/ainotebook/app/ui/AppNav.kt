@@ -198,6 +198,7 @@ private fun MainShell(factory: VMFactory) {
     val profileVm: ProfileViewModel = viewModel(factory = factory)
     val userState by profileVm.state.collectAsState()
     val chatState by chatVm.state.collectAsState()
+    val dashboardState by dashboardVm.state.collectAsState()
     val homeActivityPrefs = remember(appContext, userState.user?.id) {
         appContext.getSharedPreferences("notely_home_activity_${userState.user?.id ?: 0}", Context.MODE_PRIVATE)
     }
@@ -298,7 +299,7 @@ private fun MainShell(factory: VMFactory) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = FontWeight.Bold
                     )
-                    chatState.chats.take(5).forEach { chat ->
+                    chatState.chats.take(4).forEach { chat ->
                         Text(
                             chat.title.ifBlank { "New chat" },
                             modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
@@ -306,6 +307,20 @@ private fun MainShell(factory: VMFactory) {
                                     chatVm.openChat(chat.id)
                                     assistantMode = 2
                                     scope.launch { drawerState.close() }
+                                }
+                                .padding(horizontal = 12.dp, vertical = 9.dp),
+                            maxLines = 1,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    dashboardState.notes.take(3).forEach { note ->
+                        Text(
+                            note.topic.ifBlank { "Untitled note" },
+                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+                                .clickable {
+                                    notesVm.select(note.id)
+                                    navigate(Routes.NOTES)
                                 }
                                 .padding(horizontal = 12.dp, vertical = 9.dp),
                             maxLines = 1,
