@@ -52,6 +52,7 @@
     else if (window.NotelyAssistant) window.NotelyAssistant.open('').then(function(){return window.NotelyAssistant.newChat();});
   }
   async function loadChats() {
+    pinned = readPins();
     var holder = document.getElementById('nchChatHistory');
     if (!holder || !window.SS || !SS.api) return;
     try {
