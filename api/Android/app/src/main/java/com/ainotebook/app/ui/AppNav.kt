@@ -43,6 +43,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -127,7 +128,7 @@ fun AppRoot(repo: Repository) {
     val sessionLoading = token == "__NOTELY_SESSION_LOADING__"
     val isAuthed = !sessionLoading && !token.isNullOrBlank()
     NativeLaunchFlow(factory = factory, isAuthed = isAuthed, sessionLoading = sessionLoading) {
-        MainShell(factory)
+        key(token) { MainShell(factory) }
     }
 }
 
