@@ -141,6 +141,13 @@
     return data;
   }
 
+  function appUrl(path) {
+    var value = String(path || '/');
+    if (/^https?:\/\//i.test(value)) return value;
+    var base = String(window.SS_API_BASE || '').replace(/\/+$/, '');
+    return base ? base + (value.charAt(0) === '/' ? value : '/' + value) : value;
+  }
+
   function apiUrl(path) {
     var base = '';
     try { base = String(window.SS_API_BASE || '').trim(); } catch (_) {}
@@ -361,8 +368,8 @@
       var hasAccount = await resolveExistingAccountSession();
       if (hasAccount) {
         closeChoice();
-        if (window.NotelyShutter && typeof window.NotelyShutter.navigate === 'function') window.NotelyShutter.navigate('/dashboard');
-        else window.location.assign('/dashboard');
+        if (window.NotelyShutter && typeof window.NotelyShutter.navigate === 'function') window.NotelyShutter.navigate(appUrl('/dashboard'));
+        else window.location.assign(appUrl('/dashboard'));
         return;
       }
       var data = await api('/api/trial/start', {});
@@ -403,10 +410,10 @@
     busy = true;
     closeChoice();
     if (window.NotelyShutter && typeof window.NotelyShutter.navigate === 'function') {
-      window.NotelyShutter.navigate(url);
+      window.NotelyShutter.navigate(appUrl(url));
     } else {
       try { sessionStorage.setItem('notely-shutter-next', '1'); } catch (_) {}
-      window.location.assign(url);
+      window.location.assign(appUrl(url));
     }
   }
 
@@ -450,7 +457,7 @@
     var hasAccount = await resolveExistingAccountSession();
     if (hasAccount) {
       if (window.NotelyShutter && typeof window.NotelyShutter.navigate === 'function') window.NotelyShutter.navigate('/dashboard');
-      else { try { sessionStorage.setItem('notely-shutter-next', '1'); } catch (_) {} window.location.replace('/dashboard'); }
+      else { try { sessionStorage.setItem('notely-shutter-next', '1'); } catch (_) {} window.location.replace(appUrl('/dashboard')); }
       return;
     }
 
