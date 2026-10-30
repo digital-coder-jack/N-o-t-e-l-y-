@@ -269,6 +269,7 @@ private fun MainShell(factory: VMFactory) {
                     Button(
                         onClick = {
                             haptic()
+                            navigate(Routes.DASHBOARD)
                             activeWorkspaceTab = "chat"
                             chatVm.startNewChat()
                             assistantMode = 2
@@ -413,7 +414,7 @@ private fun MainShell(factory: VMFactory) {
                                 val selected = activeWorkspaceTab == option.first
                                 Surface(
                                     modifier = Modifier.weight(1f).clip(RoundedCornerShape(999.dp))
-                                        .clickable { activeWorkspaceTab = option.first; if (option.first == "chat") assistantMode = 0 },
+                                        .clickable { if (option.first == "chat") { navigate(Routes.DASHBOARD); assistantMode = 0 } else { activeWorkspaceTab = "workspace"; if (current != Routes.DASHBOARD) navigate(Routes.DASHBOARD) } },
                                     shape = RoundedCornerShape(999.dp),
                                     color = if (selected) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent
                                 ) {
@@ -426,7 +427,7 @@ private fun MainShell(factory: VMFactory) {
                         }
                     }
                     Button(
-                        onClick = { haptic(); activeWorkspaceTab = "chat"; chatVm.startNewChat(); assistantMode = 2 },
+                        onClick = { haptic(); navigate(Routes.DASHBOARD); activeWorkspaceTab = "chat"; chatVm.startNewChat(); assistantMode = 2 },
                         shape = RoundedCornerShape(999.dp),
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 9.dp)
                     ) { Text("＋ New") }
