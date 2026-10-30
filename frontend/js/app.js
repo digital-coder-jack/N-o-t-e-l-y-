@@ -164,7 +164,7 @@ const SS = (() => {
     clearTrialSession();
   }
   function isAuthed() { return !!getToken() || localStorage.getItem('notely-trial-active') === '1'; }
-  function logout() { clearSession(); window.location.href = '/'; }
+  function logout() { const token = getToken(); const user = getUser(); if (token) storeAccountSession(token, user); clearSession(); window.location.href = '/'; }
 
   function requireAuth() {
     if (isAuthed()) return true;
