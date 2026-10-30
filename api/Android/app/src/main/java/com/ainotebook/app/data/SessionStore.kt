@@ -154,11 +154,11 @@ class SessionStore(private val context: Context) {
     }
 
     /** Logout clears only the active session; saved account sessions remain switchable. */
-    suspend fun clear() {
+    suspend fun clear(preserveCurrent: Boolean = true) {
         context.dataStore.edit { prefs ->
             val token = decryptStored(prefs[TOKEN_KEY])
             val user = prefs[USER_KEY]?.let { runCatching { json.decodeFromString<User>(it) }.getOrNull() }
-            if (!token.isNullOrBlank() && user != null) {
+            if (preserveCurrent && !token.isNullOrBlank() && user != null) {
                 val sessions = readStoredAccounts(prefs[ACCOUNTS_KEY]).toMutableList()
                 sessions.removeAll { it.id == user.id }
                 sessions.add(0, StoredAccount(user.id, token, user))
