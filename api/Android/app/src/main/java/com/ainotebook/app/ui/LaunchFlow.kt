@@ -97,7 +97,8 @@ internal fun NativeLaunchFlow(
 
     LaunchedEffect(introFinished, sessionLoading, isAuthed, stage) {
         if (introFinished && !sessionLoading && stage == LaunchStage.INTRO) {
-            stage = if (isAuthed) LaunchStage.WORKSPACE else LaunchStage.LANDING
+            val addAccount = context.getSharedPreferences("notely_account_flow", android.content.Context.MODE_PRIVATE).getBoolean("add_account_pending", false)
+            stage = if (isAuthed) LaunchStage.WORKSPACE else if (addAccount) LaunchStage.AUTH else LaunchStage.LANDING
         }
     }
 
@@ -105,7 +106,8 @@ internal fun NativeLaunchFlow(
         if ((stage == LaunchStage.LANDING || stage == LaunchStage.AUTH) && isAuthed) {
             transitionTo(LaunchStage.WORKSPACE)
         } else if (stage == LaunchStage.WORKSPACE && !isAuthed) {
-            transitionTo(LaunchStage.LANDING)
+            val addAccount = context.getSharedPreferences("notely_account_flow", android.content.Context.MODE_PRIVATE).getBoolean("add_account_pending", false)
+            transitionTo(if (addAccount) LaunchStage.AUTH else LaunchStage.LANDING)
         }
     }
 
