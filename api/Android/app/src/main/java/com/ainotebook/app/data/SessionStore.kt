@@ -122,7 +122,7 @@ class SessionStore(private val context: Context) {
         context.dataStore.edit { prefs ->
             prefs[USER_KEY] = json.encodeToString(User.serializer(), user)
             val token = decryptStored(prefs[TOKEN_KEY])
-            if (!token.isNullOrBlank()) {
+            if (!token.isNullOrBlank() && token != PREVIEW_TEST_TOKEN) {
                 val sessions = readStoredAccounts(prefs[ACCOUNTS_KEY]).toMutableList()
                 sessions.removeAll { it.id == user.id }
                 sessions.add(0, StoredAccount(user.id, token, user))
