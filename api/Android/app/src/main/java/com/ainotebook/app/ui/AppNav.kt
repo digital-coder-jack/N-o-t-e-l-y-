@@ -78,6 +78,7 @@ import com.ainotebook.app.ui.screens.SignupScreen
 import com.ainotebook.app.ui.screens.ToolsScreen
 import com.ainotebook.app.ui.theme.Indigo
 import com.ainotebook.app.ui.theme.MutedText
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.Menu
@@ -112,6 +113,8 @@ object Routes {
     const val TOOLS = "tools"
     const val NOTES = "notes"
     const val PROFILE = "profile"
+    const val LIBRARY = "library"
+    const val SCHEDULE = "schedule"
 }
 
 private data class NavItem(val route: String, val label: String, val icon: ImageVector)
@@ -181,7 +184,7 @@ private fun MainShell(factory: VMFactory) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var assistantMode by remember { mutableStateOf(0) }
-    var drawerSearch by remember { mutableStateOf("") }
+    var activeWorkspaceTab by rememberSaveable { mutableStateOf("chat") }
     var profileMenuOpen by remember { mutableStateOf(false) }
     var helpOpen by remember { mutableStateOf(false) }
     var accountList by remember { mutableStateOf(emptyList<SessionAccount>()) }
@@ -220,9 +223,11 @@ private fun MainShell(factory: VMFactory) {
 
     val networkMonitor = LocalNetworkMonitor.current
     val isOnline by networkMonitor.isOnline.collectAsState(initial = networkMonitor.currentlyOnline())
-    val isHome = current == Routes.DASHBOARD
+    val isHome = current == Routes.DASHBOARD && activeWorkspaceTab == "chat"
     val title = when {
         isHome -> "Home"
+        current == Routes.LIBRARY -> "Library"
+        current == Routes.SCHEDULE -> "Schedule"
         current == Routes.NOTES -> "Notes"
         current == Routes.PROFILE -> "Settings"
         current?.startsWith(Routes.TOOLS) == true -> "Study tools"
@@ -231,6 +236,7 @@ private fun MainShell(factory: VMFactory) {
 
     fun navigate(route: String) {
         if (route != Routes.DASHBOARD) assistantMode = 0
+        if (route == Routes.DASHBOARD) activeWorkspaceTab = "chat"
         scope.launch { drawerState.close() }
         if (current != route) {
             nav.navigate(route) {
@@ -261,28 +267,31 @@ private fun MainShell(factory: VMFactory) {
                         Text("Notely", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     }
                     Spacer(Modifier.height(16.dp))
-                    OutlinedTextField(
-                        value = drawerSearch,
-                        onValueChange = { drawerSearch = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        placeholder = { Text("Search workspace") },
-                        shape = RoundedCornerShape(999.dp)
-                    )
+                    Button(
+                        onClick = {
+                            haptic()
+                            navigate(Routes.DASHBOARD)
+                            activeWorkspaceTab = "chat"
+                            chatVm.startNewChat()
+                            assistantMode = 2
+                            scope.launch { drawerState.close() }
+                        },
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                        shape = RoundedCornerShape(15.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 13.dp)
+                    ) { Text("＋  New chat", fontWeight = FontWeight.Bold) }
                     Text(
-                        "WORKSPACE",
+                        "NAVIGATION",
                         modifier = Modifier.padding(start = 12.dp, top = 22.dp, bottom = 8.dp),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = FontWeight.Bold
                     )
                     val navItems = listOf(
-                        Triple("Home", Routes.DASHBOARD, Icons.Default.Dashboard),
-                        Triple("Notes", Routes.NOTES, Icons.Default.AutoStories),
-                        Triple("Study tools", Routes.TOOLS, Icons.Default.AutoStories),
-                        Triple("Settings", Routes.PROFILE, Icons.Default.Settings)
+                        Triple("Library", Routes.LIBRARY, Icons.Default.AutoStories),
+                        Triple("Schedule", Routes.SCHEDULE, Icons.Default.Dashboard)
                     )
-                    navItems.filter { it.first.contains(drawerSearch, ignoreCase = true) }.forEach { item ->
+                    navItems.forEach { item ->
                         NavigationDrawerItem(
                             label = { Text(item.first) },
                             selected = when (item.second) {
@@ -301,7 +310,7 @@ private fun MainShell(factory: VMFactory) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = FontWeight.Bold
                     )
-                    chatState.chats.take(4).forEach { chat ->
+                    chatState.chats.forEach { chat ->
                         Text(
                             chat.title.ifBlank { "New chat" },
                             modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
@@ -309,20 +318,6 @@ private fun MainShell(factory: VMFactory) {
                                     chatVm.openChat(chat.id)
                                     assistantMode = 2
                                     scope.launch { drawerState.close() }
-                                }
-                                .padding(horizontal = 12.dp, vertical = 9.dp),
-                            maxLines = 1,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                    dashboardState.notes.take(3).forEach { note ->
-                        Text(
-                            note.topic.ifBlank { "Untitled note" },
-                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
-                                .clickable {
-                                    notesVm.select(note.id)
-                                    navigate(Routes.NOTES)
                                 }
                                 .padding(horizontal = 12.dp, vertical = 9.dp),
                             maxLines = 1,
@@ -410,20 +405,51 @@ private fun MainShell(factory: VMFactory) {
                     IconButton(onClick = { scope.launch { drawerState.open() } }) {
                         Icon(Icons.Default.Menu, contentDescription = "Open workspace menu")
                     }
-                    Text(title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    Button(
-                        onClick = { haptic(); chatVm.startNewChat(); assistantMode = 2 },
+                    Surface(
+                        modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
                         shape = RoundedCornerShape(999.dp),
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 9.dp)
+                        color = MaterialTheme.colorScheme.surfaceVariant
                     ) {
-                        Text("＋ New Chat")
+                        Row(Modifier.padding(3.dp), verticalAlignment = Alignment.CenterVertically) {
+                            listOf("chat" to "Chat", "workspace" to "Workspace").forEach { option ->
+                                val selected = activeWorkspaceTab == option.first
+                                Surface(
+                                    modifier = Modifier.weight(1f).clip(RoundedCornerShape(999.dp))
+                                        .clickable { if (option.first == "chat") { navigate(Routes.DASHBOARD); assistantMode = 0 } else { activeWorkspaceTab = "workspace"; if (current != Routes.DASHBOARD) navigate(Routes.DASHBOARD) } },
+                                    shape = RoundedCornerShape(999.dp),
+                                    color = if (selected) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent
+                                ) {
+                                    Text(option.second, modifier = Modifier.padding(horizontal = 8.dp, vertical = 9.dp),
+                                        color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold,
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                }
+                            }
+                        }
                     }
+                    Button(
+                        onClick = { haptic(); navigate(Routes.DASHBOARD); activeWorkspaceTab = "chat"; chatVm.startNewChat(); assistantMode = 2 },
+                        shape = RoundedCornerShape(999.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 9.dp)
+                    ) { Text("＋ New") }
                 }
             }
         ) { padding ->
             Column(Modifier.padding(padding)) {
                 OfflineBanner(isOnline = isOnline)
-                NavHost(
+                if (current == Routes.DASHBOARD && activeWorkspaceTab == "workspace") {
+                    AndroidWorkspaceCards { toolName ->
+                        when (toolName) {
+                            "notes" -> navigate(Routes.NOTES)
+                            "documents" -> navigate(Routes.LIBRARY)
+                            else -> {
+                                val tool = runCatching { Tool.valueOf(toolName.uppercase()) }.getOrNull()
+                                if (tool != null) nav.navigate("${Routes.TOOLS}/${tool.name.lowercase()}") { launchSingleTop = true }
+                                else navigate(Routes.TOOLS)
+                            }
+                        }
+                    }
+                } else NavHost(
                     navController = nav,
                     startDestination = Routes.DASHBOARD,
                     enterTransition = { fadeIn(tween(220)) + slideInHorizontally(tween(260)) { it / 6 } },
@@ -467,6 +493,12 @@ private fun MainShell(factory: VMFactory) {
                     }
                     composable(Routes.PROFILE) {
                         ProfileScreen(vm = profileVm, onLoggedOut = { })
+                    }
+                    composable(Routes.LIBRARY) {
+                        SimpleWorkspacePage("Library", "Your uploaded study materials will be organized here.")
+                    }
+                    composable(Routes.SCHEDULE) {
+                        SimpleWorkspacePage("Schedule", "Create recurring study digests and research tasks here.")
                     }
                 }
             }
@@ -531,5 +563,55 @@ private fun MainShell(factory: VMFactory) {
             text = { Text("Choose a workspace item from the menu, or ask Notely Assistant whenever you need help with your studies.") },
             confirmButton = { TextButton(onClick = { helpOpen = false }) { Text("Close") } }
         )
+    }
+}
+
+
+@Composable
+private fun AndroidWorkspaceCards(onOpen: (String) -> Unit) {
+    val tools = listOf(
+        Triple("Notes", "notes", "Write and organize study notes"),
+        Triple("Flashcards", "flashcards", "Practice active recall"),
+        Triple("Quiz", "quiz", "Test your understanding"),
+        Triple("Summarize", "summarize", "Turn material into clear summaries"),
+        Triple("Study Roadmap", "plan", "Build a learning path"),
+        Triple("Documents", "documents", "Open your study materials")
+    )
+    Column(Modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 22.dp)) {
+        Text("YOUR STUDY SPACE", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+        Text("Workspace", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Text("Choose a tool to continue learning.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+        Row(
+            Modifier.fillMaxWidth().weight(1f).horizontalScroll(rememberScrollState()).padding(top = 22.dp, bottom = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            tools.forEach { item ->
+                Surface(
+                    modifier = Modifier.width(260.dp).fillMaxHeight(.78f).clip(RoundedCornerShape(24.dp)).clickable { onOpen(item.second) },
+                    shape = RoundedCornerShape(24.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    shadowElevation = 5.dp
+                ) {
+                    Column(Modifier.fillMaxSize().padding(22.dp), verticalArrangement = Arrangement.Bottom) {
+                        Text("✦", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.headlineLarge)
+                        Spacer(Modifier.weight(1f))
+                        Text(item.first, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text(item.third, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                        Spacer(Modifier.height(14.dp))
+                        Text("Open tool →", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SimpleWorkspacePage(title: String, description: String) {
+    Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(8.dp))
+        Text(description, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
     }
 }

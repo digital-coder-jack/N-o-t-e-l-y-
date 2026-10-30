@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="/css/notely-theme-shared.css" />
   <link rel="stylesheet" href="/css/notely-lottie-icons.css" />
   <link rel="stylesheet" href="/css/notely-chat-home.css" />
+  <link rel="stylesheet" href="/css/notely-workspace-spec.css" />
 </head>
 <body>
   <div id="notely-shutter" class="notely-shutter-overlay" aria-hidden="true"><div class="notely-shutter-inner"><img src="/assets/logo.png" alt="Notely"></div></div>
@@ -29,22 +30,14 @@
         <span class="nw-brand-name">Notely</span>
         <button class="nw-icon nw-collapse" id="nwCollapse" aria-label="Collapse sidebar" type="button">‹</button>
       </div>
-      <button class="nw-search" data-view="search" type="button"><span aria-hidden="true">⌕</span> Search <kbd>⌘ K</kbd></button>
-      <nav class="nw-nav" aria-label="Workspace navigation">
-        <span>WORKSPACE</span>
-        <button data-view="overview" type="button"><span class="nch-nav-icon" aria-hidden="true">⌂</span><b>Home</b></button>
-        <button data-view="notes" type="button"><span class="nch-nav-icon" aria-hidden="true">▤</span><b>Notes</b></button>
-        <button data-view="flashcards" type="button"><span class="nch-nav-icon" aria-hidden="true">▣</span><b>Flashcards</b></button>
-        <button data-view="quizzes" type="button"><span class="nch-nav-icon" aria-hidden="true">?</span><b>Quiz</b></button>
-        <button data-view="tools" type="button"><span class="nch-nav-icon" aria-hidden="true">✧</span><b>Summarize</b></button>
-        <button data-view="mindmaps" type="button"><span class="nch-nav-icon" aria-hidden="true">◎</span><b>Mind maps</b></button>
-        <button data-view="roadmap" type="button"><span class="nch-nav-icon" aria-hidden="true">⌁</span><b>Study roadmap</b></button>
-        <button data-view="revision" type="button"><span class="nch-nav-icon" aria-hidden="true">↻</span><b>Revision planner</b></button>
-        <button data-view="documents" type="button"><span class="nch-nav-icon" aria-hidden="true">▧</span><b>Documents</b></button>
-        <button data-view="favorites" type="button"><span class="nch-nav-icon" aria-hidden="true">☆</span><b>Favorites</b></button>
-        <button data-view="settings" type="button"><span class="nch-nav-icon" aria-hidden="true">⚙</span><b>Settings</b></button>
-        <span>RECENT</span>
-        <div id="nchRecent" class="nch-recent-list" aria-label="Recent chats"></div>
+      <nav class="nw-nav" aria-label="Notely navigation">
+        <button class="nch-sidebar-new" id="nchSidebarNewChat" type="button"><span class="nch-plus" aria-hidden="true">＋</span><span>New chat</span></button>
+        <div class="nch-primary-nav" role="navigation" aria-label="Notely navigation">
+          <button type="button" data-spec-page="library"><span>▤</span>Library</button>
+          <button type="button" data-spec-page="schedule"><span>◷</span>Schedule</button>
+        </div>
+        <button type="button" data-view="overview" id="nchHiddenHome" hidden aria-hidden="true"></button>
+        <div class="nch-chat-history" id="nchChatHistory"><div class="nch-history-loading">Loading conversations…</div></div>
       </nav>
       <div class="nw-sidebar-bottom">
         <button class="nw-user" type="button" aria-label="Open account menu">
@@ -81,6 +74,7 @@
   <script src="/js/notely-workspace.js"></script>
   <script src="/js/notely-trial-workspace.js"></script>
   <script src="/js/notely-chat-home.js"></script>
+  <script src="/js/notely-workspace-spec.js"></script>
   <script src="/js/notely-theme.js" defer></script>
   <script src="/js/notely-shutter.js"></script>
   <script defer src="/js/notely-lottie-registry.js"></script>

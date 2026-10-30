@@ -199,6 +199,25 @@ app.add_middleware(RateLimitMiddleware)
 # Database checks run through /api/health so a missing DB does not prevent the
 # application from starting and reporting a safe readiness error.
 
+# TEMP: remove after testing — this endpoint is inert unless the preview-only flag is enabled.
+@app.get("/api/testing/session")
+async def get_preview_testing_session():
+    if not auth.testing_auth_enabled():
+        return {"enabled": False}
+    user = auth.preview_test_user()
+    return {
+        "enabled": True,
+        "user": {
+            "id": user["id"],
+            "name": "Test User",
+            "email": user["email"],
+            "is_test_user": True,
+            "is_trial": False,
+            "trial_expired": False,
+        },
+    }
+
+
 # ---------------------------------------------------------------------------
 # API routers
 # ---------------------------------------------------------------------------

@@ -33,6 +33,10 @@ data class AuthResponse(
 @Serializable
 data class MeResponse(val user: User = User())
 
+// TEMP: remove after testing — response for preview-only auth bypass.
+@Serializable
+data class TestingSessionResponse(val enabled: Boolean = false, val user: User = User())
+
 @Serializable
 data class MessageResponse(val message: String = "")
 

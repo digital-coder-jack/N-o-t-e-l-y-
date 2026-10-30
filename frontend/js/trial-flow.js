@@ -449,6 +449,19 @@
   }
 
   async function init() {
+    // TEMP: remove after testing — the backend confirms this is a protected Preview deployment.
+    try {
+      var testResponse = await fetch(apiUrl('/api/testing/session'), { method: 'GET', credentials: 'include', cache: 'no-store' });
+      if (testResponse.ok) {
+        var testData = await testResponse.json();
+        if (testData.enabled && testData.user && window.SS && typeof SS.setTestingSession === 'function') {
+          SS.setTestingSession(testData.user);
+          if (window.NotelyShutter && typeof window.NotelyShutter.navigate === 'function') window.NotelyShutter.navigate(appUrl('/dashboard'));
+          else window.location.replace(appUrl('/dashboard'));
+          return;
+        }
+      }
+    } catch (_) {}
     var start = $('#getStarted');
     if (start) start.addEventListener('click', showChoicesWithShutter);
 
