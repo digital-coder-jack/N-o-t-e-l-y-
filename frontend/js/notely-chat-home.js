@@ -18,7 +18,7 @@
   }
   function readProfile() {
     try {
-      profile = window.SS && SS.getUser ? SS.getUser() : JSON.parse(localStorage.getItem('ss_user') || '{}');
+      profile = typeof SS !== 'undefined' && SS.getUser ? SS.getUser() : JSON.parse(localStorage.getItem('ss_user') || '{}');
     } catch (_) { profile = {}; }
     return profile || {};
   }
@@ -229,7 +229,7 @@
     } catch (error) {
       document.body.classList.add('nch-home-active');
       if (page) page.classList.remove('is-leaving');
-      if (window.SS && SS.toast) SS.toast(error.message || 'Could not open Notely Assistant.', 'error');
+      if (typeof SS !== 'undefined' && SS.toast) SS.toast(error.message || 'Could not open Notely Assistant.', 'error');
     }
   }
   function openChat(id) {
@@ -249,6 +249,11 @@
     menu.setAttribute('role', 'menu');
     document.body.appendChild(menu);
     var userButton = document.querySelector('.nw-user');
+    var profile = readProfile();
+    var avatar = document.getElementById('nwUserAvatar');
+    var name = document.getElementById('nwUserName');
+    if (avatar) avatar.textContent = String(profile.name || profile.email || 'N').trim().charAt(0).toUpperCase();
+    if (name) name.textContent = profile.name || profile.email || 'Student';
     if (userButton) {
       userButton.setAttribute('aria-haspopup', 'menu');
       userButton.setAttribute('aria-expanded', 'false');
@@ -256,7 +261,7 @@
         event.preventDefault();
         event.stopPropagation();
         var p = readProfile();
-        var accounts = window.SS && SS.getAccounts ? SS.getAccounts() : [];
+        var accounts = typeof SS !== 'undefined' && SS.getAccounts ? SS.getAccounts() : [];
         menu.innerHTML = '<button type="button" class="nch-menu-name" id="nchAccountToggle">' + esc(p.name || p.email || 'Your account') + '　⌄</button>' +
           '<button type="button" data-profile-action="settings">Settings</button>' +
           '<button type="button" data-profile-action="help">Help</button>' +
@@ -279,12 +284,12 @@
         if (list) list.hidden = !list.hidden;
         return;
       }
-      if (target.dataset.switchAccount && window.SS && SS.switchAccount) {
+      if (target.dataset.switchAccount && typeof SS !== 'undefined' && SS.switchAccount) {
         SS.switchAccount(target.dataset.switchAccount);
         return;
       }
       if (target.dataset.addAccount) {
-        window.location.href = '/login?addAccount=1&return=%2Fdashboard';
+        if (typeof SS !== 'undefined' && SS.beginAddAccount) SS.beginAddAccount(); else window.location.href = '/login?addAccount=1&return=%2Fdashboard';
         return;
       }
       if (target.dataset.profileAction === 'settings') {
@@ -295,7 +300,7 @@
         closeProfileMenu();
         window.alert('Notely Help: choose a tool from Workspace, or ask Notely Assistant from the home screen.');
       } else if (target.dataset.profileAction === 'logout') {
-        if (window.SS && SS.logout) SS.logout();
+        if (typeof SS !== 'undefined' && SS.logout) SS.logout();
       }
     });
     document.addEventListener('click', function (event) {
@@ -340,6 +345,14 @@
       var launcher = document.getElementById('nwAssistantLauncher');
       if (launcher) launcher.hidden = false;
     }
+  });
+  var newChatButton = document.getElementById('nchNewChat');
+  if (newChatButton) newChatButton.addEventListener('click', function () {
+    document.body.classList.remove('nch-home-active');
+    if (!window.NotelyAssistant) return;
+    window.NotelyAssistant.open('').then(function () {
+      return window.NotelyAssistant.newChat();
+    }).then(function () { window.NotelyAssistant.setMode('maximized', true); });
   });
   window.addEventListener('pageshow', function () {
     homeRendered = false;
