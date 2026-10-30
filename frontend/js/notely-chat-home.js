@@ -6,6 +6,9 @@
   if (!root || !sidebar) return;
 
   var activity = [];
+  var activityUnavailable = false;
+  var activityLoaded = false;
+  var activityLoading = false;
   var profile = {};
   var activityKey = 'notely-home-activity-v1';
   var homeRendered = false;
@@ -135,6 +138,7 @@
         items.push({ kind:'file', id:f.id, title:f.filename || f.name || 'Study document', description:'Course material', timestamp:f.updated_at || f.created_at, view:'documents' });
       });
     }
+    activityUnavailable = items.length === 0 && results.some(function (result) { return result.status === 'rejected'; });
     return sortActivities(items);
   }
   function renderRecentChats() {
@@ -151,7 +155,7 @@
     var user = readProfile();
     var name = getName();
     var isTrial = !!user.is_trial;
-    var cards = activity.length ? activity.map(card).join('') : starterCards();
+    var cards = activity.length ? activity.map(card).join('') : activityUnavailable ? '<div class="nch-activity-error">Recent work could not be loaded. Your saved data has not been changed.</div>' : starterCards();
     var trialText = isTrial && !user.trial_expired ? '<small class="nch-trial-note">Trial workspace</small>' : '';
     return '<div class="nch-home">' +
       '<div class="nch-hero">' + orb() +
@@ -330,9 +334,11 @@
     if (isHome) {
       if (!homeRendered || !root.querySelector('.nch-home')) renderHome();
       document.body.classList.add('nch-home-active');
+      if (!activityLoaded && !activityLoading) refreshActivity();
     } else {
       document.body.classList.remove('nch-home-active');
       homeRendered = false;
+      activityLoaded = false;
     }
     var launcher = document.getElementById('nwAssistantLauncher');
     if (launcher) launcher.hidden = isHome;
@@ -411,11 +417,27 @@
     window.requestAnimationFrame(syncHomeState);
   });
   observer.observe(root, { childList:true, subtree:false });
+  function refreshActivity() {
+    activityLoading = true;
+    fetchActivity().then(function (items) {
+      activity = items;
+      activityLoaded = true;
+      activityLoading = false;
+      if (sidebar.querySelector('[data-view="overview"].active')) {
+        homeRendered = false;
+        renderHome();
+      }
+    }).catch(function () {
+      activityUnavailable = true;
+      activityLoaded = true;
+      activityLoading = false;
+      if (sidebar.querySelector('[data-view="overview"].active')) {
+        homeRendered = false;
+        renderHome();
+      }
+    });
+  }
   installProfileMenu();
   readProfile();
-  fetchActivity().then(function (items) {
-    activity = items;
-    syncHomeState();
-  }).catch(function () { syncHomeState(); });
   setTimeout(syncHomeState, 0);
 })();
