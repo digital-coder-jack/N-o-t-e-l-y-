@@ -60,6 +60,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.ainotebook.app.data.Repository
+import com.ainotebook.app.data.SessionAccount
 import com.ainotebook.app.ui.components.OfflineBanner
 import com.ainotebook.app.ui.components.SpaceBackground
 import com.ainotebook.app.ui.components.rememberHaptics
@@ -179,6 +180,7 @@ private fun MainShell(factory: VMFactory) {
     var drawerSearch by remember { mutableStateOf("") }
     var profileMenuOpen by remember { mutableStateOf(false) }
     var helpOpen by remember { mutableStateOf(false) }
+    var accountList by remember { mutableStateOf(emptyList<SessionAccount>()) }
     var trialReminderDismissed by rememberSaveable { mutableStateOf(false) }
     var trialEndedDismissed by rememberSaveable { mutableStateOf(false) }
 
@@ -194,7 +196,10 @@ private fun MainShell(factory: VMFactory) {
     val userState by profileVm.state.collectAsState()
     val chatState by chatVm.state.collectAsState()
 
-    LaunchedEffect(Unit) { chatVm.loadChats() }
+    LaunchedEffect(Unit) {
+        chatVm.loadChats()
+        accountList = factory.repository.accounts()
+    }
     LaunchedEffect(userState.user?.trial_expired) {
         if (userState.user?.trial_expired == true) {
             assistantMode = 0
@@ -327,6 +332,16 @@ private fun MainShell(factory: VMFactory) {
                                     Icon(Icons.Default.MoreVert, contentDescription = "Account menu")
                                 }
                                 DropdownMenu(expanded = profileMenuOpen, onDismissRequest = { profileMenuOpen = false }) {
+                                    DropdownMenuItem(text = { Text(userState.user?.name?.ifBlank { "Your account" } ?: "Your account", fontWeight = FontWeight.Bold) }, onClick = { profileMenuOpen = false }, enabled = false)
+                                    accountList.forEach { account ->
+                                        DropdownMenuItem(
+                                            text = { Row(verticalAlignment = Alignment.CenterVertically) { Text(account.name.ifBlank { account.email.ifBlank { "Account" } }, modifier = Modifier.weight(1f)); if (account.isCurrent) Text("✓", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) } },
+                                            onClick = {
+                                                profileMenuOpen = false
+                                                if (!account.isCurrent) scope.launch { factory.repository.switchAccount(account.id) }
+                                            }
+                                        )
+                                    }
                                     DropdownMenuItem(
                                         text = { Text("Settings") },
                                         onClick = { profileMenuOpen = false; navigate(Routes.PROFILE) },
