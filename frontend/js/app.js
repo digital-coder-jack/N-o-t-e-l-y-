@@ -62,7 +62,7 @@ const SS = (() => {
     if (!response.ok || !data.token) {
       if (response.status === 401) {
         clearSession();
-        if (!/\/(login|signup|forgot)(\.html)?$/.test(window.location.pathname)) window.location.assign('/login');
+        if (window.NOTELY_AUTH_FLOW_ENABLED !== false && !/\/(login|signup|forgot)(\.html)?$/.test(window.location.pathname)) window.location.assign('/login');
         throw new Error('Your session expired. Sign in again.');
       }
       throw new Error((data && (data.detail || data.message)) || 'Could not refresh your session.');
@@ -231,12 +231,12 @@ const SS = (() => {
 
     if (res.status === 402 && res.headers.get('X-Notely-Trial-Expired') === 'true') {
       clearSession();
-      if (!/\/(login|signup|forgot)(\.html)?$/.test(window.location.pathname)) window.location.assign('/signup?trial=expired');
+      if (window.NOTELY_AUTH_FLOW_ENABLED !== false && !/\/(login|signup|forgot)(\.html)?$/.test(window.location.pathname)) window.location.assign('/signup?trial=expired');
     }
 
     if (res.status === 401 && auth) {
       clearSession();
-      if (!/\/(login|signup|forgot)(\.html)?$/.test(window.location.pathname)) window.location.assign('/login');
+      if (window.NOTELY_AUTH_FLOW_ENABLED !== false && !/\/(login|signup|forgot)(\.html)?$/.test(window.location.pathname)) window.location.assign('/login');
       throw new Error('Your session expired. Sign in again.');
     }
 
