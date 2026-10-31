@@ -449,43 +449,31 @@
   }
 
   async function init() {
-    // TEMP: remove after testing — the backend confirms this is a protected Preview deployment.
+    // TEMP workspace-only entry: keep account signup/signin and trial flow
+    // intact as separate pages, but do not route landing visitors through them.
+    // Preview deployments enter directly; backend access still depends on its
+    // preview-only DISABLE_AUTH_FOR_TESTING setting.
+    var startButton = $('#getStarted');
+    if (startButton) {
+      startButton.addEventListener('click', function () {
+        if (window.NotelyShutter && typeof window.NotelyShutter.navigate === 'function') {
+          window.NotelyShutter.navigate('/dashboard');
+        } else {
+          window.location.assign('/dashboard');
+        }
+      });
+    }
     try {
-      var testResponse = await fetch(apiUrl('/api/testing/session'), { method: 'GET', credentials: 'include', cache: 'no-store' });
+      var testResponse = await fetch(apiUrl('/api/testing/session'), {
+        method: 'GET', credentials: 'include', cache: 'no-store'
+      });
       if (testResponse.ok) {
         var testData = await testResponse.json();
         if (testData.enabled && testData.user && window.SS && typeof SS.setTestingSession === 'function') {
           SS.setTestingSession(testData.user);
-          if (window.NotelyShutter && typeof window.NotelyShutter.navigate === 'function') window.NotelyShutter.navigate(appUrl('/dashboard'));
-          else window.location.replace(appUrl('/dashboard'));
-          return;
         }
       }
     } catch (_) {}
-    var start = $('#getStarted');
-    if (start) start.addEventListener('click', showChoicesWithShutter);
-
-    // Returning account users and active trial users should resume at the
-    // workspace. Expired/converted trials remain on the auth-choice flow.
-    var hasAccount = await resolveExistingAccountSession();
-    if (hasAccount) {
-      if (window.NotelyShutter && typeof window.NotelyShutter.navigate === 'function') window.NotelyShutter.navigate('/dashboard');
-      else { try { sessionStorage.setItem('notely-shutter-next', '1'); } catch (_) {} window.location.replace(appUrl('/dashboard')); }
-      return;
-    }
-
-    var currentStatus = await refreshStatus();
-    if (currentStatus.status === 'active') {
-      showLoading(function () {
-        if (window.NotelyShutter && typeof window.NotelyShutter.navigate === 'function') window.NotelyShutter.navigate('/dashboard');
-        else { try { sessionStorage.setItem('notely-shutter-next', '1'); } catch (_) {} window.location.replace('/dashboard'); }
-      });
-      return;
-    }
-    if (currentStatus.status === 'expired' || currentStatus.status === 'converted') {
-      renderChoice();
-      openChoice();
-    }
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
