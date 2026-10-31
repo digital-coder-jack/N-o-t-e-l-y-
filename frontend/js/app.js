@@ -182,12 +182,34 @@ const SS = (() => {
     localStorage.setItem(TEST_SESSION_KEY, '1');
   }
   function isTestingSession() { return localStorage.getItem(TEST_SESSION_KEY) === '1'; }
-  function isAuthed() { return isTestingSession() || !!getToken() || localStorage.getItem('notely-trial-active') === '1'; }
-  function logout() { const token = getToken(); const user = getUser(); if (token) storeAccountSession(token, user); clearSession(); window.location.href = '/'; }
+  // Guest sessions are browser-local and never authorize backend requests.
+  const GUEST_SESSION_KEY = 'notely-guest-session-v1';
+  function createGuestSession() {
+    let id = '';
+    try { id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('guest-' + Date.now() + '-' + Math.random().toString(36).slice(2)); } catch (_) { id = 'guest-' + Date.now() + '-' + Math.random().toString(36).slice(2); }
+    const session = { id: id, name: 'Guest', created_at: Date.now() };
+    localStorage.setItem(GUEST_SESSION_KEY, JSON.stringify(session));
+    return session;
+  }
+  function getGuestSession() {
+    try { const s = JSON.parse(localStorage.getItem(GUEST_SESSION_KEY) || 'null'); return s && typeof s.id === 'string' && s.id && s.name === 'Guest' ? s : null; } catch (_) { return null; }
+  }
+  function isGuest() { return !!getGuestSession(); }
+  function clearGuestSession() { localStorage.removeItem(GUEST_SESSION_KEY); }
+  function isAuthed() { return isGuest() || isTestingSession() || !!getToken() || localStorage.getItem('notely-trial-active') === '1'; }
+  function logout() {
+    if (isGuest()) {
+      if (!window.confirm('Sign out as Guest? Your local guest workspace data will be removed from this browser.')) return;
+      clearGuestSession();
+      try { localStorage.removeItem('notely-guest-data-v1'); } catch (_) {}
+      window.location.href = '/'; return;
+    }
+    const token = getToken(); const user = getUser(); if (token) storeAccountSession(token, user); clearSession(); window.location.href = '/';
+  }
 
   function requireAuth() {
     if (isAuthed()) return true;
-    window.location.assign('/login');
+    window.location.assign('/');
     return false;
   }
 
@@ -504,7 +526,7 @@ const SS = (() => {
     boot();
   }
 
-  return { api, getToken, setSession, getUser, getAccounts, beginAddAccount, switchAccount, clearSession, isAuthed, logout, refreshSession: refreshSessionToken, setTestingSession, isTestingSession,
+  return { api, getToken, setSession, getUser, getAccounts, beginAddAccount, switchAccount, clearSession, isAuthed, isGuest, getGuestSession, createGuestSession, clearGuestSession, logout, refreshSession: refreshSessionToken, setTestingSession, isTestingSession,
            setTrialSession, clearTrialSession, requireAuth, toast, attachRipples, initParticles,
            toggleTheme, getTheme, applyTheme };
 })();
