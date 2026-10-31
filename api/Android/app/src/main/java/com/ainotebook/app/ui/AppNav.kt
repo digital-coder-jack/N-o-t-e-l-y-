@@ -568,13 +568,14 @@ private fun MainShell(factory: VMFactory) {
 
 @Composable
 private fun AndroidWorkspaceCards(onOpen: (String) -> Unit) {
+    // Keep the native Workspace launcher aligned with the six web registry tools.
     val tools = listOf(
         Triple("Notes", "notes", "Write and organize study notes"),
+        Triple("Slides", "slides", "Build visual presentations"),
         Triple("Flashcards", "flashcards", "Practice active recall"),
         Triple("Quiz", "quiz", "Test your understanding"),
-        Triple("Summarize", "summarize", "Turn material into clear summaries"),
-        Triple("Study Roadmap", "plan", "Build a learning path"),
-        Triple("Documents", "documents", "Open your study materials")
+        Triple("Video Overview", "video", "Review a visual explanation"),
+        Triple("Audio Overview", "audio", "Listen to a study recap")
     )
     Column(Modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 22.dp)) {
         Text("YOUR STUDY SPACE", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
