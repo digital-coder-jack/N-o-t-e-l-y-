@@ -160,4 +160,4 @@
     bind: bind
   };
   applyTheme(current);
-})();\n/* Root snapshots are animated by the theme controller; keep the other snapshot still. */\n
+})();
