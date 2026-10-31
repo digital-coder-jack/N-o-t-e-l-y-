@@ -283,6 +283,7 @@
     topbar.classList.add('nch-topbar-updated');
   }
   sidebar.addEventListener('click',function(e){
+    var retry=e.target.closest('[data-chat-history-retry]');if(retry){loadChats();return;}
     var chat=e.target.closest('[data-spec-chat]');if(chat){currentChatId=chat.dataset.specChat;loadChats();if(window.NotelyAssistant)window.NotelyAssistant.open('').then(function(){return window.NotelyAssistant.selectChat(Number(currentChatId));}).then(function(){window.NotelyAssistant.setMode('maximized',true);});return;}
     var more=e.target.closest('[data-chat-menu]');if(more){e.stopPropagation();var panel=sidebar.querySelector('[data-chat-menu-panel="'+CSS.escape(more.dataset.chatMenu)+'"]');if(panel)panel.hidden=!panel.hidden;return;}
     var action=e.target.closest('[data-chat-action]');if(action){e.stopPropagation();chatAction(action.dataset.chatAction,action.dataset.id);return;}
