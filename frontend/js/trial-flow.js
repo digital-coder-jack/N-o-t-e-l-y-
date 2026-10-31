@@ -10,6 +10,7 @@
   var fingerprint = '';
   var status = { status: 'unknown', available: false };
   var busy = false;
+  var TRIAL_ENABLED = false;
   var reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   var $ = function (selector, root) { return (root || document).querySelector(selector); };
   var wait = function (ms) { return new Promise(function (resolve) { window.setTimeout(resolve, ms); }); };
@@ -218,7 +219,8 @@
       var button = event.target.closest('[data-choice]');
       if (!button || button.disabled || busy) return;
       var choice = button.dataset.choice;
-      if (choice === 'trial') startOrResumeTrial();
+      if (choice === 'guest') continueAsGuest();
+      else if (choice === 'trial' && TRIAL_ENABLED) startOrResumeTrial();
       else if (choice === 'signup') navigateAuth('/signup');
       else if (choice === 'signin') navigateAuth('/login');
     });
@@ -231,6 +233,13 @@
     var heading = $('#notely-choice-title', layer);
     var description = $('#notely-choice-description', layer);
     actions.innerHTML = '';
+    if (!TRIAL_ENABLED) {
+      actions.appendChild(makeButton('guest', 'Continue as guest', 'Use Notely on this device', '↗', true));
+      actions.appendChild(makeButton('signup', 'Sign up', 'Create an account with email verification', '＋', false));
+      actions.appendChild(makeButton('signin', 'Sign in', 'Continue with your existing account', '→', false));
+      setStatus('');
+      return;
+    }
     heading.textContent = status.status === 'expired' ? 'Your next chapter starts here.' : 'Make room to learn.';
     description.textContent = status.status === 'expired'
       ? 'This device has already used its seven-day trial. Sign up or sign in to continue.'
@@ -403,6 +412,15 @@
     } finally {
       busy = false;
     }
+  }
+
+  function continueAsGuest() {
+    if (busy || !window.SS || typeof SS.createGuestSession !== 'function') return;
+    busy = true;
+    SS.createGuestSession();
+    closeChoice();
+    if (window.NotelyShutter && typeof window.NotelyShutter.navigate === 'function') window.NotelyShutter.navigate('/dashboard');
+    else window.location.assign('/dashboard');
   }
 
   async function navigateAuth(url) {
