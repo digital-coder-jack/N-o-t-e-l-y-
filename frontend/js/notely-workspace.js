@@ -15,6 +15,20 @@
   async function api(path, opts) { return SS.api(path, opts || {}); }
   async function load() {
     try {
+      if (SS.isGuest && SS.isGuest()) {
+        var guestData = {};
+        try { guestData = JSON.parse(localStorage.getItem('notely-guest-data-v1') || '{}') || {}; } catch (_) {}
+        state.notes = Array.isArray(guestData.notes) ? guestData.notes : [];
+        state.files = Array.isArray(guestData.files) ? guestData.files : [];
+        state.topics = Array.isArray(guestData.topics) ? guestData.topics : [];
+        state.tasks = Array.isArray(guestData.tasks) ? guestData.tasks : [];
+        state.profile = { name: 'Guest', is_guest: true };
+        state.stats = { notes: state.notes.length };
+        var guestName = document.getElementById('nwUserName'); if (guestName) guestName.textContent = 'Guest';
+        var guestAvatar = document.querySelector('.nw-avatar'); if (guestAvatar) guestAvatar.textContent = 'G';
+        var guestIcon = document.querySelector('.nw-user i'); if (guestIcon) guestIcon.textContent = 'G';
+        render(); return;
+      }
       // TEMP: remove after testing — supports direct preview dashboard entry without running auth/trial pages.
       if (!SS.isAuthed()) {
         try {
