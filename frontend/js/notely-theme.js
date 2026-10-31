@@ -85,27 +85,26 @@
     var shouldAnimate = animate !== false && !(reducedMotion && reducedMotion.matches);
     root.style.setProperty('--notely-theme-x', point.x + 'px');
     root.style.setProperty('--notely-theme-y', point.y + 'px');
-    if (!shouldAnimate) { applyTheme(theme); return Promise.resolve(); }
-    var touchViewport = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-    // Touch browsers use the overlay reveal; it is more consistent across iOS Safari and Android WebView.
-    if (typeof document.startViewTransition === 'function' && !touchViewport) {
+    if (!shouldAnimate) { root.classList.remove('rev'); applyTheme(theme); return Promise.resolve(); }
+    var radius = endRadius(point);
+    if (typeof document.startViewTransition === 'function') {
+      var isReverse = theme === 'light';
+      if (isReverse) root.classList.add('rev'); else root.classList.remove('rev');
       var transition;
-      try {
-        transition = document.startViewTransition(function () { applyTheme(theme); });
-      } catch (error) {
-        fallbackReveal(theme, point);
-        return Promise.resolve();
-      }
+      try { transition = document.startViewTransition(function () { applyTheme(theme); }); }
+      catch (error) { root.classList.remove('rev'); fallbackReveal(theme, point); return Promise.resolve(); }
       return transition.ready.then(function () {
-        var radius = endRadius(point);
-        var newView = document.documentElement;
-        return newView.animate(
-          { clipPath: ['circle(0px at ' + point.x + 'px ' + point.y + 'px)', 'circle(' + radius + 'px at ' + point.x + 'px ' + point.y + 'px)'] },
-          { duration: 480, easing: 'cubic-bezier(.22,.8,.22,1)', pseudoElement: '::view-transition-new(root)' }
-        ).finished.catch(function () {});
-      }).catch(function () {
-        // The theme callback still applies if the browser rejects a transition animation.
-      });
+        var clipFrom = isReverse
+          ? 'circle(' + radius + 'px at ' + point.x + 'px ' + point.y + 'px)'
+          : 'circle(0px at ' + point.x + 'px ' + point.y + 'px)';
+        var clipTo = isReverse
+          ? 'circle(0px at ' + point.x + 'px ' + point.y + 'px)'
+          : 'circle(' + radius + 'px at ' + point.x + 'px ' + point.y + 'px)';
+        var pseudo = isReverse ? '::view-transition-old(root)' : '::view-transition-new(root)';
+        return root.animate({ clipPath: [clipFrom, clipTo] }, {
+          duration: 600, easing: 'ease-in-out', pseudoElement: pseudo
+        }).finished.catch(function () {});
+      }).finally(function () { root.classList.remove('rev'); });
     }
     fallbackReveal(theme, point);
     return Promise.resolve();

@@ -269,3 +269,12 @@ html { background: var(--notely-bg); }
 }
 :where(.stat-number,.stat-value,.focus-time,.timer,.score-value,.progress-label){font-variant-numeric:tabular-nums}
 :where(.page-heading p,.settings-panel p,.empty-state p,.chat-message,.note-content){max-width:65ch;line-height:var(--leading-body,1.6)}
+
+/* Theme transition snapshots: dark expands from the toggle; light reverses it. */
+::view-transition-old(root),
+::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+html.rev::view-transition-old(root) { z-index: 2; }
+html.rev::view-transition-new(root) { z-index: 1; }
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0s !important; }
+}
