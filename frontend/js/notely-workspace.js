@@ -14,50 +14,43 @@
   function empty(text) { return '<div class="nw-empty">' + text + '</div>'; }
   async function api(path, opts) { return SS.api(path, opts || {}); }
   async function load() {
+    // Temporary auth-free local workspace mode. Keep auth modules intact so a
+    // single feature flag can reconnect them later; never gate dashboard boot.
+    state.profile = { id: 'local-student', name: 'Student', is_local_user: true };
+    state.settings = {};
     try {
-      // TEMP: remove after testing — supports direct preview dashboard entry without running auth/trial pages.
-      if (!SS.isAuthed()) {
-        try {
-          var testSession = await api('/api/testing/session', { auth: false });
-          if (testSession && testSession.enabled && testSession.user && SS.setTestingSession) SS.setTestingSession(testSession.user);
-        } catch (_) {}
-      }
-      // The landing-page trial start returns a server-issued device credential.
-      // Revalidate it before redirecting: navigation can race storage writes on
-      // slower/mobile browsers, and an active anonymous trial must never be
-      // mistaken for a signed-out account.
-      if (!SS.isAuthed()) {
-        try {
-          var trialResponse = await fetch('/api/trial/status', {
-            method: 'POST',
-            credentials: 'include',
-            cache: 'no-store',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              device_token: localStorage.getItem('notely-trial-device') || undefined,
-              fingerprint: ''
-            })
-          });
-          if (trialResponse.ok) {
-            var trialData = await trialResponse.json();
-            if (trialData.status === 'active' && trialData.device_token && typeof SS.setTrialSession === 'function') {
-              SS.setTrialSession(trialData);
-            }
-          }
-        } catch (_) {}
-      }
-      if (!SS.isAuthed()) { window.location.replace('/login'); return; }
-      var results = await Promise.allSettled([api('/api/stats'), api('/api/tools/notes'), api('/api/files'), api('/api/auth/me'), api('/api/auth/settings'), api('/api/topics'), api('/api/tasks')]);
+      var results = await Promise.allSettled([
+        api('/api/stats'),
+        api('/api/tools/notes'),
+        api('/api/files'),
+        api('/api/topics'),
+        api('/api/tasks')
+      ]);
       state.stats = results[0].status === 'fulfilled' ? results[0].value : {};
       state.notes = results[1].status === 'fulfilled' ? (results[1].value.notes || []) : [];
       state.files = results[2].status === 'fulfilled' ? (results[2].value.files || []) : [];
-      if (results[3].status === 'fulfilled' && results[3].value.user) { state.profile = results[3].value.user; renderTrialStatus(); var u = state.profile; document.getElementById('nwUserName').textContent = u.name || 'Student'; var avatar = document.querySelector('.nw-avatar'); if (avatar) avatar.textContent = (u.name || u.email || 'N').trim().charAt(0).toUpperCase(); var userIcon = document.querySelector('.nw-user i'); if (userIcon) userIcon.textContent = (u.name || u.email || 'N').trim().charAt(0).toUpperCase(); }
-      if (results[4].status === 'fulfilled') { state.settings = results[4].value || {}; applyAppearance(); }
-      state.topics = results[5].status === 'fulfilled' ? (results[5].value.topics || []) : [];
-      state.tasks = results[6].status === 'fulfilled' ? (results[6].value.tasks || []) : [];
-      if (state.view === 'course' && state.activeTopicId) { try { var topicData = await api('/api/topics/' + encodeURIComponent(state.activeTopicId)); state.activeTopic = topicData.topic || null; } catch (topicError) { state.activeTopic = state.topics.find(function (t) { return String(t.id) === String(state.activeTopicId); }) || null; } }
+      state.topics = results[3].status === 'fulfilled' ? (results[3].value.topics || []) : [];
+      state.tasks = results[4].status === 'fulfilled' ? (results[4].value.tasks || []) : [];
+      var name = 'Student';
+      var nameNode = document.getElementById('nwUserName');
+      if (nameNode) nameNode.textContent = name;
+      var avatar = document.querySelector('.nw-avatar');
+      if (avatar) avatar.textContent = 'S';
+      var userIcon = document.querySelector('.nw-user i');
+      if (userIcon) userIcon.textContent = 'S';
+      if (state.view === 'course' && state.activeTopicId) {
+        state.activeTopic = state.topics.find(function (t) { return String(t.id) === String(state.activeTopicId); }) || null;
+      }
       render();
-    } catch (e) { root.innerHTML = '<div class="nw-empty">Could not load your workspace. <button class="nw-link" id="nwRetry">Try again</button><br><small>' + esc(e.message) + '</small></div>'; document.getElementById('nwRetry').onclick = load; }
+    } catch (e) {
+      // The chat-first shell remains usable even when optional workspace APIs fail.
+      state.stats = state.stats || {};
+      state.notes = state.notes || [];
+      state.files = state.files || [];
+      state.topics = state.topics || [];
+      state.tasks = state.tasks || [];
+      render();
+    }
   }
   function notebooks() {
     var cards = state.topics.map(function (t) {

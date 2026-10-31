@@ -36,9 +36,13 @@
     nav.innerHTML =
       '<button class="nch-sidebar-new" id="nchSidebarNewChat" type="button"><span class="nch-plus" aria-hidden="true">＋</span><span>New chat</span></button>' +
       '<div class="nch-primary-nav" role="navigation" aria-label="Notely navigation">' +
-        '<button type="button" data-spec-page="library"><span>▤</span>Library</button>' +
         '<button type="button" data-spec-page="schedule"><span>◷</span>Schedule</button>' +
+        '<button type="button" data-spec-page="images"><span>▧</span>Images</button>' +
+        '<button type="button" data-spec-page="library"><span>▤</span>Library</button>' +
       '</div>' +
+      '<div class="nch-sidebar-section-label">Pinned chats</div>' +
+      '<div class="nch-pinned-chat-list" id="nchPinnedChats"><div class="nch-history-empty">No pinned chats yet</div></div>' +
+      '<div class="nch-sidebar-section-label nch-recent-label">Recent chats</div>' +
       '<button type="button" data-view="overview" id="nchHiddenHome" hidden aria-hidden="true"></button>' +
       '<div class="nch-chat-history" id="nchChatHistory"><div class="nch-history-loading">Loading conversations…</div></div>';
     if (brand) brand.setAttribute('aria-label', 'Notely');
@@ -74,7 +78,10 @@
         (pinned.indexOf(id) >= 0 ? (buckets.Pinned = buckets.Pinned || [], buckets.Pinned) : buckets[dateGroup(c.updated_at || c.created_at)]).push(c);
       });
       var html = '';
-      if (buckets.Pinned && buckets.Pinned.length) html += groupMarkup('Pinned', buckets.Pinned);
+      var pinnedHolder = document.getElementById('nchPinnedChats');
+      if (pinnedHolder) pinnedHolder.innerHTML = buckets.Pinned && buckets.Pinned.length
+        ? groupMarkup('Pinned', buckets.Pinned)
+        : '<div class="nch-history-empty">No pinned chats yet</div>';
       ['Today','Yesterday','Previous 7 days','Older'].forEach(function (key) { if (buckets[key].length) html += groupMarkup(key, buckets[key]); });
       holder.innerHTML = html || '<div class="nch-history-empty"><span>✦</span><strong>No conversations yet</strong><small>Your chats will appear here.</small></div>';
       if (currentChatId) {
@@ -219,18 +226,25 @@
     activeTab = 'workspace';
     var toggle = document.getElementById('nchTabToggle');
     if (toggle) { toggle.dataset.active='workspace'; toggle.querySelectorAll('[role="tab"]').forEach(function(t){t.setAttribute('aria-selected',String(t.dataset.tab==='workspace'));}); }
-    if (kind === 'library') {
-      root.innerHTML = '<section class="nch-library-page"><div class="nch-workspace-intro"><span>YOUR FILES</span><h1>Library</h1><p>Find and organize your study materials.</p></div><div class="nch-library-toolbar"><input id="nchLibrarySearch" type="search" placeholder="Search Library files and folders…" aria-label="Search Library"><button id="nchLibraryUpload" type="button" disabled aria-disabled="true">＋ Upload files</button><button id="nchLibraryFolder" type="button" disabled aria-disabled="true">＋ Folder</button></div><p class="nch-library-notice">Original-file storage and folder APIs are not connected yet. Upload and folder actions are disabled to prevent files being accepted without durable storage.</p><div class="nch-library-filters"><button class="active" data-library-filter="all">All files</button><button data-library-filter="folders">Folders</button><button data-library-filter="files">Files</button><button data-library-filter="images">Images</button></div><div id="nchLibraryItems" class="nch-library-items"><p>Loading your files…</p></div><input id="nchLibraryInput" type="file" accept=".pdf,.docx,.txt,.png,.jpg,.jpeg,.gif,.webp" multiple hidden><div id="nchLibraryProgress" role="status"></div></section>';
-      initLibrary();
+    if (kind === 'library' || kind === 'images') {
+      var imageOnly = kind === 'images';
+      root.innerHTML = '<section class="nch-library-page"><div class="nch-workspace-intro"><span>YOUR FILES</span><h1>'+(imageOnly?'Images':'Library')+'</h1><p>'+(imageOnly?'Browse image files in your study library.':'Find and organize your study materials.')+'</p></div><div class="nch-library-toolbar"><input id="nchLibrarySearch" type="search" placeholder="Search Library files and folders…" aria-label="Search Library"><button id="nchLibraryUpload" type="button" disabled aria-disabled="true">＋ Upload files</button><button id="nchLibraryFolder" type="button" disabled aria-disabled="true">＋ Folder</button></div><p class="nch-library-notice">Original-file storage and folder APIs are not connected yet. Upload and folder actions are disabled to prevent files being accepted without durable storage.</p><div class="nch-library-filters"><button class="active" data-library-filter="all">All files</button><button data-library-filter="folders">Folders</button><button data-library-filter="files">Files</button><button data-library-filter="images">Images</button></div><div id="nchLibraryItems" class="nch-library-items"><p>Loading your files…</p></div><input id="nchLibraryInput" type="file" accept=".pdf,.docx,.txt,.png,.jpg,.jpeg,.gif,.webp" multiple hidden><div id="nchLibraryProgress" role="status"></div></section>';
+      initLibrary(imageOnly ? 'images' : 'all');
     } else {
       root.innerHTML = '<section class="nch-schedule-page"><div class="nch-workspace-intro"><span>YOUR AUTOMATIONS</span><h1>Schedule</h1><p>Plan recurring study digests and research tasks.</p></div><div class="nch-schedule-empty"><span>◷</span><h2>Scheduled tasks are being connected</h2><p>Automatic digests will appear here once the secure scheduler and source verification endpoints are deployed.</p></div></section>';
     }
   }
-  async function initLibrary() {
+  async function initLibrary(initialFilter) {
     var holder=document.getElementById('nchLibraryItems'), search=document.getElementById('nchLibrarySearch'), input=document.getElementById('nchLibraryInput');
     var foldersKey='notely-library-folders:'+accountKey, folders=[]; try{folders=JSON.parse(localStorage.getItem(foldersKey)||'[]');}catch(_){}
-    var filter='all', files=[];
+    var filter=initialFilter||'all', files=[];
     async function refresh(){try{var data=await SS.api('/api/files');files=data.files||[];render();}catch(e){holder.textContent=e.message||'Could not load Library.';}}
+    if (filter === 'images') {
+      var imageTab = document.querySelector('[data-library-filter="images"]');
+      if (imageTab) imageTab.classList.add('active');
+      var allTab = document.querySelector('[data-library-filter="all"]');
+      if (allTab) allTab.classList.remove('active');
+    }
     function render(){
       var q=(search.value||'').toLowerCase();
       var selected=files.filter(function(f){var image=(f.content_type||'').startsWith('image/');return (filter==='all'||(filter==='images'&&image)||(filter==='files'&&!image))&&(f.filename||'').toLowerCase().includes(q);});

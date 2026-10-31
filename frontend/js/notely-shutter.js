@@ -3,7 +3,7 @@
   var KEY='notely-shutter-next', LOCK='notely-shutter-lock', active=false;
   var reduced=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   function path(url){try{return new URL(url,location.href).pathname.replace(/\/+$/,'')||'/';}catch(e){return '';}}
-  function isTarget(p){return p==='/'||p==='/signup'||p==='/login'||p==='/dashboard';}
+  function isTarget(p){return p==='/'||p==='/dashboard';}
   function ensureOverlay(){
     var el=document.getElementById('pre')||document.getElementById('notely-shutter');
     if(el){el.classList.add('notely-shutter');return el;}

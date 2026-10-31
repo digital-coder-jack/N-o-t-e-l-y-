@@ -472,7 +472,7 @@ private fun EmptyChat(
             BrandLogo(size = 88.dp)
             Spacer(Modifier.size(16.dp))
             Text(
-                "How can I help you learn today?",
+                "How can I assist you today?",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onBackground

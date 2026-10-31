@@ -90,3 +90,17 @@ body.nch-home-active #nwAssistantPanel{display:none!important}
 .nch-home.is-leaving{opacity:0;transform:translateY(-8px);transition:opacity .18s ease,transform .18s ease}
 
 .nch-recent-label{display:block;padding:8px 10px 3px;color:var(--nch-muted);font:700 9px 'DM Sans',sans-serif;letter-spacing:1.1px}.nch-activity-error{grid-column:1/-1;padding:20px;border:1px dashed var(--nch-line);border-radius:16px;color:var(--nch-muted);font-size:12px;text-align:center}
+
+
+/* Sidebar hierarchy: utility destinations, pinned conversations, then recents. */
+.nw-shell.nch-shell .nch-primary-nav{display:flex;flex-direction:column;gap:5px;padding:8px 0 14px;border-bottom:1px solid var(--nch-line)}
+.nw-shell.nch-shell .nch-primary-nav button{display:flex;align-items:center;gap:12px;width:100%;min-height:40px;padding:9px 12px;border:0;border-radius:12px;background:transparent;color:var(--nch-text);font:600 13px "DM Sans",sans-serif;text-align:left;cursor:pointer}
+.nw-shell.nch-shell .nch-primary-nav button:hover{background:var(--nch-line)}
+.nw-shell.nch-shell .nch-primary-nav button span{width:20px;color:var(--nch-muted);font-size:17px;text-align:center}
+.nw-shell.nch-shell .nch-sidebar-section-label{padding:15px 9px 6px;color:var(--nch-muted);font:700 10px "DM Sans",sans-serif;letter-spacing:.12em;text-transform:uppercase}
+.nw-shell.nch-shell .nch-pinned-chat-list{max-height:30%;overflow-y:auto;flex:0 0 auto}
+.nw-shell.nch-shell .nch-pinned-chat-list .nch-history-group h3{display:none}
+.nw-shell.nch-shell .nch-recent-label{padding-top:16px}
+.nw-shell.nch-shell .nch-chat-history{min-height:72px}
+.nw-shell.nch-shell .nch-pinned-chat-list .nch-history-empty{padding:8px 10px;color:var(--nch-muted);font:12px "DM Sans",sans-serif}
+@media(max-width:760px){.nw-shell.nch-shell .nch-pinned-chat-list{max-height:22%}.nw-shell.nch-shell .nch-sidebar-section-label{padding-top:11px}}

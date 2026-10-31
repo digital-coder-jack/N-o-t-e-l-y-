@@ -63,7 +63,7 @@
   }
   function getName() {
     var p = readProfile();
-    return String(p.name || p.full_name || (p.email ? p.email.split('@')[0] : '') || 'there').trim().split(/\s+/)[0];
+    return String(p.name || p.full_name || (p.email ? p.email.split('@')[0] : '') || 'Student').trim().split(/\s+/)[0];
   }
   function icon(kind) {
     return ({ note:'▤', topic:'⌂', chat:'✦', file:'▧', task:'✓' })[kind] || '✧';
@@ -160,9 +160,8 @@
   function homeMarkup() {
     var user = readProfile();
     var name = getName();
-    var isTrial = !!user.is_trial;
     var cards = activity.length ? activity.map(card).join('') : activityUnavailable ? '<div class="nch-activity-error">Recent work could not be loaded. Your saved data has not been changed.</div>' : starterCards();
-    var trialText = isTrial && !user.trial_expired ? '<small class="nch-trial-note">Trial workspace</small>' : '';
+    var trialText = '';
     return '<div class="nch-home">' +
       '<div class="nch-hero">' + orb() +
       '<h1 class="nch-greeting">' + esc(greeting()) + ', ' + esc(name) + '<span>How can I <em>assist you</em> today?</span></h1>' +
