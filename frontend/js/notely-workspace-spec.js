@@ -54,10 +54,20 @@
   async function loadChats() {
     pinned = readPins();
     var holder = document.getElementById('nchChatHistory');
-    if (!holder || !window.SS || !SS.api) return;
+    if (!holder) return;
+    if (!window.SS || !SS.api) {
+      holder.innerHTML = '<div class="nch-history-empty"><strong>Conversations unavailable</strong><small>Chat history is not connected in this session.</small><button type="button" class="nch-history-retry" data-chat-history-retry>Retry</button></div>';
+      return;
+    }
+    holder.setAttribute('aria-busy', 'true');
     try {
-      var data = await SS.api('/api/chats');
-      var chats = Array.isArray(data.chats) ? data.chats : [];
+      var data = await Promise.race([
+        SS.api('/api/chats'),
+        new Promise(function (_, reject) {
+          window.setTimeout(function () { reject(new Error('Chat history request timed out')); }, 10000);
+        })
+      ]);
+      var chats = Array.isArray(data && data.chats) ? data.chats : [];
       var buckets = { 'Today': [], 'Yesterday': [], 'Previous 7 days': [], 'Older': [] };
       chats.forEach(function (c) {
         var id = String(c.id);
@@ -72,10 +82,16 @@
         if (active) active.classList.add('is-active');
       }
       chats.filter(function(c){return !c.title || /^new chat$/i.test(c.title);}).slice(0,5).forEach(autoTitle);
-    } catch (_) {
-      holder.innerHTML = '<div class="nch-history-empty"><strong>Could not load chats</strong><small>Your conversations are still safe. Try again shortly.</small></div>';
+    } catch (error) {
+      var message = error && error.message === 'Chat history request timed out'
+        ? 'The request took too long. Check your connection and retry.'
+        : 'Your conversations could not be loaded. They have not been deleted.';
+      holder.innerHTML = '<div class="nch-history-empty" role="status"><strong>Could not load chats</strong><small>' + esc(message) + '</small><button type="button" class="nch-history-retry" data-chat-history-retry>Retry</button></div>';
+    } finally {
+      holder.setAttribute('aria-busy', 'false');
     }
   }
+
   function groupMarkup(label, chats) {
     return '<section class="nch-history-group"><h3>' + label + '</h3>' + chats.map(function(c){
       return '<div class="nch-chat-row" data-spec-row="' + esc(c.id) + '">' +
