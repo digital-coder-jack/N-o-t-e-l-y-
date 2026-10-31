@@ -174,14 +174,11 @@
   function renderWorkspaceCards() {
     var cards = [
       ['Notes','notes','▤','Write and organize study notes'],
+      ['Slides','slides','▧','Build visual presentations'],
       ['Flashcards','flashcards','▣','Practice active recall'],
-      ['Quiz','quizzes','?','Test your understanding'],
-      ['Summarize','tools','✧','Turn material into clear summaries'],
-      ['Mind Maps','mindmaps','◎','Connect ideas visually'],
-      ['Study Roadmap','roadmap','⌁','Plan a learning path'],
-      ['Revision Planner','revision','↻','Organize revision sessions'],
-      ['Documents','documents','▧','Work with uploaded materials'],
-      ['Favorites','favorites','☆','Return to saved work']
+      ['Quiz','quiz','?','Test your understanding'],
+      ['Video Overview','video','▷','Review a visual explanation'],
+      ['Audio Overview','audio','♫','Listen to a study recap']
     ];
     root.innerHTML = '<section class="nch-workspace-page"><div class="nch-workspace-intro"><span>YOUR STUDY SPACE</span><h1>Workspace</h1><p>Choose a tool to continue learning.</p></div><div class="nch-tool-carousel-wrap"><button class="nch-carousel-arrow" id="nchCarouselPrev" aria-label="Previous tools">‹</button><div class="nch-tool-carousel" id="nchToolCarousel" tabindex="0">' +
       cards.map(function(c,i){return '<button class="nch-tool-card" type="button" data-workspace-tool="' + c[1] + '" data-card-index="' + i + '"><span class="nch-tool-icon">' + c[2] + '</span><strong>' + c[0] + '</strong><small>' + c[3] + '</small><span class="nch-tool-open">Open tool →</span></button>';}).join('') +
