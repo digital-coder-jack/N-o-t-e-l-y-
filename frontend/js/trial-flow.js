@@ -449,37 +449,33 @@
   }
 
   async function init() {
-    // TEMP: remove after testing — the backend confirms this is a protected Preview deployment.
-    try {
-      var testResponse = await fetch(apiUrl('/api/testing/session'), { method: 'GET', credentials: 'include', cache: 'no-store' });
-      if (testResponse.ok) {
-        var testData = await testResponse.json();
-        if (testData.enabled && testData.user && window.SS && typeof SS.setTestingSession === 'function') {
-          SS.setTestingSession(testData.user);
-          if (window.NotelyShutter && typeof window.NotelyShutter.navigate === 'function') window.NotelyShutter.navigate(appUrl('/dashboard'));
-          else window.location.replace(appUrl('/dashboard'));
-          return;
-        }
-      }
-    } catch (_) {}
+    // Auth/trial onboarding is intentionally disconnected during local testing.
+    // Keep the full implementation above for later reactivation via this flag.
+    var AUTH_FLOW_ENABLED = false;
+    window.NOTELY_AUTH_FLOW_ENABLED = AUTH_FLOW_ENABLED;
     var start = $('#getStarted');
+    if (!AUTH_FLOW_ENABLED) {
+      if (start) start.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (window.NotelyShutter && typeof window.NotelyShutter.navigate === 'function') {
+          window.NotelyShutter.navigate('/dashboard');
+        } else {
+          window.location.assign('/dashboard');
+        }
+      }, true);
+      return;
+    }
     if (start) start.addEventListener('click', showChoicesWithShutter);
-
-    // Returning account users and active trial users should resume at the
-    // workspace. Expired/converted trials remain on the auth-choice flow.
     var hasAccount = await resolveExistingAccountSession();
     if (hasAccount) {
       if (window.NotelyShutter && typeof window.NotelyShutter.navigate === 'function') window.NotelyShutter.navigate('/dashboard');
-      else { try { sessionStorage.setItem('notely-shutter-next', '1'); } catch (_) {} window.location.replace(appUrl('/dashboard')); }
+      else window.location.replace('/dashboard');
       return;
     }
-
     var currentStatus = await refreshStatus();
     if (currentStatus.status === 'active') {
-      showLoading(function () {
-        if (window.NotelyShutter && typeof window.NotelyShutter.navigate === 'function') window.NotelyShutter.navigate('/dashboard');
-        else { try { sessionStorage.setItem('notely-shutter-next', '1'); } catch (_) {} window.location.replace('/dashboard'); }
-      });
+      window.location.replace('/dashboard');
       return;
     }
     if (currentStatus.status === 'expired' || currentStatus.status === 'converted') {
